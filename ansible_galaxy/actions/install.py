@@ -106,14 +106,19 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
 
         # FIXME - Unsure if we want to handle the install info for all galaxy
         #         content. Skipping for non-role types for now.
+        # FIXME: this is just deciding if the content is installed or not, should check for it in
+        #        a 'installed_content_db' once we have one
         if content.content_type == "role":
             if content.install_info is not None:
+                # FIXME: seems like this should be up to the content type specific serializer/installer to figure out
+                # FIXME: this just checks for version difference, will need to enfore update/replace policy somewhre
                 if content.install_info['version'] != content.version or force_overwrite:
                     if force_overwrite:
                         display_callback('- changing role %s from %s to %s' %
                                          (content.name, content.install_info['version'], content.version or "unspecified"))
                         content.remove()
                     else:
+                        # eventually need to build a results object here
                         log.warn('- %s (%s) is already installed - use --force to change version to %s',
                                  content.name, content.install_info['version'], content.version or "unspecified")
                         continue
@@ -122,6 +127,12 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
                         display_callback('- %s is already installed, skipping.' % str(content))
                         continue
 
+        # FIXME: seems like we want to resolve deps before trying install
+        #        We need the role (or other content) deps from meta before installing
+        #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
+        #        the file, which we dont do until somewhere in the begin of content.install (fetch).
+        #        We can get that from the galaxy API though.
+        #
         try:
             installed = content.install(force_overwrite=force_overwrite)
         except exceptions.GalaxyError as e:

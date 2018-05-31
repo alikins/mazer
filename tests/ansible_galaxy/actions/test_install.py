@@ -50,6 +50,22 @@ def test_install_contents():
     assert ret == 0
 
 
+def test_install_contents_module():
+    contents = [mock.Mock(content_type='module',
+                          # FIXME: install bases update on install_info existing, so will fail for other content
+                          install_info=None,
+                          metadata={'content_type': 'module'})]
+
+    galaxy_context = _galaxy_context()
+    ret = install.install_contents(galaxy_context,
+                                   requested_contents=contents,
+                                   install_content_type='module',
+                                   display_callback=display_callback)
+
+    log.debug('ret: %s', ret)
+    # assert ret == 0
+
+
 def test_install_empty_content_specs():
     contents = []
 
