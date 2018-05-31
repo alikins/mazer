@@ -25,6 +25,8 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 
 
 # FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
+# TODO: this will eventually be replaced by a content_spec 'resolver' that may
+#       hit galaxy api
 def _build_content_set(content_specs, install_content_type, galaxy_context):
     # TODO: split this into methods that build GalaxyContent items from the content_specs
     #       and another that installs a set of GalaxyContents
@@ -116,6 +118,9 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
                     if force_overwrite:
                         display_callback('- changing role %s from %s to %s' %
                                          (content.name, content.install_info['version'], content.version or "unspecified"))
+                        # FIXME: when we get to setting up a tranaction/update plan,
+                        #        this would add a remove step there and an install
+                        #        step (or an update maybe)
                         content.remove()
                     else:
                         # eventually need to build a results object here
