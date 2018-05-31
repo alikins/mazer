@@ -29,20 +29,18 @@ import re
 import shutil
 import sys
 import time
-import yaml
 
 from jinja2 import Environment, FileSystemLoader
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
+from ansible_galaxy.actions import install
 from ansible_galaxy.config import defaults
 from ansible_galaxy.config import runtime
 from ansible_galaxy.config import config
-from ansible_galaxy import exceptions
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.utils.text import to_text
-from ansible_galaxy.utils.yaml_parse import yaml_parse
 from ansible_galaxy.utils.content_name import parse_content_name
 
 # FIXME: importing class, fix name collision later or use this style
@@ -56,6 +54,19 @@ from ansible_galaxy.flat_rest_api.token import GalaxyToken
 from ansible_galaxy.models.content import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
+
+
+def exit_without_ignore(ignore_errors, msg=None, rc=1):
+    """
+    Exits with the specified return code unless the
+    option --ignore-errors was specified
+    """
+    ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
+    if not ignore_errors:
+        message = ignore_error_blurb
+        if msg:
+            message = '%s:\n%s' % (msg, ignore_error_blurb)
+        raise cli_exceptions.GalaxyCliError(message)
 
 
 class GalaxyCLI(cli.CLI):
@@ -224,18 +235,6 @@ class GalaxyCLI(cli.CLI):
         log.debug('execute action with args: %s', self.args)
 
         self.execute()
-
-    def exit_without_ignore(self, msg=None, rc=1):
-        """
-        Exits with the specified return code unless the
-        option --ignore-errors was specified
-        """
-        ignore_error_blurb = '- you can use --ignore-errors to skip failed roles and finish processing the list.'
-        if not self.options.ignore_errors:
-            message = ignore_error_blurb
-            if msg:
-                message = '%s:\n%s' % (msg, ignore_error_blurb)
-            raise cli_exceptions.GalaxyCliError(message)
 
     def _display_content_info(self, content_info):
         log.debug('content_info: %s', content_info)
@@ -440,8 +439,6 @@ class GalaxyCLI(cli.CLI):
                 (self.options.content_type, ", ".join(CONTENT_TYPES))
             )
 
-        self.log.debug('self.options: %s', self.options)
-
         # TODO: mv to GalaxyContext constructor
         # If someone provides a --roles-path at the command line, we assume this is
         # for use with a legacy role and we want to maintain backwards compat
@@ -449,252 +446,27 @@ class GalaxyCLI(cli.CLI):
             self.log.warn('Assuming content is of type "role" since --role-path was used')
             install_content_type = 'role'
 
-            # FIXME - add more types here, PoC is just role/module
-
+        self.log.debug('self.options: %s', self.options)
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        # TODO: are these per-contentroot options?
-        no_deps = self.options.no_deps
-        force_overwrite = self.options.force
+        # FIXME - add more types here, PoC is just role/module
+        # TODO: more prep here?
+        contents = self.args
 
-        content_left = []
+        rc = 1
 
-        # FIXME - Need to handle role files here for backwards compat
+        try:
+            rc = install.install(galaxy_context,
+                                 contents=contents,
+                                 install_content_type=install_content_type,
+                                 display_callback=self.display,
+                                 no_deps=self.options.no_deps,
+                                 force_overwrite=self.options.force_overwrite)
+        except Exception as e:
+            log.exception(e)
+            raise
 
-        # TODO: this should be adding the content/self.args/content_left to
-        #       a list of needed deps
-
-        # roles were specified directly, so we'll just go out grab them
-        # (and their dependencies, unless the user doesn't want us to).
-        for content in self.args:
-            galaxy_content = yaml_parse(content.strip())
-
-            # FIXME: this is a InstallOption
-            galaxy_content["type"] = install_content_type
-
-            self.log.info('content install galaxy_content: %s', galaxy_content)
-
-            content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
-
-        for content in content_left:
-            # only process roles in roles files when names matches if given
-
-            # FIXME - not sure how to handle this scenario for ansible galaxy files
-            #         here or if we even want to handle that scenario because of
-            #         the galaxy content allowing blank repos to be inspected
-            #
-            #         maybe we want this but only for role types for backwards
-            #         compat
-            #
-            # if role_file and self.args and role.name not in self.args:
-            #    display.vvv('Skipping role %s' % role.name)
-            #    continue
-
-            log.debug('Processing %s as %s', content.name, content.content_type)
-
-            # FIXME - Unsure if we want to handle the install info for all galaxy
-            #         content. Skipping for non-role types for now.
-            if content.content_type == "role":
-                if content.install_info is not None:
-                    if content.install_info['version'] != content.version or force_overwrite:
-                        if force_overwrite:
-                            self.display('- changing role %s from %s to %s' %
-                                         (content.name, content.install_info['version'], content.version or "unspecified"))
-                            content.remove()
-                        else:
-                            log.warn('- %s (%s) is already installed - use --force to change version to %s',
-                                     content.name, content.install_info['version'], content.version or "unspecified")
-                            continue
-                    else:
-                        if not force_overwrite:
-                            self.display('- %s is already installed, skipping.' % str(content))
-                            continue
-
-            try:
-                installed = content.install(force_overwrite=force_overwrite)
-            except exceptions.GalaxyError as e:
-                log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
-                self.exit_without_ignore(e)
-                continue
-
-            if not installed:
-                log.warning("- %s was NOT installed successfully.", content.name)
-                self.exit_without_ignore()
-
-            if no_deps:
-                log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                            content.name)
-
-            # oh dear god, a dep solver...
-
-            # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
-
-            # install dependencies, if we want them
-            # FIXME - Galaxy Content Types handle dependencies in the GalaxyContent type itself because
-            #         a content repo can contain many types and many of any single type and it's just
-            #         easier to have that introspection there. In the future this should be more
-            #         unified and have a clean API
-            if content.content_type == "role":
-                if not no_deps and installed:
-                    if not content.metadata:
-                        log.warning("Meta file %s is empty. Skipping dependencies.", content.path)
-                    else:
-                        role_dependencies = content.metadata.get('dependencies') or []
-                        for dep in role_dependencies:
-                            log.debug('Installing dep %s', dep)
-                            dep_info = yaml_parse(dep)
-                            dep_role = GalaxyContent(galaxy_context, **dep_info)
-                            if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-                                # we know we can skip this, as it's not going to
-                                # be found on galaxy.ansible.com
-                                continue
-                            if dep_role.install_info is None:
-                                if dep_role not in content_left:
-                                    self.display('- adding dependency: %s' % str(dep_role))
-                                    content_left.append(dep_role)
-                                else:
-                                    self.display('- dependency %s already pending installation.' % dep_role.name)
-                            else:
-                                if dep_role.install_info['version'] != dep_role.version:
-                                    log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-                                                str(dep_role), content.name, dep_role.install_info['version'])
-                                else:
-                                    self.display('- dependency %s is already installed, skipping.' % dep_role.name)
-
-        return 0
-
-    # FIXME: rm once test scripts are updated
-    # alias content-install to install for now
-    execute_content_install = execute_install
-
-    def execute_old_role_install(self):
-        """
-        uses the args list of roles to be installed, unless -f was specified. The list of roles
-        can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
-        """
-        role_file = self.options.role_file
-
-        if len(self.args) == 0 and role_file is None:
-            # the user needs to specify one of either --role-file or specify a single user/role name
-            raise cli_exceptions.CliOptionsError("- you must specify a user/role name or a roles file")
-
-        no_deps = self.options.no_deps
-        force = self.options.force
-
-        roles_left = []
-        if role_file:
-            try:
-                f = open(role_file, 'r')
-                if role_file.endswith('.yaml') or role_file.endswith('.yml'):
-                    try:
-                        required_roles = yaml.safe_load(f.read())
-                    except Exception as e:
-                        raise cli_exceptions.GalaxyCliError("Unable to load data from the requirements file: %s" % role_file)
-
-                    if required_roles is None:
-                        raise cli_exceptions.GalaxyCliError("No roles found in file: %s" % role_file)
-
-                    for role in required_roles:
-                        if "include" not in role:
-                            role = yaml_parse(role)
-                            log.info("found role %s in yaml file", str(role))
-                            if "name" not in role and "scm" not in role:
-                                raise cli_exceptions.GalaxyCliError("Must specify name or src for role")
-                            roles_left.append(GalaxyContent(self.galaxy, **role))
-                        else:
-                            with open(role["include"]) as f_include:
-                                try:
-                                    roles_left += [
-                                        GalaxyContent(self.galaxy, **r) for r in
-                                        (yaml_parse(i) for i in yaml.safe_load(f_include))
-                                    ]
-                                except Exception as e:
-                                    msg = "Unable to load data from the include requirements file: %s %s"
-                                    raise cli_exceptions.GalaxyCliError(msg % (role_file, e))
-                else:
-                    log.warn("DEPRECATED going forward only the yaml format will be supported (version='%s')", "2.6")
-                    # roles listed in a file, one per line
-                    for rline in f.readlines():
-                        if rline.startswith("#") or rline.strip() == '':
-                            continue
-                        log.debug('found role %s in text file', str(rline))
-                        role = yaml_parse(rline.strip())
-                        roles_left.append(GalaxyContent(self.galaxy, **role))
-                f.close()
-            except (IOError, OSError) as e:
-                raise cli_exceptions.GalaxyCliError('Unable to open %s: %s' % (role_file, str(e)))
-        else:
-            # roles were specified directly, so we'll just go out grab them
-            # (and their dependencies, unless the user doesn't want us to).
-            for rname in self.args:
-                role = yaml_parse(rname.strip())
-                roles_left.append(GalaxyContent(self.galaxy, **role))
-
-        for role in roles_left:
-            # only process roles in roles files when names matches if given
-            if role_file and self.args and role.name not in self.args:
-                log.info('Skipping role %s', role.name)
-                continue
-
-            log.info('Processing role %s ', role.name)
-
-            # query the galaxy API for the role data
-
-            if role.install_info is not None:
-                if role.install_info['version'] != role.version or force:
-                    if force:
-                        self.display('- changing role %s from %s to %s' %
-                                     role.name, role.install_info['version'], role.version or "unspecified")
-                        role.remove()
-                    else:
-                        log.warn('- %s (%s) is already installed - use --force to change version to %s',
-                                 role.name, role.install_info['version'], role.version or "unspecified")
-                        continue
-                else:
-                    if not force:
-                        self.display('- %s is already installed, skipping.' % str(role))
-                        continue
-
-            try:
-                installed = role.install()
-            except exceptions.GalaxyError as e:
-                self.log.exception(e)
-                log.warn("- %s was NOT installed successfully: %s ", role.name, str(e))
-                self.exit_without_ignore()
-                continue
-
-            # install dependencies, if we want them
-            if not no_deps and installed:
-                if not role.metadata:
-                    log.warn("Meta file %s is empty. Skipping dependencies.", role.path)
-                else:
-                    role_dependencies = role.metadata.get('dependencies') or []
-                    for dep in role_dependencies:
-                        log.debug('Installing dep %s', dep)
-                        dep_info = yaml_parse(dep)
-                        dep_role = GalaxyContent(self.galaxy, **dep_info)
-                        if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-                            # we know we can skip this, as it's not going to
-                            # be found on galaxy.ansible.com
-                            continue
-                        if dep_role.install_info is None:
-                            if dep_role not in roles_left:
-                                self.display('- adding dependency: %s' % str(dep_role))
-                                roles_left.append(dep_role)
-                            else:
-                                self.display('- dependency %s already pending installation.' % dep_role.name)
-                        else:
-                            if dep_role.install_info['version'] != dep_role.version:
-                                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping' %
-                                            str(dep_role), role.name, dep_role.install_info['version'])
-                            else:
-                                self.display('- dependency %s is already installed, skipping.' % dep_role.name)
-
-            if not installed:
-                log.warning("- %s was NOT installed successfully.", role.name)
-                self.exit_without_ignore()
-
-        return 0
+        return rc
 
     def execute_remove(self):
         """
