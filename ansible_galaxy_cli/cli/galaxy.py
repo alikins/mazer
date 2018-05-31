@@ -451,17 +451,18 @@ class GalaxyCLI(cli.CLI):
 
         # FIXME - add more types here, PoC is just role/module
         # TODO: more prep here?
-        contents = self.args
+        requested_content_specs = self.args
 
         rc = 1
 
         try:
-            rc = install.install(galaxy_context,
-                                 contents=contents,
-                                 install_content_type=install_content_type,
-                                 display_callback=self.display,
-                                 no_deps=self.options.no_deps,
-                                 force_overwrite=self.options.force_overwrite)
+            rc = install.install_content_specs(galaxy_context,
+                                               content_specs=requested_content_specs,
+                                               install_content_type=install_content_type,
+                                               display_callback=self.display,
+                                               ignore_errors=self.options.ignore_errors,
+                                               no_deps=self.options.no_deps,
+                                               force_overwrite=self.options.force)
         except Exception as e:
             log.exception(e)
             raise
