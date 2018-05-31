@@ -24,34 +24,18 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-def install(galaxy_context, contents, install_content_type,
-            display_callback=None,
-            # TODO: error handling callback ?
-            ignore_errors=False,
-            no_deps=False,
-            force_overwrite=False):
-    """
-    uses the args list of roles to be installed, unless -f was specified. The list of roles
-    can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
-    """
-
-    display_callback = display_callback or display.display_callback
-    log.debug('contents: %s', contents)
-    log.debug('install_content_type: %s', install_content_type)
-    log.debug('no_deps: %s', no_deps)
-    log.debug('force_overwrite: %s', force_overwrite)
-
-    content_left = []
-
-    # FIXME - Need to handle role files here for backwards compat
-
-    # TODO: this should be adding the content/self.args/content_left to
-    #       a list of needed deps
-
+# FIXME: install_content_type is wrong, should be option to GalaxyContent.install()?
+def _build_content_set(content_specs, install_content_type, galaxy_context):
+    # TODO: split this into methods that build GalaxyContent items from the content_specs
+    #       and another that installs a set of GalaxyContents
     # roles were specified directly, so we'll just go out grab them
     # (and their dependencies, unless the user doesn't want us to).
-    for content in contents:
-        galaxy_content = yaml_parse(content.strip())
+
+    # FIXME: could be a generator...
+    content_left = []
+
+    for content_spec in content_specs:
+        galaxy_content = yaml_parse(content_spec.strip())
 
         # FIXME: this is a InstallOption
         galaxy_content["type"] = install_content_type
@@ -60,7 +44,49 @@ def install(galaxy_context, contents, install_content_type,
 
         content_left.append(GalaxyContent(galaxy_context, **galaxy_content))
 
-    for content in content_left:
+    return content_left
+
+
+# pass a list of content_spec objects
+def install_content_specs(galaxy_context, content_specs, install_content_type,
+                          display_callback=None,
+                          # TODO: error handling callback ?
+                          ignore_errors=False,
+                          no_deps=False,
+                          force_overwrite=False):
+    log.debug('contents: %s', content_specs)
+    log.debug('install_content_type: %s', install_content_type)
+
+    requested_contents = _build_content_set(content_specs=content_specs,
+                                            install_content_type=install_content_type,
+                                            galaxy_context=galaxy_context)
+
+    return install_contents(galaxy_context, requested_contents, install_content_type,
+                            display_callback=display_callback,
+                            ignore_errors=ignore_errors,
+                            no_deps=no_deps,
+                            force_overwrite=force_overwrite)
+
+
+def install_contents(galaxy_context, requested_contents, install_content_type,
+                     display_callback=None,
+                     # TODO: error handling callback ?
+                     ignore_errors=False,
+                     no_deps=False,
+                     force_overwrite=False):
+
+    display_callback = display_callback or display.display_callback
+    log.debug('requested_contents: %s', requested_contents)
+    log.debug('install_content_type: %s', install_content_type)
+    log.debug('no_deps: %s', no_deps)
+    log.debug('force_overwrite: %s', force_overwrite)
+
+    # FIXME - Need to handle role files here for backwards compat
+
+    # TODO: this should be adding the content/self.args/content_left to
+    #       a list of needed deps
+
+    for content in requested_contents:
         # only process roles in roles files when names matches if given
 
         # FIXME - not sure how to handle this scenario for ansible galaxy files
@@ -133,9 +159,9 @@ def install(galaxy_context, contents, install_content_type,
                             # be found on galaxy.ansible.com
                             continue
                         if dep_role.install_info is None:
-                            if dep_role not in content_left:
+                            if dep_role not in requested_contents:
                                 display_callback('- adding dependency: %s' % str(dep_role))
-                                content_left.append(dep_role)
+                                requested_contents.append(dep_role)
                             else:
                                 display_callback('- dependency %s already pending installation.' % dep_role.name)
                         else:

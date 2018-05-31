@@ -24,21 +24,49 @@ def test_install_empty_contents():
     contents = []
 
     galaxy_context = _galaxy_context()
-    ret = install.install(galaxy_context,
-                          contents=contents,
-                          install_content_type='role',
-                          display_callback=display_callback)
+    ret = install.install_content_specs(galaxy_context,
+                                        content_specs=contents,
+                                        install_content_type='role',
+                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+    assert ret == 0
+
+
+def test_install_malformed_contents():
+    contents = ['blrp']
+
+    galaxy_context = _galaxy_context()
+    ret = install.install_content_specs(galaxy_context,
+                                        content_specs=contents,
+                                        install_content_type='role',
+                                        display_callback=display_callback)
+
+    log.debug('ret: %s', ret)
+    assert ret == 0
 
 
 def test_install_contents():
     contents = ['alikins.testing-content']
 
     galaxy_context = _galaxy_context()
-    ret = install.install(galaxy_context,
-                          contents=contents,
-                          install_content_type='role',
-                          display_callback=display_callback)
+    ret = install.install_content_specs(galaxy_context,
+                                        content_specs=contents,
+                                        install_content_type='role',
+                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+    assert ret == 0
+
+
+def test_install_bogus_contents():
+    contents = ['alikins.not-a-real-thing']
+
+    galaxy_context = _galaxy_context()
+    ret = install.install_content_specs(galaxy_context,
+                                        content_specs=contents,
+                                        install_content_type='role',
+                                        display_callback=display_callback)
+
+    log.debug('ret: %s', ret)
+    assert ret == 1
