@@ -86,6 +86,8 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
     # TODO: this should be adding the content/self.args/content_left to
     #       a list of needed deps
 
+    # FIXME: should be while? or some more func style processing
+    #        iterating until there is nothing left
     for content in requested_contents:
         # only process roles in roles files when names matches if given
 
