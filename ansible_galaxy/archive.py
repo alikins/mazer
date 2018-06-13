@@ -289,6 +289,8 @@ def extract_file(tar_file, file_to_extract):
     dest_filename = file_to_extract['dest_filename']
     force_overwrite = file_to_extract['force_overwrite']
 
+    37/0
+
     orig_name = archive_member.name
     if not archive_member.isreg() and not archive_member.issym():
         return None
@@ -323,7 +325,6 @@ def extract_file(tar_file, file_to_extract):
 def extract_files(tar_file, files_to_extract):
     '''Process tar_file, extracting the files from files_to_extract'''
 
-    37/0
     for file_to_extract in files_to_extract:
         res = extract_file(tar_file, file_to_extract)
         if res:
