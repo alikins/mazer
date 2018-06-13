@@ -17,4 +17,4 @@ install:
 
 script:
   - flake8 ansible_galaxy_cli ansible_galaxy
-  - pytest tests/
+  - python setup.py pytest
