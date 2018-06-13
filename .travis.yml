@@ -1,0 +1,57 @@
+language: python
+dist: trusty
+sudo: required
+group: deprecated-2017Q4
+
+env:
+- PYTHONUNBUFFERED=1
+
+services:
+- docker
+
+# TODO(cutwater): Do we need this?
+before_install:
+- sudo apt-add-repository 'deb http://archive.ubuntu.com/ubuntu trusty-backports universe'
+- sudo apt-get update -qq
+
+install:
+- pip install ansible flake8
+
+script:
+# run flake8
+- make test/flake8
+
+# build images
+- make build/docker-dev
+
+# TODO(cutwater): Run tests locally
+# start the application
+- make dev/up_detached
+- make dev/waitenv
+- make dev/test
+
+# check images running
+- docker ps -a
+- docker images
+- docker-compose -f scripts/compose-dev.yml -p galaxy logs galaxy
+
+# Run simple web server test
+- pushd testing/simple
+- ansible-playbook -i inventory test.yml
+- popd
+
+# Check the logs
+- docker ps -a
+- make dev/log
+
+# Stop the application
+- make dev/down
+
+# Build release image
+- |
+  if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+    make build/docker-release
+  fi
+
+after_success:
+- scripts/travis-publish-image.sh
