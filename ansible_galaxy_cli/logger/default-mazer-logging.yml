@@ -29,7 +29,7 @@ handlers:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
     filename: '~/.ansible/mazer-http.log'
     formatter: file_verbose
-    level: INFO
+    level: DEBUG
 loggers:
   ansible_galaxy:
     handlers:
