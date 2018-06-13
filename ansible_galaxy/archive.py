@@ -301,7 +301,7 @@ def extract_file(tar_file, file_to_extract):
 
     try:
         tar_file.getmember(archive_member.name)
-    except KeyError as e:
+    except KeyError:
         raise exceptions.GalaxyArchiveError('The archive "%s" has no file "%s"' % (tar_file.name, archive_member.name),
                                             archive_path=tar_file.name)
 
