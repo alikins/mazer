@@ -323,6 +323,7 @@ def extract_file(tar_file, file_to_extract):
 def extract_files(tar_file, files_to_extract):
     '''Process tar_file, extracting the files from files_to_extract'''
 
+    37/0
     for file_to_extract in files_to_extract:
         res = extract_file(tar_file, file_to_extract)
         if res:
