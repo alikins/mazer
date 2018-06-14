@@ -2,26 +2,10 @@ import logging
 import os
 
 from ansible_galaxy import galaxy_content_spec
-from ansible_galaxy.models.galaxy_content_spec import GalaxyContentSpec
-from ansible_galaxy.utils import yaml_parse
+from ansible_galaxy import content_spec_parse
+from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
-
-
-def repo_url_to_repo_name(repo_url):
-    # gets the role name out of a repo like
-    # http://git.example.com/repos/repo.git" => "repo"
-
-    if '://' not in repo_url and '@' not in repo_url:
-        return repo_url
-    trailing_path = repo_url.split('/')[-1]
-    if trailing_path.endswith('.git'):
-        trailing_path = trailing_path[:-4]
-    if trailing_path.endswith('.tar.gz'):
-        trailing_path = trailing_path[:-7]
-    if ',' in trailing_path:
-        trailing_path = trailing_path.split(',')[0]
-    return trailing_path
 
 
 def is_scm(content_spec_string):
@@ -29,10 +13,6 @@ def is_scm(content_spec_string):
         return True
 
     return False
-
-
-def determine_content_spec_type(content_spec_string):
-    pass
 
 
 # FIXME: do we have an enum like class for py2.6? worth a dep?
@@ -67,9 +47,9 @@ def content_spec_from_string(content_spec_string):
     log.debug('fetch_method: %s', fetch_method)
 
     if fetch_method == FetchMethods.GALAXY_URL:
-        spec_data = galaxy_content_spec.parse_content_spec_string(content_spec_string)
+        spec_data = galaxy_content_spec.parse_string(content_spec_string)
     else:
-        spec_data = yaml_parse.parse_content_spec_string(content_spec_string)
+        spec_data = content_spec_parse.parse_string(content_spec_string)
 
     spec_data['fetch_method'] = fetch_method
-    return GalaxyContentSpec(**spec_data)
+    return ContentSpec(**spec_data)

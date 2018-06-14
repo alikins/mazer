@@ -1,50 +1,12 @@
 import logging
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.galaxy_content_spec import GalaxyContentSpec
+from ansible_galaxy import content_spec_parse
 
 log = logging.getLogger(__name__)
 
 
-def split_kwarg(spec_string, valid_keywords):
-    if '=' not in spec_string:
-        return (None, spec_string)
-
-    parts = spec_string.split('=', 1)
-
-    if parts[0] in valid_keywords:
-        return (parts[0], parts[1])
-
-    raise exceptions.GalaxyClientError('The content spec uses an unsuppoted keyword: %s' % spec_string)
-
-
-def split_comma(spec_string, valid_keywords):
-    # res = []
-    comma_parts = spec_string.split(',')
-    for comma_part in comma_parts:
-        kw_parts = split_kwarg(comma_part, valid_keywords)
-        log.debug('kw_parts: %s', kw_parts)
-        yield kw_parts
-
-
-def split_content_spec(spec_string, valid_keywords):
-    comma_splitter = split_comma(spec_string, valid_keywords)
-    info = {}
-    for kw in valid_keywords:
-        try:
-            key, value = next(comma_splitter)
-        except StopIteration:
-            return info
-
-        if key:
-            info[key] = value
-        else:
-            info[kw] = value
-
-    return info
-
-
-def parse_content_spec_string(content_spec_text, valid_keywords=None):
+def parse_string(content_spec_text, valid_keywords=None):
     '''Given a text/str object describing a galaxy content, parse it.
 
     And return a dict with keys: 'name', 'namespace_and_name', 'version'
@@ -60,7 +22,7 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     # FIXME: string/text naming consistency
     data['spec_string'] = content_spec_text
 
-    split_data = split_content_spec(content_spec_text, valid_keywords)
+    split_data = content_spec_parse.split_content_spec(content_spec_text, valid_keywords)
     log.debug('split_data: %s', split_data)
 
     namespace_and_name = split_data.pop('namespace_and_name')
@@ -84,15 +46,3 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     data['src'] = '%s.%s' % (data['namespace'], data['name'])
     log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
     return data
-
-
-def content_spec_from_string(content_spec_string):
-    content_spec_data = parse_content_spec_string(content_spec_string)
-
-    log.debug('content_spec_data: %s', content_spec_data)
-
-    content_spec_ = GalaxyContentSpec(**content_spec_data)
-
-    log.debug('content_spec_: %s', content_spec_)
-
-    return content_spec_

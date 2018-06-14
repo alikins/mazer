@@ -2,8 +2,8 @@ import logging
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy import galaxy_content_spec
 from ansible_galaxy import content_spec
+from ansible_galaxy.utils import yaml_parse
 
 # FIXME: get rid of flat_rest_api
 from ansible_galaxy.flat_rest_api.content import GalaxyContent
@@ -183,7 +183,7 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
                     role_dependencies = content.metadata.get('dependencies') or []
                     for dep in role_dependencies:
                         log.debug('Installing dep %s', dep)
-                        dep_info = yaml_parse(dep)
+                        dep_info = yaml_parse.yaml_parse(dep)
                         dep_role = GalaxyContent(galaxy_context, **dep_info)
                         if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
                             # we know we can skip this, as it's not going to

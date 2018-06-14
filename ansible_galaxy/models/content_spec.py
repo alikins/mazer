@@ -1,5 +1,5 @@
 
-class GalaxyContentSpec(object):
+class ContentSpec(object):
     '''The info used to identify and reference a galaxy content.
 
     For ex, 'testing.ansible-testing-content' will result in
