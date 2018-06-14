@@ -3,6 +3,7 @@ import logging
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import galaxy_content_spec
+from ansible_galaxy import content_spec
 
 # FIXME: get rid of flat_rest_api
 from ansible_galaxy.flat_rest_api.content import GalaxyContent
@@ -38,21 +39,22 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
     content_left = []
 
     for content_spec_string in content_spec_strings:
-        content_spec = galaxy_content_spec.content_spec_from_string(content_spec_string.strip())
+        content_spec_ = content_spec.content_spec_from_string(content_spec_string.strip())
 
         # FIXME: this is a InstallOption
         # content_spec['type'] = install_content_type
         if namespace:
-            content_spec['namespace'] = namespace
-        log.info('content install content_spec: %s', content_spec)
+            content_spec_.namespace = namespace
+        log.info('content install content_spec: %s', content_spec_)
 
         # TODO: a content spec resolver to extend this info, find it, build a GalaxyContent
         #       and return it.
         content_left.append(GalaxyContent(galaxy_context,
-                                          namespace=content_spec.namespace,
-                                          name=content_spec.name,
-                                          src=content_spec.src,
-                                          version=content_spec.version,
+                                          namespace=content_spec_.namespace,
+                                          name=content_spec_.name,
+                                          src=content_spec_.src,
+                                          scm=content_spec_.scm,
+                                          version=content_spec_.version,
                                           ))
 
     return content_left

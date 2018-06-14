@@ -59,7 +59,7 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     valid_keywords = valid_keywords or ('src', 'version', 'name', 'scm')
     data = {'src': None,
             'name': None,
-            'sub_name': None,
+            # 'sub_name': None,
             'version': None,
             'scm': None}
     split_data = split_content_spec(content_spec_text, valid_keywords)
@@ -89,10 +89,10 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     data['name'] = '.'.join(new_name_parts)
 
     # See if we have a sub_name as the third part of the name
-    try:
-        data['sub_name'] = name_parts.pop()
-    except IndexError:
-        data['sub_name'] = None
+    # try:
+    #    data['sub_name'] = name_parts.pop()
+    # except IndexError:
+    #    data['sub_name'] = None
 
     return data
 
@@ -156,7 +156,7 @@ def yaml_parse(content):
         # FIXME: this fails for objects with no dict attribute, like a list
         content_copy = content.copy()
 
-        data = {'src': None, 'version': None, 'name': None, 'scm': None, 'sub_name': None}
+        data = {'src': None, 'version': None, 'name': None, 'scm': None}
         data.update(content_copy)
         content = data
 
