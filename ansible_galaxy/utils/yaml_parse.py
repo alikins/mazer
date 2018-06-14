@@ -6,7 +6,6 @@ from ansible_galaxy import exceptions
 from ansible_galaxy.utils.content_name import repo_url_to_repo_name
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
-from ansible_galaxy.models import content_spec
 
 
 log = logging.getLogger(__name__)
@@ -95,17 +94,7 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     except IndexError:
         data['sub_name'] = None
 
-    log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
-    content_spec_ = content_spec.ContentSpec(**data)
-    log.debug('content_spec: %s', content_spec_)
     return data
-
-
-def build_content_spec(content_spec_text, valid_keywords=None):
-    data = parse_content_spec_string(content_spec_text, valid_keywords)
-
-    content_spec_ = content_spec.ContentSpec(**data)
-    return content_spec_
 
 
 # FIXME: remove after updating tests that reference parse_content_spec

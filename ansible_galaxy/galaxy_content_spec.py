@@ -1,7 +1,7 @@
 import logging
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.galaxy_content_spec import GalaxyContentSpec
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +81,7 @@ def parse_content_spec_string(content_spec_text, valid_keywords=None):
     if not data['name']:
         data['name'] = name_parts[1]
 
+    data['src'] = '%s.%s' % (data['namespace'], data['name'])
     log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
     return data
 
@@ -90,7 +91,7 @@ def content_spec_from_string(content_spec_string):
 
     log.debug('content_spec_data: %s', content_spec_data)
 
-    content_spec_ = ContentSpec(**content_spec_data)
+    content_spec_ = GalaxyContentSpec(**content_spec_data)
 
     log.debug('content_spec_: %s', content_spec_)
 
