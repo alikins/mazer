@@ -7,6 +7,7 @@ from ansible_galaxy.utils.content_name import repo_url_to_repo_name
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 
+
 log = logging.getLogger(__name__)
 
 
@@ -49,7 +50,7 @@ def split_content_spec(spec_string, valid_keywords):
     return info
 
 
-def parse_content_spec(content_spec_text, valid_keywords=None):
+def parse_content_spec_string(content_spec_text, valid_keywords=None):
     '''Given a text/str object describing a galaxy content, parse it.
 
     And return a dict with keys: 'name', 'src', 'scm', 'version'
@@ -93,8 +94,11 @@ def parse_content_spec(content_spec_text, valid_keywords=None):
     except IndexError:
         data['sub_name'] = None
 
-    # log.debug('parsed content_spec_text="%s" into: %s', content_spec_text, data)
     return data
+
+
+# FIXME: remove after updating tests that reference parse_content_spec
+parse_content_spec = parse_content_spec_string
 
 
 # FIXME: not really yaml,
@@ -118,7 +122,7 @@ def yaml_parse(content):
     if isinstance(content, six.string_types):
         log.debug('parsing content="%s" as a string', content)
         orig_content = copy.deepcopy(content)
-        res = parse_content_spec(content)
+        res = parse_content_spec_string(content)
         log.debug('parsed spec="%s" -> %s', content, res)
         return res
 
@@ -158,7 +162,7 @@ def yaml_parse(content):
 
         if data.get('src', None):
             # valid_kw = ('src', 'version', 'name', 'scm')
-            new_data = parse_content_spec(data['src'], VALID_ROLE_SPEC_KEYS)
+            new_data = parse_content_spec_string(data['src'], VALID_ROLE_SPEC_KEYS)
             log.debug('new_data: %s', new_data)
 
             for key in new_data:
