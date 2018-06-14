@@ -17,7 +17,7 @@ def parse_spec(content_spec):
 
 
 def assert_keys(content_spec, name=None, version=None,
-                scm=None, src=None, sub_name=None):
+                scm=None, src=None):
     # name = name or ''
     # src = src or ''
     assert isinstance(content_spec, dict)
@@ -29,7 +29,6 @@ def assert_keys(content_spec, name=None, version=None,
     assert content_spec['scm'] == scm
     assert content_spec['src'] == src, \
         'content_spec src=%s does not match expected src=%s' % (content_spec['src'], src)
-    assert content_spec['sub_name'] == sub_name
 
 
 split_kwarg_valid_test_cases = \
@@ -162,23 +161,6 @@ def test_yaml_parse_name_and_version():
     assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
 
 
-def test_yaml_parse_name_and_sub_content():
-    spec = 'some_namespace.some_content.some_sub_content'
-    result = parse_spec(spec)
-    log.debug(result)
-    assert_keys(result, name='some_namespace.some_content', version=None,
-                scm=None, src='some_namespace.some_content.some_sub_content', sub_name='some_sub_content')
-
-
-def test_yaml_parse_name_and_sub_content_and_version():
-    spec = 'some_namespace.some_content.some_sub_content,1.0.0'
-    result = parse_spec(spec)
-    log.debug(result)
-
-    assert_keys(result, name='some_namespace.some_content', version='1.0.0',
-                scm=None, src='some_namespace.some_content.some_sub_content', sub_name='some_sub_content')
-
-
 def test_yaml_parse_name_and_version_key_value():
     spec = 'some_content,version=1.0.0'
     result = parse_spec(spec)
@@ -268,7 +250,7 @@ def test_yaml_parse_a_dict_with_extra_invalid_keys():
 
     assert_keys(result, name='some_name', version='1.2.4', scm=None, src='galaxy.role')
     result_keys = set(result.keys())
-    valid_keys = set(VALID_ROLE_SPEC_KEYS + ['sub_name'])
+    valid_keys = set(VALID_ROLE_SPEC_KEYS)
     extra_keys = result_keys.difference(valid_keys)
     assert not extra_keys, \
         'Found extra invalid keys in the result. extra_keys=%s, result=%s, valid_keys=%s' % \
@@ -333,7 +315,7 @@ def parse_content_spec(content_spec):
 
 
 def assert_just_keys(parse_result):
-    valid_keys = ('name', 'src', 'scm', 'version', 'sub_name')
+    valid_keys = ('name', 'src', 'scm', 'version')
 
     for key in valid_keys:
         assert key in parse_result, 'expected the results dict to have a "%s" key but it did not' % key
@@ -348,15 +330,6 @@ def test_parse_content_spec_src():
 
     assert_just_keys(result)
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
-
-
-def test_parse_content_spec_src_sub_name():
-    spec_text = 'some_namespace.some_content.some_sub_name'
-    result = parse_content_spec(spec_text)
-
-    assert_just_keys(result)
-    assert_keys(result, name='some_namespace.some_content', version=None,
-                scm=None, src='some_namespace.some_content.some_sub_name', sub_name='some_sub_name')
 
 
 def test_parse_content_spec_src_version():
