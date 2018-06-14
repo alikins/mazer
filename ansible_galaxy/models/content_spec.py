@@ -24,8 +24,8 @@ class ContentSpec(object):
         self.sub_name = sub_name
 
     def __eq__(self, other):
-        return (self.name, self.namespace, self.version, self.src, self.scm) == \
-            (other.name, other.namespace, other.version, other.src, other.scm)
+        return (self.name, self.namespace, self.version, self.scm) == \
+            (other.name, other.namespace, other.version, other.scm)
 
     def __repr__(self):
         format_ = 'ContentSpec(name=%s, namespace=%s, version=%s, src=%s, scm=%s, spec_string=%s)'
