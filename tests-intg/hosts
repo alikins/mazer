@@ -1,0 +1,52 @@
+localhost ansible_connection=local
+#local_ssh ansible_host=127.0.0.1 sleep=1 async_timeout=3 async_poll=1
+local_ssh ansible_host=127.0.0.1 ansible_connection=ssh
+local_docker ansible_connection=docker
+boguslocal ansible_connection=local
+notboguslocal ansible_connection=local
+test1
+local3 = ansible_connection=local
+#localhost_also_setup ansible_connection=local ansible_gather_module=setup
+localhost_also_setup ansible_connection=local gather_module=also_setup ansible_gather_module=also_setup
+swoop ansible_connection=local sleep=1 async_timeout=3 async_poll=1
+coverage_local_ssh ansible_host=127.0.0.1 ansible_connection=ssh ansible_python_interpreter='/usr/bin/coverage run'
+vegetarian ansible_host=127.0.0.1 ansible_connection=ssh sleep=1 async_timeout=3 async_poll=1
+local_paramiko ansible_host=127.0.0.1 ansible_connection=paramiko sleep=1 async_timeout=30 async_poll=3
+local_test_[0:50] ansible_connection=local
+
+centos73_vm1 ansible_host=192.168.121.67 ansible_user=root
+/some/path
+mac ansible_host=192.168.1.22 ansible_user=adrian
+
+testhost ansible_connection=local
+#myhost ansible_connection=local
+
+[locals]
+localhost
+local_ssh
+#local_docker
+
+[testhosts]
+localhost
+centos73_vm1
+
+[foo_unicode]
+localhost
+
+[somegroup]
+localhost
+local_ssh
+
+[local_test]
+# local_test_[0:10]
+localhost
+# local_ssh
+#local_test_[0:1]
+
+[raleigh]
+localhost
+
+[bogusgroup]
+localhost
+boguslocal
+#/some/path

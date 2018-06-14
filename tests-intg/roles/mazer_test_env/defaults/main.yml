@@ -1,0 +1,7 @@
+---
+galaxy_api: "https://galaxy-qa.ansible.com"
+content_dir: ~/.ansible/content
+mazer_cmd: "mazer -s {{ galaxy_api }}"
+app_name: "mazer"
+galaxy_content: testing.ansible-testing-content
+# defaults file for mazer_install

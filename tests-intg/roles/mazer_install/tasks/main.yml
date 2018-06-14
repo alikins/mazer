@@ -1,0 +1,8 @@
+---
+- name: run mazer install all
+  shell: "{{ mazer_cmd }} install {{ galaxy_content }}"
+  register: cmd_install_all_results
+
+- name: show cmd_install_all_results
+  debug:
+    var: cmd_install_all_results

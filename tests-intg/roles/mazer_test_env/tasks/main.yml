@@ -1,0 +1,15 @@
+---
+- name: some mazer_test_env task
+  debug:
+    msg: "Bootstrapping {{ app_name }} and {{ galaxy_api }} installing to {{ content_dir }} with cmd: {{ mazer_cmd }}"
+
+# TODO: backup instead of rm?
+- name: cleanup the content dir
+  file:
+    name: "{{ content_dir }}"
+    state: absent
+
+- name: need an empty content dir
+  file:
+    name: "{{ content_dir }}"
+    state: directory

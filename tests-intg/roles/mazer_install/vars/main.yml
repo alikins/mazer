@@ -1,0 +1,5 @@
+---
+galaxy_api: "https://galaxy-qa.ansible.com"
+content_dir: ~/.ansible/content
+mazer_cmd: "mazer -s {{ galaxy_api }}"
+galazy_content: notarole.fosdfsdf

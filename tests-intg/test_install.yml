@@ -1,0 +1,29 @@
+---
+- name: run mazer install
+  hosts: local_test
+  gather_facts: false
+  vars:
+    galaxy_contents:
+      - geerlingguy.apache
+    content_dir: "/home/adrian/.ansible/content"
+  tasks:
+    - import_role:
+        name: mazer_install
+      vars:
+        galaxy_content: geerlingguy.apache
+      register: mazer_install_all_results
+
+    - name: show mazer install output and results
+      debug:
+        var: mazer_install_all_results
+
+    - name: grab a listing of content_dir for ref
+      find:
+        paths:
+          - "{{ content_dir }}"
+        recurse: true
+      register: content_dir_post_install
+
+    - name: "show results of mazer install to {{ content_dir }}"
+      debug:
+        var: content_dir_post_install
