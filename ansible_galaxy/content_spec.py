@@ -30,7 +30,9 @@ def choose_content_fetch_method(content_spec_string):
         # create tar file from scm url
         return FetchMethods.SCM_URL
 
-    if os.path.isfile(content_spec_string):
+    comma_parts = content_spec_string.split(',', 1)
+    potential_filename = comma_parts[0]
+    if os.path.isfile(potential_filename):
         # installing a local tar.gz
         return FetchMethods.LOCAL_FILE
 
