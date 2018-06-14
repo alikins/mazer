@@ -207,6 +207,30 @@ def test_yaml_parse_name_non_github_url():
     assert_keys(result, name='ansible-role-awx', version='1.0.0', scm='git', src='https://git.example.com/geerlingguy/ansible-role-awx.git')
 
 
+def test_yaml_parse_geerlingguy_apache():
+    spec = 'geerlingguy.apache'
+
+    content_spec_ = yaml_parse.build_content_spec(spec)
+    log.debug('content_spec: %s', content_spec_)
+
+    assert content_spec_.name == 'apache'
+    assert content_spec_.namespace == 'geerlingguy'
+
+    result = parse_spec(spec)
+
+    assert_keys(result, name='apache', src='geerlingguy.apache')
+
+
+def test_yaml_parse_testing_ansible_testing_content():
+    spec = 'testing.ansible-testing-content'
+
+    content_spec_ = yaml_parse.build_content_spec(spec)
+    log.debug('content_spec: %s', content_spec_)
+
+    assert content_spec_.name == 'ansible-testing-content'
+    assert content_spec_.namespace == 'testing'
+
+
 # See https://github.com/ansible/galaxy-cli/wiki/Content-Versioning#versions-in-galaxy-cli
 #
 # "When providing a version, provide the semantic version with or without the leading 'v' or 'V'."
