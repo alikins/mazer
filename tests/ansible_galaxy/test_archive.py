@@ -19,24 +19,6 @@ log = logging.getLogger(__name__)
 TMP_PREFIX = 'tmp_mazer_test_archive_'
 
 
-def test_find_content_type_subdirs_empty():
-    tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
-
-    tar_file = tarfile.TarFile(name='some-top-level',
-                               mode='w',
-                               fileobj=tmp_tar)
-
-    tar_file_members = tar_file.getmembers()
-
-    res = archive.find_content_type_subdirs(tar_file_members)
-    log.debug('res: %s', res)
-
-    assert isinstance(res, list)
-    assert res == []
-    assert not res
-    tmp_tar.close()
-
-
 def test_extract_file_empty():
     tmp_tar = tempfile.TemporaryFile(prefix=TMP_PREFIX)
     # TODO: replace with tmpdir fixture
@@ -361,18 +343,24 @@ tar_example1 = [
     'ansible-testing-content-master/strategy_plugins/linear.py']
 
 
-# def test_foo():
-#
-#    members = []
-#    for file_name in tar_example1:
-#        members.append(tarfile.TarInfo(name=file_name))
-#
-#    res = archive.find_content_type_subdirs(members)
-#    import pprint
-#    log.debug('res: %s', pprint.pformat(res))
+def test_foo():
 
-#    assert isinstance(res, list)
-#    assert 'roles' in res
-#    assert 'action_plugins' in res
-#    assert 'library' in res
-#    assert 'modules' not in res
+    members = []
+    for file_name in tar_example1:
+        members.append(tarfile.TarInfo(name=file_name))
+
+    len_members = len(members)
+    match_pattern = '*'
+    res = archive.filter_members_by_fnmatch(members, match_pattern)
+
+    import pprint
+    log.debug('res: %s', pprint.pformat(res))
+
+    assert len(res) == len_members, 'filtering on "*" missed some archive members'
+    assert isinstance(res, list)
+
+    action_match_pattern = '*/action_plugins/*'
+    res = archive.filter_members_by_fnmatch(members, action_match_pattern)
+    log.debug('res: %s', pprint.pformat(res))
+
+    assert len(res) == 1, 'filtering on "%s" should find one action plugin' % action_match_pattern

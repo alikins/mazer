@@ -43,46 +43,6 @@ def load_archive_role_metadata(tar_file_obj, meta_file_path):
     return metadata
 
 
-def load_archive_apb_yaml(tar_file_obj, apb_yaml_path):
-    apb_data = None
-    if not apb_yaml_path:
-        return None
-
-    try:
-        apb_data = yaml.safe_load(tar_file_obj.extractfile(apb_yaml_path))
-    except Exception:
-        log.warn('unable to extract and yaml load apb_yaml_path=%s tar_file_obj=%s',
-                 apb_yaml_path, tar_file_obj)
-
-    return apb_data
-
-
-# FIXME: causes issues on py3
-# suppose we could make this a generator if needed
-def find_content_type_subdirs(tar_file_members):
-    '''Return a list of content type subdirs found in tar_file_members
-
-    This list comprehension will iterate every member entry in
-    the tarfile, split it's name by os.sep and drop the top most
-    parent dir, which will be self.content_meta.name (we don't want it as it's
-    not needed for plugin types. First make sure the length of
-    that split and drop of parent dir is length > 1 and verify
-    that the subdir is infact in content.CONTENT_TYPE_DIR_MAP.values()
-
-    This should give us a list of valid content type subdirs
-    found heuristically within this Galaxy Content repo'''
-    plugin_subdirs = [
-        os.path.join(m.name.split(os.sep)[1:])[0]
-        for m in tar_file_members
-        if len(os.path.join(m.name.split(os.sep)[1:])) > 1
-        and os.path.join(m.name.split(os.sep)[1:])[0] in content.CONTENT_TYPE_DIR_MAP.values()
-    ]
-
-    # uniq and order
-    plugin_subdirs_set = set(plugin_subdirs)
-    return sorted(list(plugin_subdirs_set))
-
-
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
     # log.debug('tar_info=%s, content_name=%s, content_path=%s, match_pattern=%s',
     #          tar_info, content_name, content_path, match_pattern)
@@ -108,8 +68,7 @@ def tar_info_content_name_match(tar_info, content_name, content_path=None, match
 
 
 # ansible-galaxy.yml is based on fnmatch style patterns
-def filter_members_by_fnmatch(tar_file_obj, match_pattern):
-    tar_file_members = tar_file_obj.getmembers()
+def filter_members_by_fnmatch(tar_file_members, match_pattern):
 
     member_matches = [tar_file_member for tar_file_member in tar_file_members
                       if fnmatch.fnmatch(tar_file_member.name, match_pattern)]
@@ -117,11 +76,9 @@ def filter_members_by_fnmatch(tar_file_obj, match_pattern):
     return member_matches
 
 
-def filter_members_by_content_type(tar_file_obj,
+def filter_members_by_content_type(tar_file_members,
                                    content_archive_type,
                                    content_type):
-
-    tar_file_members = tar_file_obj.getmembers()
 
     member_matches = [tar_file_member for tar_file_member in tar_file_members
                       if tar_info_content_name_match(tar_file_member,
@@ -138,14 +95,14 @@ def filter_members_by_content_type(tar_file_obj,
     return member_matches
 
 
-def filter_members_by_content_meta(tar_file_obj, content_archive_type, content_meta):
+def filter_members_by_content_meta(tar_file_members, content_archive_type, content_meta):
     if not content_meta:
         log.debug('no content_meta info')
         return []
 
     content_type = content_meta.content_type
 
-    return filter_members_by_content_type(tar_file_obj, content_archive_type, content_type)
+    return filter_members_by_content_type(tar_file_members, content_archive_type, content_type)
 
 
 def extract_file(tar_file, file_to_extract):
