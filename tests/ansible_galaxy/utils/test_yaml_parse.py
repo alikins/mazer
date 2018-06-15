@@ -1,5 +1,6 @@
 import logging
 
+from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
 from ansible_galaxy import content_spec_parse
@@ -32,32 +33,53 @@ def assert_keys(content_spec, name=None, version=None,
         'content_spec src=%s does not match expected src=%s' % (content_spec['src'], src)
 
 
-def test_yaml_parse_empty_string():
+def test_yaml_parse_empty_string_no_namespace_required():
     spec = ''
-    result = parse_spec(spec)
+    result = parse_spec(spec, resolver=content_spec_parse.resolve)
 
     assert_keys(result, name='', version=None, scm=None, src='')
 
 
+def test_yaml_parse_empty_string():
+    spec = ''
+    try:
+        parse_spec(spec)
+    except exceptions.GalaxyError as e:
+        log.exception(e)
+        return
+
+    assert False, 'Expected a GalaxyError here because the content_spec didnt have a namespace'
+
+
 def test_yaml_parse_just_name():
-    spec = 'some_content'
+    spec = 'some_namespace.some_content'
     result = parse_spec(spec)
+
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version=None, scm=None, src='some_namespace.some_content')
+
+
+def test_yaml_parse_just_name_no_namespace_required():
+    spec = 'some_content'
+    result = parse_spec(spec, resolver=content_spec_parse.resolve)
 
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
 
 
 def test_yaml_parse_name_and_version():
-    spec = 'some_content,1.0.0'
+    spec = 'some_namespace.some_content,1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='1.0.0', scm=None, src='some_namespace.some_content')
 
 
 def test_yaml_parse_name_and_version_key_value():
-    spec = 'some_content,version=1.0.0'
+    spec = 'some_namespace.some_content,version=1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='1.0.0', scm=None, src='some_namespace.some_content')
 
 
 def test_yaml_parse_name_github_url():
@@ -86,10 +108,11 @@ def test_yaml_parse_name_non_github_url():
 # "When providing a version, provide the semantic version with or without the leading 'v' or 'V'."
 #
 def test_yaml_parse_name_and_version_leading_V():
-    spec = 'some_content,V1.0.0'
+    spec = 'some_namespace.some_content,V1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='V1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='V1.0.0', scm=None, src='some_namespace.some_content')
 
 
 def test_yaml_parse_name_and_version_leading_v():
@@ -97,6 +120,14 @@ def test_yaml_parse_name_and_version_leading_v():
     result = parse_spec(spec)
 
     assert_keys(result, namespace='some_namespace', name='some_content',
+                version='v1.0.0', scm=None, src='some_namespace.some_content')
+
+
+def test_yaml_parse_name_and_version_leading_v_no_namespace_required():
+    spec = 'some_content,v1.0.0'
+    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+
+    assert_keys(result, name='some_content',
                 version='v1.0.0', scm=None, src='some_content')
 
 

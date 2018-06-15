@@ -119,27 +119,29 @@ def test_split_content_spec(split_content_spec):
 
 
 def assert_keys(content_spec, name=None, version=None,
-                scm=None, src=None):
+                scm=None, src=None, namespace=None):
     # name = name or ''
     # src = src or ''
     assert isinstance(content_spec, dict)
 
+    log.debug('content_spec: %s', content_spec)
     # TODO: should it default to empty string?
     assert content_spec['name'] == name, \
         'content_spec name=%s does not match expected name=%s' % (content_spec['name'], name)
     assert content_spec['version'] == version
     assert content_spec['scm'] == scm
+    # assert content_spec.get('namespace') == namespace
     assert content_spec['src'] == src, \
         'content_spec src=%s does not match expected src=%s' % (content_spec['src'], src)
 
 
-def parse_content_spec(content_spec_string):
+def parse_content_spec(content_spec_string, resolver=None):
     result = content_spec_parse.spec_data_from_string(content_spec_string,
-                                                      resolver=content_spec_parse.resolve)
+                                                      resolver=resolver)
     log.debug('result: %s', result)
-    gresult = content_spec_parse.spec_data_from_string(content_spec_string,
-                                                       resolver=galaxy_content_spec.resolve)
-    log.debug('gresult: %s', gresult)
+    # gresult = content_spec_parse.spec_data_from_string(content_spec_string,
+    #                                                   resolver=galaxy_content_spec.resolve)
+    # log.debug('gresult: %s', gresult)
     return result
 
 
@@ -153,52 +155,67 @@ def assert_just_keys(parse_result):
         assert result_key in valid_keys, 'the results had unexpected key="%s"' % result_key
 
 
-def test_parse_content_spec_src():
+def test_parse_content_spec_src_no_namespace_required():
     spec_text = 'some_content'
-    result = parse_content_spec(spec_text)
+    result = parse_content_spec(spec_text,
+                                resolver=content_spec_parse.resolve)
 
     assert_just_keys(result)
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
+
+
+def test_parse_content_spec_src():
+    spec_text = 'some_namespace.some_content'
+    result = parse_content_spec(spec_text)
+
+    assert_just_keys(result)
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version=None, scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_version():
-    spec_text = 'some_content,1.0.0'
+    spec_text = 'some_namespace.some_content,1.0.0'
     result = parse_content_spec(spec_text)
 
     assert_just_keys(result)
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='1.0.0', scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_version_name():
-    spec_text = 'some_content,1.2.3,somename'
+    spec_text = 'some_namespace.some_content,1.2.3,somename'
     result = parse_content_spec(spec_text)
 
     assert_just_keys(result)
-    assert_keys(result, name='somename', version='1.2.3', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='somename',
+                version='1.2.3', scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_key_value():
-    spec_text = 'src=some_content'
+    spec_text = 'src=some_namespace.some_content'
     result = parse_content_spec(spec_text)
 
     assert_just_keys(result)
-    assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version=None, scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_version_key_value():
-    spec_text = 'some_content,version=1.0.0'
+    spec_text = 'some_namespace.some_content,version=1.0.0'
     result = parse_content_spec(spec_text)
 
     assert_just_keys(result)
-    assert_keys(result, name='some_content', version='1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='1.0.0', scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_version_name_key_value():
-    spec_text = 'some_content,1.2.3,name=somename'
+    spec_text = 'some_namespace.some_content,1.2.3,name=somename'
     result = parse_content_spec(spec_text)
 
     assert_just_keys(result)
-    assert_keys(result, name='somename', version='1.2.3', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='somename',
+                version='1.2.3', scm=None, src='some_namespace.some_content')
 
 
 def test_parse_content_spec_src_version_name_something_invalid_key_value():
