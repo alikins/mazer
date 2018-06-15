@@ -217,7 +217,7 @@ class GalaxyContent(object):
             return self._metadata
 
         meta_path = os.path.join(self.path,
-                                 archive.META_MAIN)
+                                 content_archive.META_MAIN)
 
         if os.path.isfile(meta_path):
             log.debug('loading content metadata from meta_path: %s', meta_path)
