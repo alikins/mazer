@@ -93,10 +93,11 @@ def test_yaml_parse_name_and_version_leading_V():
 
 
 def test_yaml_parse_name_and_version_leading_v():
-    spec = 'some_content,v1.0.0'
+    spec = 'some_namespace.some_content,v1.0.0'
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_content', version='v1.0.0', scm=None, src='some_content')
+    assert_keys(result, namespace='some_namespace', name='some_content',
+                version='v1.0.0', scm=None, src='some_content')
 
 
 # proving a name and a version as comma separated key values
