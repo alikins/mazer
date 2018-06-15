@@ -2,26 +2,30 @@ import logging
 
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
+from ansible_galaxy import content_spec_parse
+from ansible_galaxy import galaxy_content_spec
 
 
 log = logging.getLogger(__name__)
 
 
-def parse_spec(content_spec):
-    result = yaml_parse.yaml_parse(content_spec)
+def parse_spec(content_spec, resolver=None):
+    result = yaml_parse.yaml_parse(content_spec, resolver=resolver)
     log.debug('result=%s', result)
     return result
 
 
 def assert_keys(content_spec, name=None, version=None,
-                scm=None, src=None):
+                scm=None, src=None, namespace=None):
     # name = name or ''
     # src = src or ''
     assert isinstance(content_spec, dict)
 
+    log.debug('content_spec: %s', content_spec)
     # TODO: should it default to empty string?
     assert content_spec['name'] == name, \
         'content_spec name=%s does not match expected name=%s' % (content_spec['name'], name)
+    assert content_spec.get('namespace') == namespace
     assert content_spec['version'] == version
     assert content_spec['scm'] == scm
     assert content_spec['src'] == src, \
@@ -98,7 +102,7 @@ def test_yaml_parse_name_and_version_leading_v():
 # proving a name and a version as comma separated key values
 def test_yaml_parse_name_with_name_key_value():
     spec = 'some_content,name=other_name'
-    result = parse_spec(spec)
+    result = parse_spec(spec, resolver=content_spec_parse.resolve)
 
     # TODO: what should 'src' be for this cases?
     assert_keys(result, name='other_name', version=None, scm=None, src='some_content')
@@ -124,7 +128,8 @@ def test_yaml_parse_a_dict():
             'src': 'galaxy.role'}
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_name', version='1.2.4', scm=None, src='galaxy.role')
+    assert_keys(result, namespace='galaxy', name='some_name',
+                version='1.2.4', scm=None, src='galaxy.role')
 
 
 def test_yaml_parse_a_dict_with_extra_invalid_keys():
@@ -136,15 +141,18 @@ def test_yaml_parse_a_dict_with_extra_invalid_keys():
             'url': 'http://example.com/galaxy/foo'}
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_name', version='1.2.4', scm=None, src='galaxy.role')
+    assert_keys(result, namespace='galaxy', name='some_name',
+                version='1.2.4', scm=None, src='galaxy.role')
     result_keys = set(result.keys())
     valid_keys = set(VALID_ROLE_SPEC_KEYS)
+    valid_keys.add('namespace')
     extra_keys = result_keys.difference(valid_keys)
     assert not extra_keys, \
         'Found extra invalid keys in the result. extra_keys=%s, result=%s, valid_keys=%s' % \
         (extra_keys, result, valid_keys)
 
-    assert_keys(result, name='some_name', version='1.2.4', scm=None, src='galaxy.role')
+    assert_keys(result, namespace='galaxy', name='some_name',
+                version='1.2.4', scm=None, src='galaxy.role')
 
 
 # comments in yaml_parse.py indicate src='galaxy.role,version,name' is supposed to work
@@ -154,7 +162,8 @@ def test_yaml_parse_a_dict_with_conflicts():
             'src': 'galaxy.role,1.0.0,some_name2'}
     result = parse_spec(spec)
 
-    assert_keys(result, name='some_name1', version='1.2.3', scm=None, src='galaxy.role,1.0.0,some_name2')
+    assert_keys(result, namespace='galaxy', name='some_name1',
+                version='1.2.3', scm=None, src='galaxy.role,1.0.0,some_name2')
 
 
 def test_yaml_parse_a_old_style_role_dict():
@@ -180,17 +189,18 @@ def test_yaml_parse_a_old_style_role_dict():
 def test_yaml_parse_a_comma_sep_style_role_dict_with_version():
     src = 'galaxy.role,1.2.3'
     spec = {'src': src}
-    result = parse_spec(spec)
+    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
-    assert_keys(result, name='galaxy.role', version='1.2.3', scm=None, src='galaxy.role,1.2.3')
+    assert_keys(result, namespace='galaxy', name='role', version='1.2.3',
+                scm=None, src='galaxy.role,1.2.3')
 
 
 # FIXME: I'm not real sure what the result of this is supposed to be
 def test_yaml_parse_a_comma_sep_style_role_dict_with_name_version():
     src = 'galaxy.role,1.2.3,some_role'
     spec = {'src': src}
-    result = parse_spec(spec)
+    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
-    assert_keys(result, name='galaxy.role', version='1.2.3', scm=None, src=src)
+    assert_keys(result, namespace='galaxy', name='some_role', version='1.2.3', scm=None, src=src)

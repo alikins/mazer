@@ -3,6 +3,7 @@ import logging
 import six
 
 from ansible_galaxy import content_spec_parse
+# from ansible_galaxy import content_spec
 from ansible_galaxy.utils.role_spec import role_spec_parse
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 
@@ -18,7 +19,7 @@ log = logging.getLogger(__name__)
 # FIXME: does this actually use yaml?
 # FIXME: kind of seems like this does two different things
 # FIXME: letting this take a string _or_ a mapping seems troubleprone
-def yaml_parse(content):
+def yaml_parse(content, resolver=None):
     """parses the passed in yaml string and returns a dict with name/src/scm/version
 
     Or... if the passed in 'content' is a dict, it either creates role or if not a role,
@@ -31,7 +32,8 @@ def yaml_parse(content):
     if isinstance(content, six.string_types):
         log.debug('parsing content="%s" as a string', content)
         orig_content = copy.deepcopy(content)
-        res = content_spec_parse.parse_string(content)
+        res = content_spec_parse.spec_data_from_string(content, resolver=resolver)
+        # res = content_spec_parse.parse_string(content)
         log.debug('parsed spec="%s" -> %s', content, res)
         return res
 
@@ -71,7 +73,8 @@ def yaml_parse(content):
 
         if data.get('src', None):
             # valid_kw = ('src', 'version', 'name', 'scm')
-            new_data = content_spec_parse.parse_string(data['src'], VALID_ROLE_SPEC_KEYS)
+            # new_data = content_spec_parse.parse_string(data['src'], VALID_ROLE_SPEC_KEYS)
+            new_data = content_spec_parse.spec_data_from_string(data['src'], resolver=resolver)
             log.debug('new_data: %s', new_data)
 
             for key in new_data:
@@ -90,7 +93,7 @@ def yaml_parse(content):
 
     for key in list(content.keys()):
         # sub_name doesnt mean anything to role spec
-        if key not in VALID_ROLE_SPEC_KEYS and not key == 'sub_name':
+        if key not in VALID_ROLE_SPEC_KEYS and key not in ('sub_name', 'namespace'):
             log.debug('removing invalid key: %s', key)
 
             content.pop(key)

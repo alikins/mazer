@@ -43,15 +43,69 @@ def choose_content_fetch_method(content_spec_string):
     return FetchMethods.GALAXY_URL
 
 
-def content_spec_from_string(content_spec_string):
+def resolve(data):
+    src = data['src']
+    if data['name'] is None:
+        scm_name = content_spec_parse.repo_url_to_repo_name(src)
+        data['name'] = scm_name
+        if '+' in src:
+            (scm_url, scm_src) = src.split('+', 1)
+            data['scm'] = scm_url
+            data['src'] = scm_src
+
+    # split the name on '.' and recombine the first 1 or 2
+    name_parts = data['name'].split('.')
+    new_name_parts = []
+    new_name_parts.append(name_parts.pop(0))
+
+    # we may not have a second part to the name
+    try:
+        new_name_parts.append(name_parts.pop(0))
+    except IndexError:
+        pass
+
+    # combine the name parts, which may be one or two parts
+    data['name'] = '.'.join(new_name_parts)
+
+    return data
+
+
+def spec_data_from_string(content_spec_string):
     fetch_method = choose_content_fetch_method(content_spec_string)
 
     log.debug('fetch_method: %s', fetch_method)
 
-    if fetch_method == FetchMethods.GALAXY_URL:
-        spec_data = galaxy_content_spec.parse_string(content_spec_string)
-    else:
-        spec_data = content_spec_parse.parse_string(content_spec_string)
-
+    spec_data = content_spec_parse.parse_string(content_spec_string)
     spec_data['fetch_method'] = fetch_method
+
+    log.debug('spec_data: %s', spec_data)
+
+    resolver = resolve
+    if fetch_method == FetchMethods.GALAXY_URL:
+        resolver = galaxy_content_spec.resolve
+
+    resolved_name = resolver(spec_data)
+    log.debug('resolved_name: %s', resolved_name)
+    spec_data.update(resolved_name)
+
+    return spec_data
+
+
+def content_spec_from_string(content_spec_string):
+    spec_data = spec_data_from_string(content_spec_string)
+
+    import pprint
+    log.debug('spec_data2: %s', pprint.pformat(spec_data))
+    # TODO: build galaxy name/namespace here from parse_string results
+    # TODO: enfore namespace.name requirement
+    # else:
+     #   resolved_name = resolve(spec_data)
+     #   log.debug('css resolved_name: %s', resolved_name)
+
+     #   spec_data.update(resolved_name)
+
+        # TODO: if no name, build it from the 'src' value with repo_from_url
+
+    # TODO: enfore content_spec rules (ie, namespace.name) here instead of in parse_string?
+
     return ContentSpec(**spec_data)

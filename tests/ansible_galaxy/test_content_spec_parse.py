@@ -4,6 +4,7 @@ import pytest
 
 from ansible_galaxy import content_spec_parse
 from ansible_galaxy import exceptions
+from ansible_galaxy import galaxy_content_spec
 
 log = logging.getLogger(__name__)
 
@@ -133,13 +134,17 @@ def assert_keys(content_spec, name=None, version=None,
 
 
 def parse_content_spec(content_spec_string):
-    result = content_spec_parse.parse_string(content_spec_string)
-    log.debug('result=%s', result)
+    result = content_spec_parse.spec_data_from_string(content_spec_string,
+                                                      resolver=content_spec_parse.resolve)
+    log.debug('result: %s', result)
+    gresult = content_spec_parse.spec_data_from_string(content_spec_string,
+                                                       resolver=galaxy_content_spec.resolve)
+    log.debug('gresult: %s', gresult)
     return result
 
 
 def assert_just_keys(parse_result):
-    valid_keys = ('name', 'src', 'scm', 'version')
+    valid_keys = ('name', 'namespace', 'src', 'scm', 'version', 'spec_string', 'fetch_method')
 
     for key in valid_keys:
         assert key in parse_result, 'expected the results dict to have a "%s" key but it did not' % key
@@ -170,13 +175,6 @@ def test_parse_content_spec_src_version_name():
 
     assert_just_keys(result)
     assert_keys(result, name='somename', version='1.2.3', scm=None, src='some_content')
-
-
-def test_parse_content_spec_src_version_name_something_invalid():
-    spec_text = 'some_content,1.2.3,somename,some_scm,some_garbage'
-    result = parse_content_spec(spec_text)
-
-    assert_keys(result, name='somename', version='1.2.3', scm='some_scm', src='some_content')
 
 
 def test_parse_content_spec_src_key_value():
