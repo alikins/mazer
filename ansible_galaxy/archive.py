@@ -12,7 +12,6 @@ import yaml
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy.models import content
-from ansible_galaxy.models import content_repository
 
 log = logging.getLogger(__name__)
 
@@ -42,20 +41,6 @@ def load_archive_role_metadata(tar_file_obj, meta_file_path):
                   meta_file_path, tar_file_obj)
 
     return metadata
-
-
-def load_archive_galaxyfile(tar_file_obj, galaxy_file_path):
-    galaxy_metadata = None
-    if not galaxy_file_path:
-        return None
-
-    try:
-        galaxy_metadata = content_repository.load(tar_file_obj.extractfile(galaxy_file_path))
-    except Exception:
-        log.warn('unable to extract and yaml load galaxy_file=%s tar_file_obj=%s',
-                 galaxy_file_path, tar_file_obj)
-
-    return galaxy_metadata
 
 
 def load_archive_apb_yaml(tar_file_obj, apb_yaml_path):

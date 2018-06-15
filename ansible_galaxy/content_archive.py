@@ -169,24 +169,12 @@ def load_archive(archive_path):
     #                                                         content_dir=content_meta.content_dir)
 
     log.debug('meta_file: %s', meta_file)
-    log.debug('galaxy_file: %s', galaxy_file)
     log.debug('archive_type: %s', archive_type)
     log.debug("archive_parent_dir: %s", archive_parent_dir)
     log.debug("meta_parent_dir: %s", meta_parent_dir)
 
-    # if not meta_file and not galaxy_file and self.content_type == "role":
-    #    raise exceptions.GalaxyClientError("this role does not appear to have a meta/main.yml file or ansible-galaxy.yml.")
-
     # metadata_ = archive.load_archive_role_metadata(content_tar_file,
     #                                               meta_file)
-
-    # galaxy_metadata = archive.load_archive_galaxyfile(content_tar_file,
-    #                                                  galaxy_file)
-
-    # apb_data = archive.load_archive_apb_yaml(content_tar_file,
-    #                                          apb_yaml_file)
-
-    # log.debug('apb_data: %s', pprint.pformat(apb_data))
 
     # looks like we are a role, update the default content_type from all -> role
     if archive_type == 'role':
@@ -205,17 +193,3 @@ def load_archive(archive_path):
 
     return content_tar_file, content_archive.ContentArchiveMeta(archive_type=archive_type,
                                                                 top_dir=archive_parent_dir)
-
-# TODO: add back galaxy, apb meta data load
-#    if apb_data:
-#        log.debug('Find APB metadata in the archive, so installing it as APB content_type')
-#
-#        data = self.content_meta.data
-#        data['apb_data'] = apb_data
-#
-#        content_meta = content.APBContentArchiveMeta.from_data(data)
-#
-#        log.debug('APB content_meta: %s', content_meta)
-#        content_archive_type = 'apb'
-#
-#    log.debug('content_archive_type=%s', content_archive_type)
