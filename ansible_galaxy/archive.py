@@ -6,8 +6,6 @@
 import fnmatch
 import logging
 import os
-import yaml
-
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
@@ -26,21 +24,6 @@ log = logging.getLogger(__name__)
 # extract_content_by_role_name(role_name)
 
 # def content_type_match(content_type, member_path):
-
-
-# FIXME: mv to AnsibleGalaxyMetadata
-def load_archive_role_metadata(tar_file_obj, meta_file_path):
-    metadata = None
-    if not meta_file_path:
-        return None
-
-    try:
-        metadata = yaml.safe_load(tar_file_obj.extractfile(meta_file_path))
-    except Exception:
-        log.debug('unable to extract and yaml load role meta_file=%s tar_file_obj=%s',
-                  meta_file_path, tar_file_obj)
-
-    return metadata
 
 
 def tar_info_content_name_match(tar_info, content_name, content_path=None, match_pattern=None):
@@ -93,16 +76,6 @@ def filter_members_by_content_type(tar_file_members,
     # log.debug('member_matches=%s', pprint.pformat([x.name for x in member_matches]))
 
     return member_matches
-
-
-def filter_members_by_content_meta(tar_file_members, content_archive_type, content_meta):
-    if not content_meta:
-        log.debug('no content_meta info')
-        return []
-
-    content_type = content_meta.content_type
-
-    return filter_members_by_content_type(tar_file_members, content_archive_type, content_type)
 
 
 def extract_file(tar_file, file_to_extract):
