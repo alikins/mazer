@@ -5,7 +5,7 @@ import logging
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy.fetch import base
-from ansible_galaxy.flat_rest_api.api import GalaxyAPI
+from ansible_galaxy.rest_api import GalaxyAPI
 from ansible_galaxy.models import content_version
 from ansible_galaxy.utils.content_name import parse_content_name
 
