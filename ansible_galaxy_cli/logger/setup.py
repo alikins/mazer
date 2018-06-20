@@ -49,9 +49,7 @@ class ExpandTildeWatchedFileHandler(logging.handlers.WatchedFileHandler):
 def setup(logging_config=None):
     logging_config = logging_config or {}
 
-    conf = logging.config.dictConfig(logging_config)
-
-    return conf
+    logging.config.dictConfig(logging_config)
 
 
 def load_config_yaml(config_file_path):
@@ -73,12 +71,12 @@ def setup_default():
 
     # fallback is basically no setup, null handler, etc
     # builtin, doesn't depend on yaml config
-    conf = setup(FALLBACK_LOGGING_CONFIG)
+    setup(FALLBACK_LOGGING_CONFIG)
 
     # load the more extensive defaults from DEFAULT_LOGGING_CONFIG_YAML
     default_logging_config = load_config_yaml(DEFAULT_LOGGING_CONFIG_YAML)
     if default_logging_config:
-        conf = setup(default_logging_config)
+        setup(default_logging_config)
 
     # load custom logging config
     logging_config = load_config_yaml(LOGGING_CONFIG_YAML)
@@ -88,5 +86,3 @@ def setup_default():
 
     # import logging_tree
     # logging_tree.printout()
-
-    return conf
