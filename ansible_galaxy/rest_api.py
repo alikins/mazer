@@ -25,7 +25,7 @@ __metaclass__ = type
 import logging
 import json
 from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import quote as urlquote, urlencode
+from six.moves.urllib.parse import quote as urlquote
 import socket
 import ssl
 
@@ -46,13 +46,17 @@ def g_connect(method):
     def wrapped(self, *args, **kwargs):
         if not self.initialized:
             log.debug("Initial connection to galaxy_server: %s", self._api_server)
+
             server_version = self._get_server_api_version()
+
             if server_version not in self.SUPPORTED_VERSIONS:
                 raise exceptions.GalaxyClientError("Unsupported Galaxy server API version: %s" % server_version)
 
             self.baseurl = '%s/api/%s' % (self._api_server, server_version)
             self.version = server_version  # for future use
+
             log.debug("Base API: %s", self.baseurl)
+
             self.initialized = True
         return method(self, *args, **kwargs)
     return wrapped
@@ -111,17 +115,26 @@ class GalaxyAPI(object):
 
             # debug log a json version of the data that was created from the response
             response_log.debug('"%s %s" data:\n%s', http_method, url, json.dumps(data, indent=2))
-        except HTTPError as e:
+        except HTTPError as http_exc:
             self.log.debug('Exception on "%s %s"', http_method, url)
-            self.log.exception(e)
+            self.log.exception(http_exc)
 
             # FIXME: probably need a try/except here if the response body isnt json which
             #        can happen if a proxy mangles the response
-            res = json.loads(to_text(e.fp.read(), errors='surrogate_or_strict'))
+            res = json.loads(to_text(http_exc.fp.read(), errors='surrogate_or_strict'))
 
             http_log.error('%s %s data from server error response:\n%s', http_method, url, res)
 
-            raise exceptions.GalaxyClientError(res['detail'])
+            try:
+                error_msg = '%s' % res['detail']
+                raise exceptions.GalaxyClientError(error_msg)
+            except (KeyError, TypeError) as detail_parse_exc:
+                self.log.exception(detail_parse_exc)
+                self.log.warn('Unable to parse error detail from response: %s' % detail_parse_exc)
+
+            # TODO: great place to be able to use 'raise from'
+            # FIXME: this needs to be tweaked so the
+            raise exceptions.GalaxyClientError(http_exc)
         except (ssl.SSLError, socket.error) as e:
             self.log.debug('Connection error to Galaxy API for request "%s %s": %s', http_method, url, e)
             self.log.exception(e)
@@ -153,7 +166,7 @@ class GalaxyAPI(object):
         try:
             data = json.loads(to_text(return_data.read(), errors='surrogate_or_strict'))
         except Exception as e:
-            raise exceptions.GalaxyClientError("Could not process data from the API server (%s): %s " % (url, to_native(e))) from e
+            raise exceptions.GalaxyClientError("Could not process data from the API server (%s): %s " % (url, to_native(e)))
 
         if 'current_version' not in data:
             raise exceptions.GalaxyClientError("missing required 'current_version' from server response (%s)" % url)
