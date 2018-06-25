@@ -380,7 +380,7 @@ def test_galaxy_api_fetch_content_related_500(mocker, galaxy_api):
     try:
         res = galaxy_api.fetch_content_related('/api/v1/repositories/56683/content/')
         log.debug('res: %s', res)
-    except exceptions.GalaxyClientError as e:
+    except exceptions.GalaxyClientError:
         return
 
     assert False, 'Excepted to get a GalaxyClientError here but did not.'
