@@ -58,9 +58,9 @@ def load_config_yaml(config_file_path):
     try:
         with open(config_file_path, 'r') as logging_config_file:
             logging_config = yaml.safe_load(logging_config_file)
-    except OSError as e:
+    except (IOError, OSError) as e:
         pass
-    except yaml.error.YamlError as e:
+    except yaml.error.YAMLError as e:
         print(e)
 
     return logging_config

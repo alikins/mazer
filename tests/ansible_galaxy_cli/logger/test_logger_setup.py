@@ -34,8 +34,8 @@ def test_setup_default(mocker):
     cli_logger = logging.getLogger('ansible_galaxy_cli')
 
     assert cli_logger.getEffectiveLevel() == logging.INFO
-    # should have null handlers at least
-    assert cli_logger.hasHandlers()
 
-    import logging_tree
-    logging_tree.printout()
+    # should have null handlers at least
+    # no hasHandlers for py2.7 so just
+    if hasattr(cli_logger, 'hasHandlers'):
+        assert cli_logger.hasHandlers()
