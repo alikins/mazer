@@ -130,7 +130,7 @@ class GalaxyAPI(object):
                 raise exceptions.GalaxyClientError(error_msg)
             except (KeyError, TypeError) as detail_parse_exc:
                 self.log.exception(detail_parse_exc)
-                self.log.warn('Unable to parse error detail from response: %s' % detail_parse_exc)
+                self.log.warning('Unable to parse error detail from response: %s', detail_parse_exc)
 
             # TODO: great place to be able to use 'raise from'
             # FIXME: this needs to be tweaked so the
@@ -181,9 +181,9 @@ class GalaxyAPI(object):
         name = urlquote(name)
         url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
         data = self.__call_galaxy(url, http_method='GET')
-        if len(data["results"]) != 0:
+        if data["results"]:
             return data["results"][0]
-        return None
+        return {}
 
     @g_connect
     def lookup_content_by_name(self, namespace, repo_name, content_name, content_type=None, notify=True):
@@ -201,9 +201,13 @@ class GalaxyAPI(object):
 
         url = '%s/content/?name=%s&namespace__name=%s' % (self.baseurl, content_name, namespace)
         data = self.__call_galaxy(url, http_method='GET')
-        if len(data["results"]) != 0:
+        if data["results"]:
             return data["results"][0]
-        return None
+
+        self.log.debug('No results found while looking for content by name for '
+                       'namespace=%s repo_name=%s content_name=%s',
+                       namespace, repo_name, content_name)
+        return {}
 
     @g_connect
     def fetch_content_related(self, related_url):
@@ -213,21 +217,26 @@ class GalaxyAPI(object):
         """
         self.log.debug('related_url=%s', related_url)
 
-        try:
-            url = '%s%s?page_size=50' % (self._api_server, related_url)
+        # try:
+        url = '%s%s?page_size=50' % (self._api_server, related_url)
+
+        # can raise a GalaxyClientError
+        data = self.__call_galaxy(url, http_method='GET')
+
+        # empty list for return value if there are no results
+        results = data.get('results', [])
+
+        # TODO: generalize the pagination support
+        # check for paginated results
+        done = (data.get('next_link', None) is None)
+
+        while not done:
+            url = '%s%s' % (self._api_server, data['next_link'])
             data = self.__call_galaxy(url, http_method='GET')
-            results = data.get('results', None)
-            if results is None:
-                # not a results list, just return the item
-                return data
+
+            # if no results, default to a empty list
+            results += data.get('results', [])
 
             done = (data.get('next_link', None) is None)
-            while not done:
-                url = '%s%s' % (self._api_server, data['next_link'])
-                data = self.__call_galaxy(url, http_method='GET')
-                results += data['results']
-                done = (data.get('next_link', None) is None)
-            return results
-        except Exception as e:
-            self.log.exception(e)
-            return None
+
+        return results
