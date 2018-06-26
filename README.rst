@@ -38,6 +38,9 @@ Installing Mazer
 
 From source
 ```````````
+
+The source code for mazer lives at `https://github.com/ansible/mazer <https://github.com/ansible/mazer>`
+
     $ git clone https://github.com/ansible/mazer.git
     $ cd mazer
     $ python setup.py install

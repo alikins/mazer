@@ -155,6 +155,8 @@ This will install the geerlingguy.nginx role to ~/my-ansible-content/roles/geerl
 
 ### From source
 
+The source code for mazer lives at [https://github.com/ansible/mazer](https://github.com/ansible/mazer)
+
 ```
 $ git clone https://github.com/ansible/mazer.git
 $ cd mazer
