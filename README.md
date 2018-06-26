@@ -18,7 +18,7 @@ for multiple roles all in one repository.
 
 ### Installing roles
 
-To install the galaxy role ['geerlingguy.nginx'](https://galaxy.ansible.com/geerlingguy/nginx/) via galaxy:
+To install the galaxy role [geerlingguy.nginx](https://galaxy.ansible.com/geerlingguy/nginx/) via galaxy:
 
 ```
 $ mazer install geerlingguy.nginx
@@ -38,7 +38,7 @@ $ mazer install git+https://github.com/geerlingguy/ansible-role-nginx
 
 ### Installing repos with multiple roles
 
-To install the galaxy repo ['testing.ansible-testing-content'](https://galaxy.ansible.com/testing/ansible-testing-content):
+To install the galaxy repo [testing.ansible-testing-content](https://galaxy.ansible.com/testing/ansible-testing-content):
 
 ```
 $ mazer install testing.ansible-testing-content
