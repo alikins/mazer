@@ -7,7 +7,7 @@ import sys
 
 from jinja2 import Environment, FileSystemLoader
 
-from ansible.module_utils._text import to_bytes
+from ansible_galaxy.utils.text import to_bytes
 
 
 def generate_parser():
@@ -93,14 +93,12 @@ def opt_doc_list(cli):
 def opts_docs(cli_class_name, cli_module_name):
     ''' generate doc structure from options '''
 
-    cli_name = 'ansible-%s' % cli_module_name
-    if cli_module_name == 'adhoc':
-        cli_name = 'ansible'
+    cli_name = "mazer"
 
     # WIth no action/subcommand
     # shared opts set
     # instantiate each cli and ask its options
-    cli_klass = getattr(__import__("ansible.cli.%s" % cli_module_name,
+    cli_klass = getattr(__import__("ansible_galaxy_cli.cli.%s" % cli_module_name,
                                    fromlist=[cli_class_name]), cli_class_name)
     cli = cli_klass([])
 
@@ -146,7 +144,7 @@ def opts_docs(cli_class_name, cli_module_name):
     # use class attrs not the attrs on a instance (not that it matters here...)
     for action in getattr(cli_klass, 'VALID_ACTIONS', ()):
         # instantiate each cli and ask its options
-        action_cli_klass = getattr(__import__("ansible.cli.%s" % cli_module_name,
+        action_cli_klass = getattr(__import__("ansible_galaxy_cli.cli.%s" % cli_module_name,
                                               fromlist=[cli_class_name]), cli_class_name)
         # init with args with action added?
         cli = action_cli_klass([])
@@ -246,8 +244,10 @@ if __name__ == '__main__':
         else:
             # myclass = "%sCLI" % libname.capitalize()
             cli_class_name = "%sCLI" % cli_name.capitalize()
-            output[cli_name] = 'ansible-%s.1.rst.in' % cli_name
-            cli_bin_name = 'ansible-%s' % cli_name
+            # output[cli_name] = 'ansible-%s.1.rst.in' % cli_name
+            output[cli_name] = 'mazer.1.rst.in'
+            # cli_bin_name = 'ansible-%s' % cli_name
+            cli_bin_name = 'mazer'
 
         # FIXME:
         allvars[cli_name] = opts_docs(cli_class_name, cli_name)
