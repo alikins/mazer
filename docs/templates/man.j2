@@ -1,0 +1,96 @@
+{% set name = 'mazer' -%}
+{{name}}
+{{ '=' * ( name|length|int ) }}
+
+{{ '-' * ( short_desc|default('')|string|length|int ) }}
+{{short_desc|default('')}}
+{{ '-' * ( short_desc|default('')|string|length|int ) }}
+
+:Version:        Mazer %VERSION%
+:Manual section: 1
+:Manual group:   System administration commands
+
+
+
+SYNOPSIS
+--------
+{{ usage|replace('%prog', name) }}
+
+
+DESCRIPTION
+-----------
+{{ long_desc|default('', True)|wordwrap }}
+
+{% if options %}
+COMMON OPTIONS
+--------------
+{% for option in options|sort(attribute='options') %}
+{% for switch in option['options'] %}**{{switch}}**{% if option['arg'] %} '{{option['arg']}}'{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+
+  {{ option['desc'] }}
+{% endfor %}
+{% endif %}
+
+{% if arguments %}
+ARGUMENTS
+---------
+
+{% for arg in arguments %}
+{{ arg }}
+
+{{ (arguments[arg]|default(' '))|wordwrap }}
+
+{% endfor %}
+{% endif %}
+
+{% if actions %}
+ACTIONS
+-------
+{% for action in actions %}
+**{{ action }}**
+  {{ (actions[action]['desc']|default(' '))}}
+
+{% if actions[action]['options'] %}
+{% for option in actions[action]['options']|sort(attribute='options') %}
+{% for switch in option['options'] if switch in actions[action]['option_names'] %}  **{{switch}}**{% if option['arg'] %} '{{option['arg']}}'{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+
+        {{ (option['desc']) }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+
+ENVIRONMENT
+-----------
+
+The following environment variables may be specified.
+
+
+
+FILES
+-----
+
+~/.ansible/mazer.yml -- User config file, overrides the default config if present
+
+
+AUTHOR
+------
+
+Ansible was originally written by Michael DeHaan.
+
+
+COPYRIGHT
+---------
+
+Copyright © 2018 Red Hat, Inc | Ansible.
+Mazer is released under the terms of the GPLv3 License.
+
+
+SEE ALSO
+--------
+
+Extensive documentation is available in the documentation site:
+<https://galaxy.ansible.com/docs>.
+IRC and mailing list info can be found in file CONTRIBUTING.md,
+available in: <https://github.com/ansible/mazer>

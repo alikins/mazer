@@ -253,7 +253,10 @@ class GalaxyCLI(cli.CLI):
 
     def execute_install(self):
         """
-        Install a collection.
+        Install the args list of repositories (role, collections, etc) to be installed, unless -f was specified.
+
+        The list of repositories can be a name (which will be downloaded via the galaxy API and github),
+        or it can be a local .tar.gz file.
         """
 
         self.log.debug('self.options: %s', self.options)
@@ -292,7 +295,10 @@ class GalaxyCLI(cli.CLI):
 
     def execute_list(self):
         """
-        List repositories, roles, and collections installed on the local file system.
+        Lists all of the repositories installed on the local system.
+
+        If additional repository names or patterns are provided, the results
+        are filtered to list only matching repositories.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
