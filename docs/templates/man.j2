@@ -1,4 +1,4 @@
-{% set name = ('ansible' if cli == 'adhoc' else 'ansible-%s' % cli) -%}
+{% set name = cli -%}
 {{name}}
 {{ '=' * ( name|length|int ) }}
 
@@ -6,7 +6,7 @@
 {{short_desc|default('')}}
 {{ '-' * ( short_desc|default('')|string|length|int ) }}
 
-:Version:        Ansible %VERSION%
+:Version:        Mazer %VERSION%
 :Manual section: 1
 :Manual group:   System administration commands
 
@@ -61,43 +61,17 @@ ACTIONS
 {% endif %}
 
 
-{% if inventory %}
-INVENTORY
----------
-
-Ansible stores the hosts it can potentially operate on in an inventory.
-This can be an YAML file, ini-like file, a script, directory, list, etc.
-For additional options, see the documentation on https://docs.ansible.com/.
-
-{% endif %}
 ENVIRONMENT
 -----------
 
 The following environment variables may be specified.
 
-{% if inventory %}
-ANSIBLE_INVENTORY  -- Override the default ansible inventory file
-
-{% endif %}
-{% if library %}
-ANSIBLE_LIBRARY -- Override the default ansible module library path
-
-{% endif %}
-ANSIBLE_CONFIG -- Override the default ansible config file
-
-Many more are available for most options in ansible.cfg
 
 
 FILES
 -----
 
-{% if inventory %}
-/etc/ansible/hosts -- Default inventory file
-
-{% endif %}
-/etc/ansible/ansible.cfg -- Config file, used if present
-
-~/.ansible.cfg -- User config file, overrides the default config if present
+~/.ansible/mazer.yml -- User config file, overrides the default config if present
 
 
 AUTHOR
@@ -109,16 +83,14 @@ Ansible was originally written by Michael DeHaan.
 COPYRIGHT
 ---------
 
-Copyright © 2017 Red Hat, Inc | Ansible.
-Ansible is released under the terms of the GPLv3 License.
+Copyright © 2018 Red Hat, Inc | Ansible.
+Mazer is released under the terms of the GPLv3 License.
 
 
 SEE ALSO
 --------
 
-{% for other in cli_list|sort %}{% if other != cli %}**ansible{% if other != 'adhoc' %}-{{other}}{% endif %}** (1){% if not loop.last %}, {% endif %}{% endif %}{% endfor %}
-
 Extensive documentation is available in the documentation site:
-<https://docs.ansible.com>.
+<https://galaxy.ansible.com/docs>.
 IRC and mailing list info can be found in file CONTRIBUTING.md,
-available in: <https://github.com/ansible/ansible>
+available in: <https://github.com/ansible/mazer>
