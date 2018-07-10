@@ -28,6 +28,16 @@ scm: {repo_clone_url}
 
 {repo_contents}"""
 
+# label: {repo_label}
+# description: {repo_description}
+INSTALLED_REPO_TEMPLATE = """namespace: {repo.content_spec.namespace.namespace}
+name: {repo.content_spec.name}
+version: {repo.content_spec.version}
+path: {repo.path}
+scm: {repo.content_spec.scm}
+"""
+
+
 CONTENT_TEMPLATE = """    content_name: {content_name}
     content_type: {content_type}
     description: {content_description}
@@ -83,9 +93,7 @@ def _repr_remote_repo(remote_data):
 
 
 def _repr_installed_repo(installed_repo):
-    lines = []
-    lines.append('installed_path: %s' % installed_repo.path)
-    return '\n'.join(lines)
+    return INSTALLED_REPO_TEMPLATE.format(repo=installed_repo)
 
 
 def _repr_installed_content(installed_content):
