@@ -34,6 +34,7 @@ INSTALLED_REPO_TEMPLATE = """namespace: {repo.content_spec.namespace.namespace}
 name: {repo.content_spec.name}
 version: {repo.content_spec.version}
 path: {repo.path}
+namespace_path: {repo.content_spec.namespace.path}
 scm: {repo.content_spec.scm}
 """
 
