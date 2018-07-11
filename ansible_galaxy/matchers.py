@@ -54,7 +54,8 @@ class MatchNamespacesOrLabels(Match):
         self.namespaces_or_labels = namespaces_or_labels or []
 
     def match(self, other):
-        log.debug('self.namespaces_or_labels: %s other.namespace: %s other.label: %s', self.namespaces_or_labels, other.content_spec.namespace, other.content_spec.label)
+        log.debug('self.namespaces_or_labels: %s other.namespace: %s other.label: %s',
+                  self.namespaces_or_labels, other.content_spec.namespace, other.content_spec.label)
         # TODO: should this matcher require a namespace string or a namespace object? either?
         return any([other.content_spec.label in self.namespaces_or_labels,
                     other.content_spec.namespace in self.namespaces_or_labels])
