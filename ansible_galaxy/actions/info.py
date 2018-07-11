@@ -30,11 +30,11 @@ scm: {repo_clone_url}
 
 # label: {repo_label}
 # description: {repo_description}
-INSTALLED_REPO_TEMPLATE = """namespace: {repo.content_spec.namespace.namespace}
+# namespace_path: {repo.content_spec.namespace.path}
+INSTALLED_REPO_TEMPLATE = """namespace: {repo.content_spec.namespace}
 name: {repo.content_spec.name}
 version: {repo.content_spec.version}
 path: {repo.path}
-namespace_path: {repo.content_spec.namespace.path}
 scm: {repo.content_spec.scm}
 """
 
@@ -105,6 +105,10 @@ def _repr_installed_content(installed_content):
     return INSTALLED_CONTENT_TEMPLATE.format(**installed_data)
 
 
+def _repr_unmatched_label(unmatched_label):
+    return '{0}'.format(unmatched_label)
+
+
 # TODO: move to a repr for Role?
 def _repr_role_info(role_info):
 
@@ -130,11 +134,10 @@ def _repr_role_info(role_info):
 
 def info_content_specs(galaxy_context,
                        api,
-                       content_specs,
+                       content_spec_strings,
                        display_callback=None,
                        offline=None):
 
-    output = ''
     online = not offline
 
     display_callback = display_callback or display.display_callback
@@ -144,17 +147,16 @@ def info_content_specs(galaxy_context,
 
     offline = offline or False
 
-    icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
+    # icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
-    not_installed = []
 
     labels_to_match = []
 
-    for content_spec in content_specs:
-        galaxy_namespace, repo_name, content_name = parse_content_name(content_spec)
+    all_labels_to_match = []
+    for content_spec_string in content_spec_strings:
+        galaxy_namespace, repo_name, content_name = parse_content_name(content_spec_string)
 
-        log.debug('content_spec=%s', content_spec)
+        log.debug('content_spec=%s', content_spec_string)
         log.debug('galaxy_username=%s', galaxy_namespace)
         log.debug('repo_name=%s', repo_name)
         log.debug('content_name=%s', content_name)
@@ -165,11 +167,13 @@ def info_content_specs(galaxy_context,
         if online:
             # remote_data = api.lookup_content_by_name(galaxy_namespace, repo_name, content_name)
             remote_data = api.lookup_repo_by_name(galaxy_namespace, repo_name)
-            display_callback(_repr_remote_repo(remote_data))
+            if remote_data:
+                display_callback(_repr_remote_repo(remote_data))
 
         label_to_match = '%s.%s' % (galaxy_namespace, repo_name)
-        repo_namespace = RepositoryNamespace(namespace=galaxy_namespace)
-        labels_to_match.append((label_to_match, ContentSpec(namespace=repo_namespace,
+        all_labels_to_match.append(label_to_match)
+
+        labels_to_match.append((label_to_match, ContentSpec(namespace=galaxy_namespace,
                                                             name=repo_name)))
 
     # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
@@ -184,41 +188,34 @@ def info_content_specs(galaxy_context,
 
     remote_data = False
 
+    matched_labels = []
     for matched_repo in matched_repos:
         display_callback(_repr_installed_repo(matched_repo))
         log.debug('matched_repo: %s', matched_repo)
+        matched_labels.append(matched_repo.content_spec.label)
 
-        #for matched_content in matched_contents:
-        #    display_callback(_repr_installed_content(matched_content))
+    unmatched_labels = set(all_labels_to_match).difference(set(matched_labels))
 
+    log.debug('all_labels: %s', all_labels_to_match)
+    log.debug('mathed_labels: %s', matched_labels)
+    log.debug('unmatched_labels: %s', unmatched_labels)
 
-    # FIXME
+    if unmatched_labels:
+        display_callback('These repos were not found:')
+
+        for unmatched_label in sorted(unmatched_labels):
+            display_callback(_repr_unmatched_label(unmatched_label))
+    # for matched_content in matched_contents:
+    #    display_callback(_repr_installed_content(matched_content))
 
     return
-
-
-
-    # TODO: split 'info' action into 'info about installed repos' and 'info from galaxy about a repo'
-    if not offline:
-        # remote_data = api.lookup_content_by_name(galaxy_namespace, repo_name, content_name)
-        remote_data = api.lookup_repo_by_name(galaxy_namespace, repo_name)
-        display_callback(_repr_remote_repo(remote_data))
-    else:
-        for matched_content in matched_contents:
-            display_callback(_repr_installed_content(matched_content))
 
     # role_spec = yaml_parse({'role': role})
     # if role_spec:
     #     role_info.update(role_spec)
 
     # not_installed =
-    # data = self._display_role_info(content_info)
-    # FIXME: This is broken in both 1.9 and 2.0 as
-    # _display_role_info() always returns something
 
-    display_callback(output)
+#    if not_installed:
 
-    if not_installed:
-        display_callback('These repos were not installed: %s' % ', '.join(sorted(not_installed)))
-
-    return 0
+#    return 0
