@@ -203,7 +203,7 @@ class GalaxyCLI(cli.CLI):
     # TODO: most of this logic should be out of cli class
     def execute_init(self):
         """
-        creates the skeleton framework of a role that complies with the galaxy metadata format.
+        Creates the skeleton framework of a role that complies with the galaxy metadata format.
         """
 
         init_path = self.options.init_path
@@ -247,7 +247,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_info(self):
         """
-        prints out detailed information about an installed role as well as info available from the galaxy API.
+        Show detailed information about an installed role as well as info available from the galaxy API.
         """
 
         if len(self.args) == 0:
@@ -267,8 +267,10 @@ class GalaxyCLI(cli.CLI):
 
     def execute_install(self):
         """
-        uses the args list of roles to be installed, unless -f was specified. The list of roles
-        can be a name (which will be downloaded via the galaxy API and github), or it can be a local .tar.gz file.
+        Install the args list of roles to be installed, unless -f was specified.
+
+        The list of roles can be a name (which will be downloaded via the galaxy API and github),
+        or it can be a local .tar.gz file.
         """
 
         install_content_type = self.options.content_type
@@ -319,7 +321,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_remove(self):
         """
-        removes the list of roles passed as arguments from the local system.
+        Removes the list of roles from the local system.
         """
 
         if len(self.args) == 0:
@@ -336,7 +338,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_list(self):
         """
-        lists the roles installed on the local system or matches a single role passed as an argument.
+        Lists the roles installed on the local system or matches a single role passed as an argument.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
