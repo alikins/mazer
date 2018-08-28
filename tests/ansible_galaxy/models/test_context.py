@@ -1,19 +1,18 @@
 
 import logging
 
+import pytest
 import six
 
-from ansible_galaxy.models import context
+
+from ansible_galaxy.models.models import GalaxyContext
 
 log = logging.getLogger(__name__)
 
 
-def test_context_empty_init():
-    galaxy_context = context.GalaxyContext()
-
-    assert galaxy_context.server is not None
-    assert galaxy_context.content_path is None
-    assert isinstance(galaxy_context.server, dict)
+def test_context_empty_init_raise_type_error():
+    with pytest.raises(TypeError):
+        GalaxyContext()
 
 
 def test_context_with_content_path_and_server():
@@ -24,10 +23,10 @@ def test_context_with_content_path_and_server():
     server = {'url': server_url,
               'ignore_certs': ignore_certs}
 
-    galaxy_context = context.GalaxyContext(server=server, content_path=content_path)
+    galaxy_context = GalaxyContext(server=server, content_path=content_path)
 
     log.debug('galaxy_context: %s', galaxy_context)
-    assert isinstance(galaxy_context, context.GalaxyContext)
+    assert isinstance(galaxy_context, GalaxyContext)
 
     assert isinstance(galaxy_context.content_path, six.string_types)
     assert isinstance(galaxy_context.server, dict)
@@ -39,25 +38,22 @@ def test_context_with_content_path_and_server():
 
 
 def test_context_from_empty_server():
-    server = {}
-    galaxy_context = context.GalaxyContext(server=server)
+    content_path = '/dev/null/some_content_path'
 
-    assert galaxy_context.content_path is None
-    assert isinstance(galaxy_context.server, dict)
-    log.debug('server: %s', galaxy_context.server)
-    assert galaxy_context.server['url'] is None
-    assert galaxy_context.server['ignore_certs'] is False
+    server = {}
+
+    with pytest.raises(ValueError):
+        GalaxyContext(content_path=content_path,
+                      server=server)
 
 
 def test_context_server_none_content_path_none():
 
-    galaxy_context = context.GalaxyContext(server=None,
-                                           content_path=None)
+    with pytest.raises(TypeError):
+        GalaxyContext(content_path=None,
+                      server=None)
 
-    assert galaxy_context.content_path is None
-    assert isinstance(galaxy_context.server, dict)
-    assert galaxy_context.server['url'] is None
-    assert galaxy_context.server['ignore_certs'] is False
+    return
 
 
 def test_context_repr():
@@ -68,7 +64,7 @@ def test_context_repr():
     server = {'url': server_url,
               'ignore_certs': ignore_certs}
 
-    galaxy_context = context.GalaxyContext(server=server, content_path=content_path)
+    galaxy_context = GalaxyContext(server=server, content_path=content_path)
     rep_res = repr(galaxy_context)
 
     log.debug('rep_res: %s', rep_res)

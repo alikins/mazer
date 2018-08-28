@@ -139,6 +139,23 @@ class GalaxyContentMeta(object):
 
 
 @attr.s(frozen=True)
+class GalaxyContext(object):
+    ''' Keeps global galaxy info '''
+    content_path = attr.ib()
+    server = attr.ib(validator=attr.validators.instance_of(dict))
+
+    @server.default
+    def _get_server_default(self):
+        return {'url': None,
+                'ignore_certs': False}
+
+    @server.validator
+    def _server_validate(self, attribute, value):
+        if 'url' not in value and 'ignore_certs' not in value:
+            raise ValueError("'server' dict must have 'url' and 'ignore_certs' keys")
+
+
+@attr.s(frozen=True)
 class InstallInfo(object):
     '''The info that is saved into the .galaxy_install_info file'''
     install_date = attr.ib()

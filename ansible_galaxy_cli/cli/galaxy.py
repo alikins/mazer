@@ -41,8 +41,7 @@ from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 from ansible_galaxy_cli import exceptions as cli_exceptions
 from ansible_galaxy import matchers
-from ansible_galaxy.models.context import GalaxyContext
-from ansible_galaxy.models.models import BuildContext
+from ansible_galaxy.models.models import BuildContext, GalaxyContext
 
 from ansible_galaxy import rest_api
 

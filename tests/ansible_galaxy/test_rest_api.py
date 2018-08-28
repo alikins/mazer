@@ -12,7 +12,7 @@ from six import text_type
 
 import ansible_galaxy
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.context import GalaxyContext
+from ansible_galaxy.models.models import GalaxyContext
 from ansible_galaxy import rest_api
 
 log = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 def test_galaxy_api_init():
 
-    gc = GalaxyContext()
+    gc = GalaxyContext(content_path=None)
     api = rest_api.GalaxyAPI(gc)
 
     assert isinstance(api, rest_api.GalaxyAPI)
@@ -100,7 +100,8 @@ def test_galaxy_api_get_server_api_version(mocker):
                      ]
                  ))
 
-    gc = GalaxyContext(server=default_server_dict)
+    gc = GalaxyContext(server=default_server_dict,
+                       content_path=None)
     api = rest_api.GalaxyAPI(gc)
     res = api._get_server_api_version()
 
@@ -121,7 +122,8 @@ def test_galaxy_api_get_server_api_version_not_supported_version(mocker):
                      ]
                  ))
 
-    gc = GalaxyContext(server=default_server_dict)
+    gc = GalaxyContext(server=default_server_dict,
+                       content_path=None)
     api = rest_api.GalaxyAPI(gc)
 
     # expected to raise a client error about the server version not being supported in client
@@ -146,7 +148,8 @@ def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
                                        hdrs={},
                                        fp=io.StringIO(initial_value=error_body)))
 
-    gc = GalaxyContext(server=default_server_dict)
+    gc = GalaxyContext(server=default_server_dict,
+                       content_path=None)
     api = rest_api.GalaxyAPI(gc)
     try:
         api._get_server_api_version()
@@ -167,7 +170,8 @@ def test_galaxy_api_get_server_api_version_HTTPError_not_json(mocker):
                      ]
                  ))
 
-    gc = GalaxyContext(server=default_server_dict)
+    gc = GalaxyContext(server=default_server_dict,
+                       content_path=None)
     api = rest_api.GalaxyAPI(gc)
     try:
         api._get_server_api_version()
@@ -190,7 +194,8 @@ def test_galaxy_api_get_server_api_version_no_current_version(mocker):
                      ]
                  ))
 
-    gc = GalaxyContext(server=default_server_dict)
+    gc = GalaxyContext(server=default_server_dict,
+                       content_path=None)
     api = rest_api.GalaxyAPI(gc)
     try:
         api._get_server_api_version()
@@ -210,8 +215,10 @@ galaxy_context_params = [{'server': default_server_dict,
 
 @pytest.fixture(scope='module',
                 params=galaxy_context_params)
+# def galaxy_api(request):
 def galaxy_api(request):
-    gc = GalaxyContext(server=request.param['server'])
+    gc = GalaxyContext(server=request.param['server'],
+                       content_path=None)
     # log.debug('gc: %s', gc)
 
     # mock the result of _get_server_api_versions here, so that we dont get the extra

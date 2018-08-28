@@ -197,7 +197,6 @@ class TestGalaxy(unittest.TestCase):
 
             # checking that the common results of parse() for all possible actions have been created/called
             self.assertIsInstance(galaxycli_obj.parser, ansible_galaxy_cli.cli.SortedOptParser)
-            # self.assertIsInstance(galaxycli_obj.galaxy, ansible_galaxy.models.context.GalaxyContext)
             formatted_call = {
                 'info': 'usage: %prog info [options] repo_name[,version]',
                 'init': 'usage: %prog init [options] role_name',

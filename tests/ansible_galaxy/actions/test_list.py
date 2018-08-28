@@ -4,6 +4,7 @@ import pprint
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.actions import list as list_action
+from ansible_galaxy.models.models import GalaxyContext
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +51,8 @@ def test_list_empty_roles_paths(galaxy_context):
 
 
 def test_list_no_content_dir(galaxy_context):
-    galaxy_context.content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
+    content_path = os.path.join(galaxy_context.content_path, 'doesntexist')
+    galaxy_context = GalaxyContext(content_path=content_path)
     res = list_action.list(galaxy_context,
                            display_callback=display_callback)
 
