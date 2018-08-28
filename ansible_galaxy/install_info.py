@@ -5,7 +5,7 @@ import yaml
 
 import attr
 
-from ansible_galaxy.models.install_info import InstallInfo
+from ansible_galaxy.models.models import InstallInfo
 
 log = logging.getLogger(__name__)
 
