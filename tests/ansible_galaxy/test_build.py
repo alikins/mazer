@@ -4,7 +4,7 @@ import pprint
 import tarfile
 
 from ansible_galaxy import build
-from ansible_galaxy.models.build_context import BuildContext
+from ansible_galaxy.models.models import BuildContext
 from ansible_galaxy.models.collection_info import CollectionInfo
 from ansible_galaxy.models.collection_artifact_manifest import CollectionArtifactManifest
 
