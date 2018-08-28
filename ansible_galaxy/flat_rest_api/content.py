@@ -40,7 +40,7 @@ from ansible_galaxy import display
 from ansible_galaxy.constants import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES, \
     CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models import content
+from ansible_galaxy.models.models import GalaxyContentMeta
 from ansible_galaxy.models.install_info import InstallInfo
 
 
@@ -137,14 +137,14 @@ class GalaxyContent(object):
         #    requires_meta_main = True
 
         self.content_meta = content_meta or \
-            content.GalaxyContentMeta(namespace=namespace,
-                                      name=name,
-                                      version=version,
-                                      src=src,
-                                      scm=scm,
-                                      content_type=content_type,
-                                      content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None),
-                                      path=primary_galaxy_content_path)
+            GalaxyContentMeta(namespace=namespace,
+                              name=name,
+                              version=version,
+                              src=src,
+                              scm=scm,
+                              content_type=content_type,
+                              content_dir=CONTENT_TYPE_DIR_MAP.get(content_type, None),
+                              path=primary_galaxy_content_path)
 
         # TODO: factory? metaclass?
         if content_type not in CONTENT_TYPES and content_type != "all":
@@ -240,7 +240,7 @@ class GalaxyContent(object):
                                                                                  content_type=install_content_type)
 
             # filter by path built from sub_dir and sub_name for 'modules/elasticsearch_plugin.py'
-            content_sub_dir = content_meta.content_sub_dir or content.CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
+            content_sub_dir = content_meta.content_sub_dir or CONTENT_TYPE_DIR_MAP.get(install_content_type, '')
 
             label = "%s.%s" % (content_meta.namespace, content_meta.name)
             log.debug('content_meta: %s', content_meta)
