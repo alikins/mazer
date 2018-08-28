@@ -37,9 +37,9 @@ from ansible_galaxy import content_archive
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import display
+from ansible_galaxy.constants import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES, \
+    CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models.content import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES
-from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
 from ansible_galaxy.models.install_info import InstallInfo
 

@@ -1,7 +1,7 @@
 import logging
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
+from ansible_galaxy.constants import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
 from ansible_galaxy import content_spec_parse
 from ansible_galaxy import galaxy_content_spec

@@ -5,24 +5,25 @@ import attr
 import pytest
 
 from ansible_galaxy.models import content
+from ansible_galaxy.constants import CONTENT_TYPES, CONTENT_TYPE_DIR_MAP
 
 log = logging.getLogger(__name__)
 
 
 def test_content_type_dir_map():
-    assert isinstance(content.CONTENT_TYPE_DIR_MAP, dict)
+    assert isinstance(CONTENT_TYPE_DIR_MAP, dict)
 
 
 def test_content_type_dir_map_items():
-    for content_type in content.CONTENT_TYPES:
-        assert content_type in content.CONTENT_TYPE_DIR_MAP
+    for content_type in CONTENT_TYPES:
+        assert content_type in CONTENT_TYPE_DIR_MAP
         if content_type == 'module':
             expected = 'library'
         else:
             expected = '%ss' % content_type
-        assert content.CONTENT_TYPE_DIR_MAP[content_type] == expected
+        assert CONTENT_TYPE_DIR_MAP[content_type] == expected
 
-    assert 'role' in content.CONTENT_TYPES
+    assert 'role' in CONTENT_TYPES
 
 
 def test_galaxy_content_meta_no_args():

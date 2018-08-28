@@ -7,15 +7,15 @@ import fnmatch
 import logging
 import os
 
+from ansible_galaxy.constants import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy.models import content
 
 log = logging.getLogger(__name__)
 
 # pass in list of tarinfo of paths to extract
 # pass in a map of tar member paths -> dest paths, built separately?
-#  (based on content_type and content.CONTENT_TYPE_DIR_MAP etc)
+#  (based on content_type and CONTENT_TYPE_DIR_MAP etc)
 
 # for plugins and everything except roles
 # extract_content_by_content_type(content_type, base_path=None)
@@ -67,7 +67,7 @@ def filter_members_by_content_type(tar_file_members,
                       if tar_info_content_name_match(tar_file_member,
                                                      "",
                                                      # self.content_meta.name,
-                                                     content_path=content.CONTENT_TYPE_DIR_MAP.get(content_type))]
+                                                     content_path=CONTENT_TYPE_DIR_MAP.get(content_type))]
 
     # everything for roles
     if content_archive_type == 'role':
@@ -182,7 +182,7 @@ def extract_by_content_type(tar_file_obj,
 
     # append the content_dir if we have one
     content_path = os.path.join(extract_to_path,
-                                content.CONTENT_TYPE_DIR_MAP.get('install_content_type', content_meta.content_dir or ''))
+                                CONTENT_TYPE_DIR_MAP.get('install_content_type', content_meta.content_dir or ''))
     if content_meta.content_sub_dir:
         log.debug('content_sub_path=%s', content_meta.content_sub_dir)
         content_path = os.path.join(content_path, content_meta.content_sub_dir or '')
@@ -222,8 +222,8 @@ def extract_by_content_type(tar_file_obj,
                     plugin_found = parent_dir.lstrip(content_meta.name)
 
             # secondary dir (roles/, callback_plugins/) is a match for the content_type
-            elif len(parts_list) > 1 and parts_list[1] == content.CONTENT_TYPE_DIR_MAP.get(content_meta.content_type):
-                plugin_found = content.CONTENT_TYPE_DIR_MAP.get(content_meta.content_type)
+            elif len(parts_list) > 1 and parts_list[1] == CONTENT_TYPE_DIR_MAP.get(content_meta.content_type):
+                plugin_found = CONTENT_TYPE_DIR_MAP.get(content_meta.content_type)
 
             # log.debug('plugin_found1: %s', plugin_found)
             # if not plugin_found:

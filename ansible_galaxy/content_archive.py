@@ -3,7 +3,7 @@ import os
 import tarfile
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.models import content
+from ansible_galaxy.constants import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content_archive
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def detect_content_archive_type(archive_path, archive_members):
 
     meta_main_target = os.path.join(top_dir, 'meta/main.yml')
 
-    type_dirs = content.CONTENT_TYPE_DIR_MAP.values()
+    type_dirs = CONTENT_TYPE_DIR_MAP.values()
     log.debug('type_dirs: %s', type_dirs)
 
     type_dir_targets = set([os.path.join(top_dir, x) for x in type_dirs])

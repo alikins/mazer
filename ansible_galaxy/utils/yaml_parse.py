@@ -5,7 +5,7 @@ import six
 from ansible_galaxy import content_spec_parse
 # from ansible_galaxy import content_spec
 from ansible_galaxy.utils.role_spec import role_spec_parse
-from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
+from ansible_galaxy.constants import VALID_ROLE_SPEC_KEYS
 
 
 log = logging.getLogger(__name__)

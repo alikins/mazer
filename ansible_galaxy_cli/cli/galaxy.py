@@ -46,8 +46,7 @@ from ansible_galaxy.models.models import BuildContext
 
 from ansible_galaxy import rest_api
 
-# FIXME: not a model...
-from ansible_galaxy.models.content import CONTENT_TYPES
+from ansible_galaxy.constants import CONTENT_TYPES
 
 log = logging.getLogger(__name__)
 
