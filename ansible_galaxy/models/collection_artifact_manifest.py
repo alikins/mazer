@@ -4,7 +4,7 @@ import logging
 
 import attr
 
-from ansible_galaxy.models.collection_info import CollectionInfo
+from ansible_galaxy.models.models import CollectionInfo
 from ansible_galaxy.models.models import CollectionArtifactFile
 
 log = logging.getLogger(__name__)

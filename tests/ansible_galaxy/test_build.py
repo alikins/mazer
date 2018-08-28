@@ -5,7 +5,7 @@ import tarfile
 
 from ansible_galaxy import build
 from ansible_galaxy.models.models import BuildContext
-from ansible_galaxy.models.collection_info import CollectionInfo
+from ansible_galaxy.models.models import CollectionInfo
 from ansible_galaxy.models.collection_artifact_manifest import CollectionArtifactManifest
 
 

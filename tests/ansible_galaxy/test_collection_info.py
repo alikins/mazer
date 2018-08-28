@@ -5,7 +5,7 @@ import os
 import attr
 
 from ansible_galaxy import collection_info
-from ansible_galaxy.models.collection_info import CollectionInfo
+from ansible_galaxy.models.models import CollectionInfo
 from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
