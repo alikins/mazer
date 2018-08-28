@@ -4,7 +4,7 @@ import tarfile
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.constants import CONTENT_TYPE_DIR_MAP
-from ansible_galaxy.models import content_archive
+from ansible_galaxy.models.models import ContentArchiveMeta
 
 log = logging.getLogger(__name__)
 
@@ -82,9 +82,9 @@ def load_archive(archive_path):
         #                                       os.path.join(archive_parent_dir, archive.META_MAIN))
         log.debug('Found role metadata in the archive, so installing it as role content_type')
 
-    archive_meta = content_archive.ContentArchiveMeta(top_dir=archive_parent_dir,
-                                                      archive_type=archive_type,
-                                                      archive_path=archive_path)
+    archive_meta = ContentArchiveMeta(top_dir=archive_parent_dir,
+                                      archive_type=archive_type,
+                                      archive_path=archive_path)
 
     log.debug('role archive_meta: %s', archive_meta)
 
