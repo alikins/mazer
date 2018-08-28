@@ -4,7 +4,7 @@ import pprint
 
 import yaml
 
-from ansible_galaxy.models.role_metadata import RoleMetadata
+from ansible_galaxy.models.models import RoleMetadata
 
 log = logging.getLogger(__name__)
 
