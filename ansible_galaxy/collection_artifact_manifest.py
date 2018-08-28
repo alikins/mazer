@@ -8,8 +8,7 @@ import yaml
 from ansible_galaxy.utils import chksums
 from ansible_galaxy.models.collection_artifact_manifest import \
     CollectionArtifactManifest
-from ansible_galaxy.models.collection_artifact_file import \
-    CollectionArtifactFile
+from ansible_galaxy.models.models import CollectionArtifactFile
 
 log = logging.getLogger(__name__)
 pf = pprint.pformat

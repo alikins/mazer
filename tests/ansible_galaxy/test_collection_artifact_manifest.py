@@ -3,7 +3,7 @@ import os
 
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy.models.collection_artifact_manifest import CollectionArtifactManifest
-from ansible_galaxy.models.collection_artifact_file import CollectionArtifactFile
+from ansible_galaxy.models.models import CollectionArtifactFile
 from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
