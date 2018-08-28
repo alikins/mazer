@@ -3,25 +3,25 @@ import logging
 import attr
 import pytest
 
-from ansible_galaxy.models import content_spec
+from ansible_galaxy.models.models import ContentSpec
 
 log = logging.getLogger(__name__)
 
 
 def test_init():
-    cs = content_spec.ContentSpec(namespace='ns',
-                                  name='n',
-                                  version='3.4.5')
+    cs = ContentSpec(namespace='ns',
+                     name='n',
+                     version='3.4.5')
 
-    assert isinstance(cs, content_spec.ContentSpec)
+    assert isinstance(cs, ContentSpec)
 
     log.debug('cs: %s', cs)
 
 
 def test_frozen():
-    cs = content_spec.ContentSpec(namespace='ns',
-                                  name='n',
-                                  version='3.4.5')
+    cs = ContentSpec(namespace='ns',
+                     name='n',
+                     version='3.4.5')
 
     log.debug('cs: %s', cs)
 
@@ -48,17 +48,17 @@ def test_frozen():
 
 
 def test_hash():
-    cs1 = content_spec.ContentSpec(namespace='cs1',
-                                   name='cs1',
-                                   version='3.4.5')
+    cs1 = ContentSpec(namespace='cs1',
+                      name='cs1',
+                      version='3.4.5')
 
-    cs1a = content_spec.ContentSpec(namespace='cs1',
-                                    name='cs1',
-                                    version='3.4.5')
+    cs1a = ContentSpec(namespace='cs1',
+                       name='cs1',
+                       version='3.4.5')
 
-    cs2 = content_spec.ContentSpec(namespace='cs2',
-                                   name='c2',
-                                   version='3.4.2')
+    cs2 = ContentSpec(namespace='cs2',
+                      name='c2',
+                      version='3.4.2')
 
     hash1 = hash(cs1)
     hash1a = hash(cs1a)
@@ -91,17 +91,17 @@ def test_hash():
 
 
 def test_equal():
-    cs1 = content_spec.ContentSpec(namespace='ns',
-                                   name='n',
-                                   version='3.4.5')
+    cs1 = ContentSpec(namespace='ns',
+                      name='n',
+                      version='3.4.5')
 
-    cs1a = content_spec.ContentSpec(namespace='ns',
-                                    name='n',
-                                    version='3.4.5')
+    cs1a = ContentSpec(namespace='ns',
+                       name='n',
+                       version='3.4.5')
 
-    cs2 = content_spec.ContentSpec(namespace='ns2',
-                                   name='n2',
-                                   version='3.4.2')
+    cs2 = ContentSpec(namespace='ns2',
+                      name='n2',
+                      version='3.4.2')
 
     assert cs1 == cs1a
     assert cs1a == cs1

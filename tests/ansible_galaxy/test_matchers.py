@@ -3,7 +3,7 @@ import pytest
 
 from ansible_galaxy import matchers
 from ansible_galaxy.models.content_repository import ContentRepository
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.models import ContentSpec
 
 log = logging.getLogger(__name__)
 

@@ -3,7 +3,7 @@ import logging
 
 from ansible_galaxy import display
 from ansible_galaxy import matchers
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.models import ContentSpec
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.utils.content_name import parse_content_name
 from ansible_galaxy.utils.text import to_text

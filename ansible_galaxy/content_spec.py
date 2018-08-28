@@ -3,7 +3,7 @@ import os
 
 from ansible_galaxy import galaxy_content_spec
 from ansible_galaxy import content_spec_parse
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.models import ContentSpec
 
 log = logging.getLogger(__name__)
 
