@@ -152,3 +152,8 @@ class InstallInfo(object):
                    install_date=install_datetime.strftime('%c'))
         return inst
 
+
+@attr.s(frozen=True)
+class RepositoryNamespace(object):
+    namespace = attr.ib()
+    path = attr.ib(default=None, cmp=False)

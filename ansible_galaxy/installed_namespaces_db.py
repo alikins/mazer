@@ -3,7 +3,7 @@ import logging
 import os
 
 from ansible_galaxy import matchers
-from ansible_galaxy.models.repository_namespace import RepositoryNamespace
+from ansible_galaxy.models.models import RepositoryNamespace
 
 log = logging.getLogger(__name__)
 
