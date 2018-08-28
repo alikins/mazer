@@ -103,6 +103,13 @@ class ContentSpec(object):
 
 
 @attr.s(frozen=True)
+class ContentRepository(object):
+    content_spec = attr.ib(type=ContentSpec)
+    path = attr.ib(default=None)
+    installed = attr.ib(default=False, type=bool, cmp=False)
+
+
+@attr.s(frozen=True)
 class GalaxyContentMeta(object):
     namespace = attr.ib()
     name = attr.ib()
