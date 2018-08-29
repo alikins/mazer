@@ -34,8 +34,7 @@ class CollectionInfo(object):
     license = attr.ib(default=None)
 
 
-# TODO: static method of CollectionArtifactFile?
-def convert_file_dict_list_to_artifact_file_list(val):
+def _collection_manifest_convert_files_to_artifact_files(val):
     '''Convert a list of dicts with file info into list of CollectionArtifactFile'''
 
     new_list = []
@@ -58,7 +57,8 @@ class CollectionManifest(object):
     collection_info = attr.ib(type=CollectionInfo)
     format_version = attr.ib(default=0.0)
 
-    files = attr.ib(factory=list, converter=convert_file_dict_list_to_artifact_file_list)
+    files = attr.ib(factory=list,
+                    converter=_collection_manifest_convert_files_to_artifact_files)
 
     # a build_info = attr.ib(type=CollectionArtifactBuildInfo)
     #   CollectionArtifactBuildInfo has 'build_date', 'build_tool'
