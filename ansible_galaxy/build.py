@@ -10,7 +10,7 @@ import six
 from ansible_galaxy import collection_members
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy.collection_info import COLLECTION_INFO_FILENAME
-from ansible_galaxy.models.models import CollectionArtifactManifest
+from ansible_galaxy.models.models import CollectionManifest
 from ansible_galaxy.utils.text import to_bytes
 
 log = logging.getLogger(__name__)
@@ -92,8 +92,8 @@ class Build(object):
         col_files = collection_artifact_manifest.gen_manifest_artifact_files(col_file_names,
                                                                              self.build_context.collection_path)
 
-        manifest = CollectionArtifactManifest(collection_info=self.collection_info,
-                                              files=col_files)
+        manifest = CollectionManifest(collection_info=self.collection_info,
+                                      files=col_files)
 
         log.debug('manifest: %s', manifest)
 

@@ -2,7 +2,7 @@ import logging
 import os
 
 from ansible_galaxy import collection_artifact_manifest
-from ansible_galaxy.models.models import CollectionArtifactManifest
+from ansible_galaxy.models.models import CollectionManifest
 from ansible_galaxy.models.models import CollectionArtifactFile
 from ansible_galaxy import yaml_persist
 
@@ -16,7 +16,7 @@ def test_load():
         res = collection_artifact_manifest.load(data_fd)
         log.debug('res: %s', res)
 
-        assert isinstance(res, CollectionArtifactManifest)
+        assert isinstance(res, CollectionManifest)
         assert isinstance(res.files, list)
         assert isinstance(res.files[0], CollectionArtifactFile)
 

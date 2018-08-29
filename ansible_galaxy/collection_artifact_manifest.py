@@ -6,7 +6,7 @@ import os
 import yaml
 
 from ansible_galaxy.utils import chksums
-from ansible_galaxy.models.models import CollectionArtifactManifest
+from ansible_galaxy.models.models import CollectionManifest
 from ansible_galaxy.models.models import CollectionArtifactFile
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def load(data_or_file_object, klass=None):
 
     log.debug('data: %s', pf(data_dict))
 
-    klass = CollectionArtifactManifest
+    klass = CollectionManifest
     instance = klass(**data_dict)
 
     log.debug('%s instance from_kwargs: %s', type(instance), instance)

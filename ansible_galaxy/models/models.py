@@ -54,7 +54,7 @@ def convert_file_dict_list_to_artifact_file_list(val):
 
 # see https://github.com/ansible/galaxy/issues/957
 @attr.s(frozen=True)
-class CollectionArtifactManifest(object):
+class CollectionManifest(object):
     collection_info = attr.ib(type=CollectionInfo)
     format_version = attr.ib(default=0.0)
 

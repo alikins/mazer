@@ -6,7 +6,7 @@ import tarfile
 from ansible_galaxy import build
 from ansible_galaxy.models.models import BuildContext
 from ansible_galaxy.models.models import CollectionInfo
-from ansible_galaxy.models.models import CollectionArtifactManifest
+from ansible_galaxy.models.models import CollectionManifest
 
 
 log = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ def test_build_run(tmpdir):
     res = build_.run(display_callback)
 
     assert isinstance(res, build.BuildResult)
-    assert isinstance(res.manifest, CollectionArtifactManifest)
+    assert isinstance(res.manifest, CollectionManifest)
     assert isinstance(res.manifest.collection_info, CollectionInfo)
     assert isinstance(res.manifest.files, list)
 
