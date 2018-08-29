@@ -4,7 +4,7 @@ import logging
 import attr
 import pytest
 
-from ansible_galaxy.models.models import GalaxyContentMeta
+from ansible_galaxy.models import GalaxyContentMeta
 from ansible_galaxy.constants import CONTENT_TYPES, CONTENT_TYPE_DIR_MAP
 
 log = logging.getLogger(__name__)

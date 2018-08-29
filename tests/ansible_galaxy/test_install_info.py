@@ -7,7 +7,7 @@ import yaml
 from six import string_types
 
 from ansible_galaxy import install_info
-from ansible_galaxy.models.models import InstallInfo
+from ansible_galaxy.models import InstallInfo
 
 log = logging.getLogger(__name__)
 

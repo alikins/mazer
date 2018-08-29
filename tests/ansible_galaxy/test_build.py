@@ -4,9 +4,9 @@ import pprint
 import tarfile
 
 from ansible_galaxy import build
-from ansible_galaxy.models.models import BuildContext
-from ansible_galaxy.models.models import CollectionInfo
-from ansible_galaxy.models.models import CollectionManifest
+from ansible_galaxy.models import BuildContext
+from ansible_galaxy.models import CollectionInfo
+from ansible_galaxy.models import CollectionManifest
 
 
 log = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import logging
 import attr
 import pytest
 
-from ansible_galaxy.models.models import ContentSpec
+from ansible_galaxy.models import ContentSpec
 
 log = logging.getLogger(__name__)
 

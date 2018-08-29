@@ -10,7 +10,7 @@ import six
 from ansible_galaxy import collection_members
 from ansible_galaxy import collection_artifact_manifest
 from ansible_galaxy.collection_info import COLLECTION_INFO_FILENAME
-from ansible_galaxy.models.models import CollectionManifest
+from ansible_galaxy.models import CollectionManifest
 from ansible_galaxy.utils.text import to_bytes
 
 log = logging.getLogger(__name__)

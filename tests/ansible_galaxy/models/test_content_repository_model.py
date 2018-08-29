@@ -5,7 +5,7 @@ import attr
 import pytest
 import six
 
-from ansible_galaxy.models.models import ContentRepository, ContentSpec
+from ansible_galaxy.models import ContentRepository, ContentSpec
 
 log = logging.getLogger(__name__)
 

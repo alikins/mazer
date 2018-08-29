@@ -2,7 +2,7 @@ import logging
 import os
 
 from ansible_galaxy.actions import build
-from ansible_galaxy.models.models import BuildContext
+from ansible_galaxy.models import BuildContext
 
 log = logging.getLogger(__name__)
 

@@ -4,7 +4,7 @@ import logging
 import attr
 import pytest
 
-from ansible_galaxy.models.models import InstallInfo
+from ansible_galaxy.models import InstallInfo
 
 log = logging.getLogger(__name__)
 

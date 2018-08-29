@@ -8,5 +8,5 @@ def galaxy_context(tmpdir):
     server = {'url': 'http://localhost:8000',
               'ignore_certs': False}
     content = tmpdir.mkdir('content')
-    from ansible_galaxy.models.models import GalaxyContext
+    from ansible_galaxy.models import GalaxyContext
     return GalaxyContext(server=server, content_path=content.strpath)

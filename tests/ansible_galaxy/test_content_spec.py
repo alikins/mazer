@@ -4,7 +4,7 @@ import os
 import pytest
 
 from ansible_galaxy import content_spec
-from ansible_galaxy.models.models import ContentSpec
+from ansible_galaxy.models import ContentSpec
 
 log = logging.getLogger(__name__)
 

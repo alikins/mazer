@@ -40,7 +40,7 @@ from ansible_galaxy import display
 from ansible_galaxy.constants import CONTENT_TYPES, SUPPORTED_CONTENT_TYPES, \
     CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models.models import GalaxyContentMeta, InstallInfo
+from ansible_galaxy.models import GalaxyContentMeta, InstallInfo
 
 
 log = logging.getLogger(__name__)

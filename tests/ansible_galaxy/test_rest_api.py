@@ -12,7 +12,7 @@ from six import text_type
 
 import ansible_galaxy
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.models import GalaxyContext
+from ansible_galaxy.models import GalaxyContext
 from ansible_galaxy import rest_api
 
 log = logging.getLogger(__name__)

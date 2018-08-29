@@ -4,7 +4,7 @@ import pprint
 
 import yaml
 
-from ansible_galaxy.models.models import CollectionInfo
+from ansible_galaxy.models import CollectionInfo
 
 log = logging.getLogger(__name__)
 pf = pprint.pformat

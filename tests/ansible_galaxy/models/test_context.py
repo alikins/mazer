@@ -5,7 +5,7 @@ import pytest
 import six
 
 
-from ansible_galaxy.models.models import GalaxyContext
+from ansible_galaxy.models import GalaxyContext
 
 log = logging.getLogger(__name__)
 

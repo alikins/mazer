@@ -2,7 +2,7 @@ import io
 import logging
 
 from ansible_galaxy import role_metadata
-from ansible_galaxy.models.models import RoleMetadata
+from ansible_galaxy.models import RoleMetadata
 
 log = logging.getLogger(__name__)
 

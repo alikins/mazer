@@ -4,7 +4,7 @@ import tarfile
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.constants import CONTENT_TYPE_DIR_MAP
-from ansible_galaxy.models.models import ContentArchiveMeta
+from ansible_galaxy.models import ContentArchiveMeta
 
 log = logging.getLogger(__name__)
 

@@ -2,8 +2,8 @@ import logging
 import os
 
 from ansible_galaxy import collection_artifact_manifest
-from ansible_galaxy.models.models import CollectionManifest
-from ansible_galaxy.models.models import CollectionArtifactFile
+from ansible_galaxy.models import CollectionManifest
+from ansible_galaxy.models import CollectionArtifactFile
 from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ import pprint
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.actions import list as list_action
-from ansible_galaxy.models.models import GalaxyContext
+from ansible_galaxy.models import GalaxyContext
 
 log = logging.getLogger(__name__)
 

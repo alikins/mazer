@@ -6,8 +6,8 @@ import os
 import yaml
 
 from ansible_galaxy.utils import chksums
-from ansible_galaxy.models.models import CollectionManifest
-from ansible_galaxy.models.models import CollectionArtifactFile
+from ansible_galaxy.models import CollectionManifest
+from ansible_galaxy.models import CollectionArtifactFile
 
 log = logging.getLogger(__name__)
 pf = pprint.pformat

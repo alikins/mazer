@@ -1,6 +1,6 @@
 import logging
 
-from ansible_galaxy.models.models import RoleMetadata
+from ansible_galaxy.models import RoleMetadata
 
 import attr
 

@@ -9,7 +9,7 @@ import pprint
 
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.models import GalaxyContentMeta
+from ansible_galaxy.models import GalaxyContentMeta
 
 
 log = logging.getLogger(__name__)
