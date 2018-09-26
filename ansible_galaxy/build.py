@@ -16,7 +16,7 @@ from ansible_galaxy.utils.text import to_bytes
 
 log = logging.getLogger(__name__)
 
-ARCHIVE_FILENAME_TEMPLATE = 'v{version}.{extension}'
+ARCHIVE_FILENAME_TEMPLATE = '{name}-{version}.{extension}'
 ARCHIVE_FILENAME_EXTENSION = 'tar.gz'
 
 ARCHIVE_TOPDIR_TEMPLATE = '{collection_info.name}-{collection_info.version}'
@@ -108,7 +108,8 @@ class Build(object):
 
         # ie, 'v1.2.3.tar.gz', not full path
         archive_filename_basename = \
-            ARCHIVE_FILENAME_TEMPLATE.format(version=self.collection_info.version,
+            ARCHIVE_FILENAME_TEMPLATE.format(name=self.collection_info.name,
+                                             version=self.collection_info.version,
                                              extension=ARCHIVE_FILENAME_EXTENSION)
 
         archive_path = os.path.join(self.build_context.output_path,
