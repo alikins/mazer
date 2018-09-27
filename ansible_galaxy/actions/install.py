@@ -5,6 +5,8 @@ import pprint
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import content_spec
+from ansible_galaxy import installed_repository_db
+from ansible_galaxy import matchers
 from ansible_galaxy.utils import yaml_parse
 
 # FIXME: get rid of flat_rest_api
@@ -84,6 +86,33 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
                                             galaxy_context=galaxy_context,
                                             namespace_override=namespace_override,
                                             editable=editable)
+
+    # FIXME: mv mv this filtering to it's own method
+    # match any of the content specs for stuff we want to install
+    # ie, see if it is already installed
+    repository_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
+
+    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    already_installed_generator = icdb.select(repository_match_filter=repository_match_filter)
+
+    log.debug('requested_contents before: %s', requested_contents)
+
+    # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
+    #        we can simplify this filter with set ops
+
+    already_installed_content_spec_set = set([installed.content_spec for installed in already_installed_generator])
+
+    log.debug('already_installed_content_spec_set: %s', already_installed_content_spec_set)
+
+    for z in requested_contents:
+        log.debug('z.content_spec: %s', z.content_spec)
+
+    needs_installed = [y for y in requested_contents if y.content_spec not in already_installed_content_spec_set]
+
+    log.debug('needs_installed: %s', pprint.pformat(needs_installed))
+
+    requested_contents = needs_installed
+    log.debug('requested_contents after: %s', requested_contents)
 
     return install_contents(galaxy_context, requested_contents, install_content_type,
                             display_callback=display_callback,
