@@ -27,6 +27,7 @@ import datetime
 import logging
 import os
 from shutil import rmtree
+import pprint
 
 import attr
 
@@ -114,6 +115,7 @@ class GalaxyContent(object):
         self._install_info = install_info
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+        self.log.debug('init name=%s, namespace=%s, path=%s', name, namespace, path)
 
         self.display_callback = display_callback or display.display_callback
 
@@ -564,9 +566,11 @@ class GalaxyContent(object):
 
         install_datetime = datetime.datetime.utcnow()
 
-        repo_info_path = os.path.join(content_meta.path,
-                                      self.content_meta.namespace,
-                                      self.content_meta.name,
+        repo_install_path = os.path.join(content_meta.path,
+                                         self.content_meta.namespace,
+                                         self.content_meta.name)
+
+        repo_info_path = os.path.join(repo_install_path,
                                       '.galaxy_install_info')
 
         repo_install_info = InstallInfo.from_version_date(version=content_meta.version,
@@ -584,11 +588,21 @@ class GalaxyContent(object):
         # rm any temp files created when getting the content archive
         self._fetcher.cleanup()
 
+        installed_contents = []
         for item in installed:
-            log.info('Installed content: %s', item[0])
+            installed_content_meta = item[0]
+            log.info('Installed content: %s', installed_content_meta)
+            #  name=test-role-c, namespace=alikins, path=/home/adrian/.ansible/content/alikins/ansible_testing_content/roles/test-role-c
+
+            installed_content = InstalledContent(self.galaxy,
+                                                 name=installed_content_meta.name,
+                                                 namespace=installed_content_meta.namespace,
+                                                 path=repo_install_path)
+            installed_contents.append(installed_content)
             # log.debug('Installed files: %s', pprint.pformat(item[1]))
 
-        return installed
+        log.debug('installed_contents: %s', pprint.pformat(installed_contents))
+        return installed_contents
 
     # TODO: property of GalaxyContentMeta ?
     @property
