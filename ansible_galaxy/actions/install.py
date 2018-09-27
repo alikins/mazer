@@ -1,5 +1,6 @@
 import logging
 import os
+import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
@@ -91,6 +92,7 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
                             force_overwrite=force_overwrite)
 
 
+# TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def install_contents(galaxy_context, requested_contents, install_content_type,
                      display_callback=None,
                      # TODO: error handling callback ?
@@ -111,6 +113,7 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
 
     # FIXME: should be while? or some more func style processing
     #        iterating until there is nothing left
+    while True:
     for content in requested_contents:
         # only process roles in roles files when names matches if given
 
@@ -196,6 +199,7 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
             log.warning("- %s was NOT installed successfully.", content.name)
             raise_without_ignore(ignore_errors)
 
+        log.debug('installed: %s', pprint.pformat(installed))
         if no_deps:
             log.warning('- %s was installed but any deps will not be installed because of no_deps',
                         content.name)
@@ -209,32 +213,56 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
         #         a content repo can contain many types and many of any single type and it's just
         #         easier to have that introspection there. In the future this should be more
         #         unified and have a clean API
-        if content.content_type == "role":
-            if not no_deps and installed:
-                if not content.metadata:
-                    log.warning("Meta file %s is empty. Skipping dependencies.", content.path)
-                else:
-                    role_dependencies = content.metadata.get('dependencies') or []
-                    for dep in role_dependencies:
-                        log.debug('Installing dep %s', dep)
-                        dep_info = yaml_parse.yaml_parse(dep)
-                        dep_role = GalaxyContent(galaxy_context, **dep_info)
-                        if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
-                            # we know we can skip this, as it's not going to
-                            # be found on galaxy.ansible.com
-                            continue
-                        if dep_role.install_info is None:
-                            if dep_role not in requested_contents:
-                                display_callback('- adding dependency: %s' % str(dep_role))
-                                requested_contents.append(dep_role)
+        dep_requirement_content_specs = []
+        for installed_content in installed:
+
+            if installed_content.content_type == "role":
+                if not no_deps and installed:
+                    if not installed_content.metadata:
+                        log.warning("Meta file %s is empty. Skipping dependencies.", installed_content.path)
+                    else:
+                        role_dependencies = installed_content.metadata.dependencies
+                        for dep in role_dependencies:
+                            log.debug('Installing dep %s', dep)
+
+                            dep_info = yaml_parse.yaml_parse(dep)
+                            log.debug('dep_info: %s', pprint.pformat(dep_info))
+
+                            dep_requirement_content_specs.append(dep)
+
+        # WARNING: recursive with no real bound
+        try:
+            rc = install.install_content_specs(galaxy_context,
+                                               editable=self.options.editable_install,
+                                               content_spec_strings=dep_requirement_content_specs,
+                                               install_content_type=install_content_type,
+                                               namespace_override=self.options.namespace,
+                                               display_callback=self.display,
+                                               ignore_errors=self.options.ignore_errors,
+                                               no_deps=self.options.no_deps,
+                                               force_overwrite=self.options.force)
+        except Exception as e:
+            log.exception(e)
+            raise
+        dep_requirement_content_
+                            dep_role = GalaxyContent(galaxy_context, **dep_info)
+
+                            if '.' not in dep_role.name and '.' not in dep_role.src and dep_role.scm is None:
+                                # we know we can skip this, as it's not going to
+                                # be found on galaxy.ansible.com
+                                continue
+                            if dep_role.install_info is None:
+                                if dep_role not in requested_contents:
+                                    display_callback('- adding dependency: %s' % str(dep_role))
+                                    requested_contents.append(dep_role)
+                                else:
+                                    display_callback('- dependency %s already pending installation.' % dep_role.name)
                             else:
-                                display_callback('- dependency %s already pending installation.' % dep_role.name)
-                        else:
-                            if dep_role.install_info['version'] != dep_role.version:
-                                log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
-                                            str(dep_role), content.name, dep_role.install_info['version'])
-                            else:
-                                display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
+                                if dep_role.install_info['version'] != dep_role.version:
+                                    log.warning('- dependency %s from role %s differs from already installed version (%s), skipping',
+                                                str(dep_role), installed_content.name, dep_role.install_info['version'])
+                                else:
+                                    display_callback('- dependency %s is already installed, skipping.' % dep_role.name)
 
     return 0
 
