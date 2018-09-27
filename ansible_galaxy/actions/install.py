@@ -181,15 +181,8 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
 
     # FIXME: should be while? or some more func style processing
     #        iterating until there is nothing left
-    while True:
-        if not requested_contents:
-            break
-
-        try:
-            content = requested_contents.pop()
-        except IndexError:
-            break
-
+    for content in requested_contents:
+        log.debug('content: %s', content)
         new_dep_requirement_content_specs = install_content(galaxy_context,
                                                             content,
                                                             install_content_type,
@@ -201,7 +194,7 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
         log.debug('new_dep_requirement_content_specs: %s', pprint.pformat(new_dep_requirement_content_specs))
         log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
 
-        dep_requirement_content_specs = new_dep_requirement_content_specs
+        dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
 
         log.debug('dep_requirement_content_specs2: %s', pprint.pformat(dep_requirement_content_specs))
         # dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
