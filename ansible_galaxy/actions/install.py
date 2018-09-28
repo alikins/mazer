@@ -101,14 +101,9 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
     #        we can simplify this filter with set ops
 
     already_installed_content_spec_set = set([installed.content_spec for installed in already_installed_generator])
-
     log.debug('already_installed_content_spec_set: %s', already_installed_content_spec_set)
 
-    for z in requested_contents:
-        log.debug('z.content_spec: %s', z.content_spec)
-
     needs_installed = [y for y in requested_contents if y.content_spec not in already_installed_content_spec_set]
-
     log.debug('needs_installed: %s', pprint.pformat(needs_installed))
 
     requested_contents = needs_installed
@@ -298,6 +293,9 @@ def install_content(galaxy_context, content, install_content_type,
 
     # oh dear god, a dep solver...
 
+    #
+    if no_deps:
+        return dep_requirement_content_specs
     # FIXME: should install all of init 'deps', then build a list of new deps, and repeat
 
     # install dependencies, if we want them
@@ -306,28 +304,34 @@ def install_content(galaxy_context, content, install_content_type,
     #         easier to have that introspection there. In the future this should be more
     #         unified and have a clean API
     for installed_content in installed:
+        log.debug('installed_content: %s %s', installed_content, installed_content.content_type)
+
         # TODO: generalize to collections/repos
-        if installed_content.content_type == "role":
-            if not no_deps and installed:
-                if not installed_content.metadata:
-                    log.warning("Meta file %s is empty. Skipping dependencies.", installed_content.path)
-                else:
-                    role_dependencies = installed_content.metadata.dependencies
-                    log.debug('role_dependencies: %s', pprint.pformat(role_dependencies))
+        # if installed_content.content_type == "role":
+        if not installed_content.metadata:
+            log.warning("Meta file %s is empty. Skipping dependencies.", installed_content.path)
+            continue
 
-                    for dep in role_dependencies:
-                        log.debug('Installing dep %s', dep)
+        # TODO: InstalledContent -> InstalledCollection
+        #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
+        #       InstalledCollection.requirements for install time requirements
+        #        so collections and trad roles have same interface
+        collection_dependencies = installed_content.metadata.dependencies
+        log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
 
-                        dep_info = yaml_parse.yaml_parse(dep)
-                        log.debug('dep_info: %s', pprint.pformat(dep_info))
+        for dep in collection_dependencies:
+            log.debug('Installing dep %s', dep)
 
-                        if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
-                            log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
-                            # we know we can skip this, as it's not going to
-                            # be found on galaxy.ansible.com
-                            continue
+            dep_info = yaml_parse.yaml_parse(dep)
+            log.debug('dep_info: %s', pprint.pformat(dep_info))
 
-                        dep_requirement_content_specs.append(dep)
+            if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
+                log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
+                # we know we can skip this, as it's not going to
+                # be found on galaxy.ansible.com
+                continue
+
+            dep_requirement_content_specs.append(dep)
 
     log.debug('dep_requirement_content_specs: %s', pprint.pformat(dep_requirement_content_specs))
     return dep_requirement_content_specs
