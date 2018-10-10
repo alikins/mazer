@@ -4,7 +4,7 @@ import logging
 from ansible_galaxy import display
 from ansible_galaxy import matchers
 from ansible_galaxy.models.content_spec import ContentSpec
-from ansible_galaxy import installed_repository_db
+from ansible_galaxy import installed_collection_db
 from ansible_galaxy.utils.content_name import parse_content_name
 from ansible_galaxy.utils.text import to_text
 
@@ -139,7 +139,7 @@ def info_content_specs(galaxy_context,
     offline = offline or False
 
     # icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    icdb = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
 
     labels_to_match = []
 

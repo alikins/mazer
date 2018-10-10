@@ -2,7 +2,7 @@ import glob
 import logging
 import os
 
-from ansible_galaxy import installed_repository_db
+from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
 from ansible_galaxy.flat_rest_api.content import InstalledContent
 
@@ -35,10 +35,10 @@ def installed_content_iterator(galaxy_context,
 
     content_type = content_type or 'roles'
 
-    installed_repo_db = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    installed_coll_db = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
 
     # for namespace_full_path in namespace_paths_iterator:
-    for installed_repository in installed_repo_db.select(namespace_match_filter=namespace_match_filter,
+    for installed_repository in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
                                                          repository_match_filter=repository_match_filter):
         log.debug('Found repo "%s" at %s', installed_repository.content_spec.label, installed_repository.path)
         installed_repository_full_path = installed_repository.path
