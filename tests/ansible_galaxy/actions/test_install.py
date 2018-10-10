@@ -25,10 +25,10 @@ def _galaxy_context():
 def test_install_contents_empty_contents(galaxy_context):
     contents = []
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='role',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      install_content_type='role',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     assert ret == 0
@@ -40,10 +40,10 @@ def test_install_contents(galaxy_context):
                           install_info=None,
                           metadata={'content_type': 'role'})]
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='role',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      install_content_type='role',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     assert ret == 0
@@ -55,10 +55,10 @@ def test_install_contents_module(galaxy_context):
                           install_info=None,
                           metadata={'content_type': 'module'})]
 
-    ret = install.install_contents(galaxy_context,
-                                   requested_contents=contents,
-                                   install_content_type='module',
-                                   display_callback=display_callback)
+    ret = install.install_collections(galaxy_context,
+                                      requested_contents=contents,
+                                      install_content_type='module',
+                                      display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     # assert ret == 0
