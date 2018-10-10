@@ -309,14 +309,16 @@ def install_content(galaxy_context, content, install_content_type,
         # TODO: generalize to collections/repos
         # if installed_content.content_type == "role":
         if not installed_content.metadata:
-            log.warning("Meta file %s is empty. Skipping dependencies.", installed_content.path)
-            continue
+            log.warning("Meta file %s is empty. Skipping meta main dependencies.", installed_content.path)
+            # continue
 
         # TODO: InstalledContent -> InstalledCollection
         #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
         #       InstalledCollection.requirements for install time requirements
         #        so collections and trad roles have same interface
-        collection_dependencies = installed_content.metadata.dependencies
+        collection_dependencies = []
+        if installed_content.metadata:
+            collection_dependencies = installed_content.metadata.dependencies or []
         log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
 
         for dep in collection_dependencies:

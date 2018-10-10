@@ -163,7 +163,7 @@ class GalaxyContent(object):
         #  (ie, via asking the galaxy api)
         self._find_results = None
 
-    def __repr__(self):
+    def __not_repr__(self):
         """
         Returns "content_name (version) content_type" if version is not null
         Returns "content_name content_type" otherwise
@@ -631,6 +631,7 @@ class InstalledContent(GalaxyContent):
         """
         Returns role metadata for type role, errors otherwise
         """
+        log.debug('metadata prop')
         if self.content_meta.content_type not in ('role', 'all'):
             log.debug('content_type not role %s', self.content_meta.content_type)
             return {}
