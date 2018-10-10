@@ -5,23 +5,23 @@ import yaml
 
 log = logging.getLogger(__name__)
 
-# aka, persistence of ansible_galaxy.models.content_repository
+# aka, persistence of ansible_galaxy.models.collection
 
 
 def load(data_or_file_object):
-    content_repository = yaml.safe_load(data_or_file_object)
-    return content_repository
+    collection = yaml.safe_load(data_or_file_object)
+    return collection
 
 
-def remove(installed_repository):
-    log.info("Removing installed repository: %s", installed_repository)
+def remove(installed_collection):
+    log.info("Removing installed collection: %s", installed_collection)
     try:
-        shutil.rmtree(installed_repository.path)
+        shutil.rmtree(installed_collection.path)
         return True
     except EnvironmentError as e:
         log.warn('Unable to rm the directory "%s" while removing installed repo "%s": %s',
-                 installed_repository.path,
-                 installed_repository.label,
+                 installed_collection.path,
+                 installed_collection.label,
                  e)
         log.exception(e)
         raise
