@@ -109,11 +109,11 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
     requested_contents = needs_installed
     log.debug('requested_contents after: %s', requested_contents)
 
-    return install_contents(galaxy_context, requested_contents, install_content_type,
-                            display_callback=display_callback,
-                            ignore_errors=ignore_errors,
-                            no_deps=no_deps,
-                            force_overwrite=force_overwrite)
+    return install_collections(galaxy_context, requested_contents, install_content_type,
+                               display_callback=display_callback,
+                               ignore_errors=ignore_errors,
+                               no_deps=no_deps,
+                               force_overwrite=force_overwrite)
 
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
@@ -154,12 +154,12 @@ def install_content_specs_loop(galaxy_context, content_spec_strings, install_con
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_contents(galaxy_context, requested_contents, install_content_type,
-                     display_callback=None,
-                     # TODO: error handling callback ?
-                     ignore_errors=False,
-                     no_deps=False,
-                     force_overwrite=False):
+def install_collections(galaxy_context, requested_contents, install_content_type,
+                        display_callback=None,
+                        # TODO: error handling callback ?
+                        ignore_errors=False,
+                        no_deps=False,
+                        force_overwrite=False):
 
     display_callback = display_callback or display.display_callback
     log.debug('requested_contents: %s', requested_contents)
@@ -178,13 +178,13 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
     #        iterating until there is nothing left
     for content in requested_contents:
         log.debug('content: %s', content)
-        new_dep_requirement_content_specs = install_content(galaxy_context,
-                                                            content,
-                                                            install_content_type,
-                                                            display_callback=display_callback,
-                                                            ignore_errors=ignore_errors,
-                                                            no_deps=no_deps,
-                                                            force_overwrite=force_overwrite)
+        new_dep_requirement_content_specs = install_collection(galaxy_context,
+                                                               content,
+                                                               install_content_type,
+                                                               display_callback=display_callback,
+                                                               ignore_errors=ignore_errors,
+                                                               no_deps=no_deps,
+                                                               force_overwrite=force_overwrite)
 
         log.debug('new_dep_requirement_content_specs: %s', pprint.pformat(new_dep_requirement_content_specs))
         log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
@@ -198,12 +198,12 @@ def install_contents(galaxy_context, requested_contents, install_content_type,
     return dep_requirement_content_specs
 
 
-def install_content(galaxy_context, content, install_content_type,
-                    display_callback=None,
-                    # TODO: error handling callback ?
-                    ignore_errors=False,
-                    no_deps=False,
-                    force_overwrite=False):
+def install_collection(galaxy_context, content, install_content_type,
+                       display_callback=None,
+                       # TODO: error handling callback ?
+                       ignore_errors=False,
+                       no_deps=False,
+                       force_overwrite=False):
 
     dep_requirement_content_specs = []
 
@@ -213,7 +213,7 @@ def install_content(galaxy_context, content, install_content_type,
 
     if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
         install_editable_content(content)
-        log.debug('not installing/extractings because of install_content')
+        log.debug('not installing/extractings because of install_collection')
         return
 
     log.debug('About to find() requested content: %s', content)
