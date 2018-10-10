@@ -139,7 +139,7 @@ def info_content_specs(galaxy_context,
     offline = offline or False
 
     # icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
-    icdb = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
+    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
 
     labels_to_match = []
 
@@ -167,7 +167,7 @@ def info_content_specs(galaxy_context,
     # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
     matcher = matchers.MatchContentSpec([label_and_spec[1] for label_and_spec in labels_to_match])
 
-    matched_repos = irdb.select(repository_match_filter=matcher)
+    matched_repos = icdb.select(repository_match_filter=matcher)
 
     # matched_contents = icdb.select(repository_match_filter=matcher)
     # log.debug('matched_contents: %s', list(matched_contents))

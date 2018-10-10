@@ -71,7 +71,7 @@ def installed_repository_iterator(galaxy_context,
                 yield content_repository
 
 
-class InstalledRepositoryDatabase(object):
+class InstalledCollectionDatabase(object):
 
     def __init__(self, installed_context=None):
         self.installed_context = installed_context

@@ -35,7 +35,7 @@ def installed_content_iterator(galaxy_context,
 
     content_type = content_type or 'roles'
 
-    installed_coll_db = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
+    installed_coll_db = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
 
     # for namespace_full_path in namespace_paths_iterator:
     for installed_repository in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
