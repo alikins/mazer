@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def CR(namespace=None, name=None):
-    # ns = repository_namespace.RepositoryNamespace(namespace=namespace)
+    # ns = collection_namespace.CollectionNamespace(namespace=namespace)
     cs = ContentSpec(namespace=namespace,
                      name=name)
     return Collection(content_spec=cs)
