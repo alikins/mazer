@@ -34,11 +34,9 @@ import attr
 from ansible_galaxy import exceptions
 from ansible_galaxy import archive
 from ansible_galaxy import content_archive
-from ansible_galaxy import install
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import display
-from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import CONTENT_TYPES
 from ansible_galaxy.models.content import CONTENT_TYPE_DIR_MAP
 from ansible_galaxy.models import content
@@ -426,30 +424,6 @@ class GalaxyContent(object):
         install_info.save(content_install_info, info_path)
 
         return installed
-
-    def find(self):
-        """find/discover info about the content
-
-        This is all side effect, setting self._find_results."""
-
-        log.debug('Attempting to find() content_spec=%s', self.content_spec)
-
-        find_results = install.find(self.galaxy,
-                                    content_spec=self.content_spec)
-
-        log.debug('extracted install.find results: %s', find_results)
-
-        # FIXME: remove entire method
-        self._find_results = find_results
-        return
-
-        self._fetcher = fetch_factory.get(galaxy_context=self.galaxy,
-                                          content_spec=self.content_spec)
-
-        # TODO: sep method, called from actions.install
-        self._find_results = self._fetcher.find()
-
-        log.debug('find() found info for %s', self.content_spec)
 
     def fetch(self):
         """download the archive and side effect set self._archive_path to where it was downloaded to.
