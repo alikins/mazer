@@ -9,10 +9,6 @@ from ansible_galaxy.models.content_spec import ContentSpec
 log = logging.getLogger(__name__)
 
 
-def repository_match_all(collection):
-    return True
-
-
 def get_repository_paths(namespace_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
