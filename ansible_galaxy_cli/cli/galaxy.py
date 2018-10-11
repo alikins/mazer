@@ -88,7 +88,7 @@ class GalaxyCLI(cli.CLI):
         if self.action == "build":
             self.parser.set_usage("usage: %prog build [options]")
             self.parser.add_option('--collection-path', dest='collection_path', default=None,
-                                   help='The path in which the collection repository is located. The default is the current working directory.')
+                                   help='The path in which the collection is located. The default is the current working directory.')
             self.parser.add_option('--output-path', dest='output_path', default=None,
                                    help='The path in which the collection artifact will be created. The default is ./releases/.')
 
