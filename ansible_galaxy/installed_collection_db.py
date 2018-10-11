@@ -34,10 +34,10 @@ def get_repository_paths(namespace_path):
 
 def installed_repository_iterator(galaxy_context,
                                   namespace_match_filter=None,
-                                  repository_match_filter=None):
+                                  collection_match_filter=None):
 
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
-    repository_match_filter = repository_match_filter or matchers.MatchAll()
+    collection_match_filter = collection_match_filter or matchers.MatchAll()
 
     content_path = galaxy_context.content_path
 
@@ -65,8 +65,8 @@ def installed_repository_iterator(galaxy_context,
                                     path=repository_full_path)
 
             # log.debug('content_repo: %s', collection)
-            # log.debug('match: %s(%s) %s', repository_match_filter, collection, repository_match_filter(collection))
-            if repository_match_filter(collection):
+            # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
+            if collection_match_filter(collection):
                 log.debug('Found collection "%s" in namespace "%s"', repository_path, namespace.namespace)
                 yield collection
 
@@ -76,14 +76,14 @@ class InstalledCollectionDatabase(object):
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
-    def select(self, namespace_match_filter=None, repository_match_filter=None):
+    def select(self, namespace_match_filter=None, collection_match_filter=None):
         # ie, default to select * more or less
-        repository_match_filter = repository_match_filter or matchers.MatchAll()
+        collection_match_filter = collection_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
 
         installed_repositories = installed_repository_iterator(self.installed_context,
                                                                namespace_match_filter=namespace_match_filter,
-                                                               repository_match_filter=repository_match_filter)
+                                                               collection_match_filter=collection_match_filter)
 
         for matched_repository in installed_repositories:
             yield matched_repository

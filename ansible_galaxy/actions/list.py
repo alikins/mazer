@@ -8,16 +8,16 @@ log = logging.getLogger(__name__)
 
 
 def _list(galaxy_context,
-          repository_match_filter=None,
+          collection_match_filter=None,
           display_callback=None):
 
-    repository_match_filter = repository_match_filter or matchers.MatchAll()
+    collection_match_filter = collection_match_filter or matchers.MatchAll()
 
     # We search for installed repos to list, and then display all the content in those installed repos
     icdb = installed_content_db.InstalledContentDatabase(galaxy_context)
 
     repo_list = []
-    for content_info in icdb.select(repository_match_filter=repository_match_filter):
+    for content_info in icdb.select(collection_match_filter=collection_match_filter):
         content_dict = content_info.copy()
         repo = content_dict.pop('installed_repository')
 
@@ -37,12 +37,12 @@ def _list(galaxy_context,
 
 
 def list(galaxy_context,
-         repository_match_filter=None,
+         collection_match_filter=None,
          display_callback=None):
     '''Run _list action and return an exit code suitable for process exit'''
 
     _list(galaxy_context,
-          repository_match_filter=repository_match_filter,
+          collection_match_filter=collection_match_filter,
           display_callback=display_callback)
 
     return 0

@@ -288,7 +288,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchLabels(self.args)
 
         return remove.remove(galaxy_context,
-                             repository_match_filter=match_filter,
+                             collection_match_filter=match_filter,
                              display_callback=self.display)
 
     def execute_list(self):
@@ -304,7 +304,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
-                                repository_match_filter=match_filter,
+                                collection_match_filter=match_filter,
                                 display_callback=self.display)
 
     def execute_version(self):
