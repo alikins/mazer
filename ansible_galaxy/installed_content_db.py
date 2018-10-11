@@ -38,13 +38,13 @@ def installed_content_iterator(galaxy_context,
     installed_coll_db = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
 
     # for namespace_full_path in namespace_paths_iterator:
-    for installed_repository in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
+    for installed_collection in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
                                                          collection_match_filter=collection_match_filter):
-        log.debug('Found repo "%s" at %s', installed_repository.content_spec.label, installed_repository.path)
-        installed_repository_full_path = installed_repository.path
+        log.debug('Found collection "%s" at %s', installed_collection.content_spec.label, installed_collection.path)
+        installed_repository_full_path = installed_collection.path
 
-        if not collection_match_filter(installed_repository):
-            log.debug('The repo_match_filter %s failed to match for %s', collection_match_filter, installed_repository)
+        if not collection_match_filter(installed_collection):
+            log.debug('The collection_match_filter %s failed to match for %s', collection_match_filter, installed_collection)
             continue
 
         # since we will need a different iterator for each specific type of content, consult
@@ -60,7 +60,7 @@ def installed_content_iterator(galaxy_context,
         log.debug('Looking for %s in repo at %s', content_type, installed_repository_full_path)
         for installed_content_full_path in installed_repository_content_iterator:
 
-            repo_namespace = installed_repository.content_spec.namespace
+            repo_namespace = installed_collection.content_spec.namespace
             path_file = os.path.basename(installed_content_full_path)
 
             gr = InstalledContent(galaxy_context, path_file, namespace=repo_namespace, path=installed_content_full_path)
@@ -80,10 +80,10 @@ def installed_content_iterator(galaxy_context,
                 log.debug('%s was not matched by content_match_filter: %s', gr, content_match_filter)
                 continue
 
-            # this is sort of the 'join' of installed_repository and installed_content
+            # this is sort of the 'join' of installed_collection and installed_content
             content_info = {'path': path_file,
                             'content_data': gr,
-                            'installed_repository': installed_repository,
+                            'installed_collection': installed_collection,
                             'version': version,
                             }
 
@@ -95,7 +95,7 @@ class InstalledContentDatabase(object):
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
-    # select content based on matching the installed namespace.repository and/or the content itself
+    # select content based on matching the installed namespace.collection and/or the content itself
     def select(self, collection_match_filter=None, content_match_filter=None):
         # ie, default to select * more or less
         collection_match_filter = collection_match_filter or matchers.MatchAll()
