@@ -69,14 +69,14 @@ def _build_content_set(content_spec_strings, install_content_type, galaxy_contex
 
 
 # pass a list of content_spec objects
-def install_content_specs(galaxy_context, content_spec_strings, install_content_type,
-                          editable=False,
-                          namespace_override=None,
-                          display_callback=None,
-                          # TODO: error handling callback ?
-                          ignore_errors=False,
-                          no_deps=False,
-                          force_overwrite=False):
+def install_collections_matching_collection_specs(galaxy_context, content_spec_strings, install_content_type,
+                                                  editable=False,
+                                                  namespace_override=None,
+                                                  display_callback=None,
+                                                  # TODO: error handling callback ?
+                                                  ignore_errors=False,
+                                                  no_deps=False,
+                                                  force_overwrite=False):
     log.debug('editable: %s', editable)
     log.debug('content_spec_strings: %s', content_spec_strings)
     log.debug('install_content_type: %s', install_content_type)
@@ -118,36 +118,36 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_content_specs_loop(galaxy_context, content_spec_strings, install_content_type,
-                               editable=False,
-                               namespace_override=None,
-                               display_callback=None,
-                               # TODO: error handling callback ?
-                               ignore_errors=False,
-                               no_deps=False,
-                               force_overwrite=False):
+def install_collection_specs_loop(galaxy_context, collection_spec_strings, install_content_type,
+                                  editable=False,
+                                  namespace_override=None,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
 
-    requested_content_spec_strings = content_spec_strings
+    requested_collection_spec_strings = collection_spec_strings
 
     while True:
-        if not requested_content_spec_strings:
+        if not requested_collection_spec_strings:
             break
 
         new_requested_content_spec_strings = \
-            install_content_specs(galaxy_context,
-                                  requested_content_spec_strings,
-                                  install_content_type,
-                                  editable=editable,
-                                  namespace_override=namespace_override,
-                                  display_callback=display_callback,
-                                  ignore_errors=ignore_errors,
-                                  no_deps=no_deps,
-                                  force_overwrite=force_overwrite)
+            install_collections_matching_collection_specs(galaxy_context,
+                                                          requested_collection_spec_strings,
+                                                          install_content_type,
+                                                          editable=editable,
+                                                          namespace_override=namespace_override,
+                                                          display_callback=display_callback,
+                                                          ignore_errors=ignore_errors,
+                                                          no_deps=no_deps,
+                                                          force_overwrite=force_overwrite)
 
         log.debug('new_requested_content_spec_strings: %s', pprint.pformat(new_requested_content_spec_strings))
 
         # set the content_specs to search for to whatever the install reported as being needed yet
-        requested_content_spec_strings = new_requested_content_spec_strings
+        requested_collection_spec_strings = new_requested_content_spec_strings
 
     # FIXME: what results to return?
     return 0
