@@ -10,16 +10,16 @@ log = logging.getLogger(__name__)
 
 
 # need a content_type matcher?
-def installed_repository_role_iterator(repository_path):
+def installed_collection_role_iterator(collection_path):
 
-    repository_roles_dirs = glob.glob('%s/%s/*' % (repository_path, 'roles'))
-    for repository_roles_path in repository_roles_dirs:
+    collection_roles_dirs = glob.glob('%s/%s/*' % (collection_path, 'roles'))
+    for collection_roles_path in collection_roles_dirs:
         # full_content_paths.append(namespaced_roles_path)
-        # log.debug('rrp: %s', repository_roles_path)
-        yield repository_roles_path
+        # log.debug('rrp: %s', collection_roles_path)
+        yield collection_roles_path
 
 
-installed_repository_content_iterator_map = {'roles': installed_repository_role_iterator}
+installed_collection_content_iterator_map = {'roles': installed_collection_role_iterator}
 
 
 def installed_content_iterator(galaxy_context,
@@ -41,7 +41,7 @@ def installed_content_iterator(galaxy_context,
     for installed_collection in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
                                                          collection_match_filter=collection_match_filter):
         log.debug('Found collection "%s" at %s', installed_collection.content_spec.label, installed_collection.path)
-        installed_repository_full_path = installed_collection.path
+        installed_collection_full_path = installed_collection.path
 
         if not collection_match_filter(installed_collection):
             log.debug('The collection_match_filter %s failed to match for %s', collection_match_filter, installed_collection)
@@ -49,16 +49,16 @@ def installed_content_iterator(galaxy_context,
 
         # since we will need a different iterator for each specific type of content, consult
         # a map of content_type->iterator_method however there is only a 'roles' iterator for now
-        installed_repository_content_iterator_method = \
-            installed_repository_content_iterator_map.get(content_type)
+        installed_collection_content_iterator_method = \
+            installed_collection_content_iterator_map.get(content_type)
 
-        if installed_repository_content_iterator_method is None:
+        if installed_collection_content_iterator_method is None:
             continue
 
-        installed_repository_content_iterator = installed_repository_content_iterator_method(installed_repository_full_path)
+        installed_collection_content_iterator = installed_collection_content_iterator_method(installed_collection_full_path)
 
-        log.debug('Looking for %s in repo at %s', content_type, installed_repository_full_path)
-        for installed_content_full_path in installed_repository_content_iterator:
+        log.debug('Looking for %s in collection at %s', content_type, installed_collection_full_path)
+        for installed_content_full_path in installed_collection_content_iterator:
 
             repo_namespace = installed_collection.content_spec.namespace
             path_file = os.path.basename(installed_content_full_path)
