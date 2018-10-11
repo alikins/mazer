@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
 
-COLLECTION_TEMPLATE = """
+GALAXY_REPOSITORY_TEMPLATE = """
 label: {repo_label}
 namespace: {repo_namespace}
 name: {repo_name}
@@ -23,14 +23,11 @@ scm: {repo_clone_url}
 
 {repo_contents}"""
 
-# label: {repo_label}
-# description: {repo_description}
-# namespace_path: {repo.content_spec.namespace.path}
-INSTALLED_COLLECTION_TEMPLATE = """namespace: {repo.content_spec.namespace}
-name: {repo.content_spec.name}
-version: {repo.content_spec.version}
-path: {repo.path}
-scm: {repo.content_spec.scm}
+INSTALLED_COLLECTION_TEMPLATE = """namespace: {collection.content_spec.namespace}
+name: {collection.content_spec.name}
+version: {collection.content_spec.version}
+path: {collection.path}
+scm: {collection.content_spec.scm}
 """
 
 
@@ -82,11 +79,11 @@ def _repr_remote_repo(remote_data):
 
     remote_data['repo_contents'] = '\n'.join(content_info_parts)
 
-    return COLLECTION_TEMPLATE.format(**remote_data)
+    return GALAXY_REPOSITORY_TEMPLATE.format(**remote_data)
 
 
 def _repr_installed_collection(installed_collection):
-    return INSTALLED_COLLECTION_TEMPLATE.format(repo=installed_collection)
+    return INSTALLED_COLLECTION_TEMPLATE.format(collection=installed_collection)
 
 
 def _repr_installed_content(installed_content):
@@ -151,6 +148,8 @@ def info_content_specs(galaxy_context,
 
         collection_name = collection_name or content_name
 
+        # Note: What this client calls 'collection' galaxy server api calls a repository
+        #       so 'collection_name' could also be considered a 'repo_name'
         if online:
             # remote_data = api.lookup_content_by_name(galaxy_namespace, collection_name, content_name)
             remote_data = api.lookup_repo_by_name(galaxy_namespace, collection_name)
@@ -183,7 +182,7 @@ def info_content_specs(galaxy_context,
     unmatched_labels = set(all_labels_to_match).difference(set(matched_labels))
 
     if unmatched_labels:
-        display_callback('These repos were not found:')
+        display_callback('These collections were not found:')
 
         for unmatched_label in sorted(unmatched_labels):
             display_callback(_repr_unmatched_label(unmatched_label))
