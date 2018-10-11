@@ -210,6 +210,7 @@ def install_collection(galaxy_context, content,
                        no_deps=False,
                        force_overwrite=False):
 
+    # INITIAL state
     dep_requirement_content_specs = []
 
     # TODO: we could do all the downloads first, then install them. Likely
@@ -217,14 +218,23 @@ def install_collection(galaxy_context, content,
     log.debug('Processing %s as %s', content.name, content.content_type)
 
     if content.content_spec.fetch_method == content_spec.FetchMethods.EDITABLE:
+        # trans to INSTALL_EDITABLE state
         install_editable_content(content)
+        # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
         log.debug('not installing/extractings because of install_collection')
         return
+    # else trans to ... FIND_FETCHER?
 
     log.debug('About to find() requested content: %s', content)
 
     fetcher = install.fetcher(galaxy_context, content_spec=content.content_spec)
+    # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
+    # could also move some of the logic in fetcher_factory to be driven from here
+    # and make the steps of mapping collection spec -> fetcher method part of the
+    # state machine. That might be a good place to support multiple galaxy servers
+    # or preferring local content to remote content, etc.
 
+    # FIND state
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
@@ -238,11 +248,23 @@ def install_collection(galaxy_context, content,
         # continue
         return None
 
+    # TODO: state transition, if find_results -> INSTALL
+    #       if not, then FIND_FAILED
+
     log.debug('About to download requested content: %s', content)
 
+    # FETCH state
     try:
-        content.fetch()
+        fetch_results = install.fetch(fetcher,
+                                      content_spec=content.content_spec,
+                                      find_results=find_results)
+        # content.fetch()
+        log.debug('fetch_results: %s', fetch_results)
+        # fetch_results will include a 'archive_path' pointing to where the artifact
+        # was saved to locally.
     except exceptions.GalaxyError as e:
+        # fetch error probably should just go to a FAILED state, at least until
+        # we have to implement retries
         log.warning('Unable to fetch %s: %s', content.name, e)
         raise_without_ignore(ignore_errors, e)
         # continue
