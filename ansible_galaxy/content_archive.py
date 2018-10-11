@@ -1,7 +1,11 @@
+import datetime
 import logging
 import os
 import tarfile
 
+import attr
+
+from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy.models import content
 from ansible_galaxy.models import content_archive
@@ -12,6 +16,74 @@ log = logging.getLogger(__name__)
 META_MAIN = os.path.join('meta', 'main.yml')
 GALAXY_FILE = 'ansible-galaxy.yml'
 APB_YAML = 'apb.yml'
+
+
+@attr.s()
+class ContentArchive(object):
+    info = attr.ib(type=content_archive.ContentArchiveMeta)
+    tarfile = attr.ib(type=tarfile.TarFile, default=None)
+    install_datetime = attr.ib(type=datetime.datetime.DateTime,
+                               default=None)
+
+    def extract(self):
+        '''do the file extraction bits'''
+        pass
+
+    def install_info(self):
+        pass
+
+
+@attr.s()
+class CollectionContentArchive(ContentArchive):
+    def extract(self, content_namespace, content_name, display_callback,
+                extract_to_path, force_overwrite=False):
+        display_callback('- extracting all content from "%s" to %s' % (content_name, self.path))
+        all_installed_paths = []
+        files_to_extract = []
+        tar_members = self.tarfile.getmembers()
+        parent_dir = tar_members[0].name
+
+        for member in tar_members:
+            rel_path = member.name[len(parent_dir) + 1:]
+            namespaced_role_rel_path = os.path.join(content_namespace, content_name, rel_path)
+            files_to_extract.append({
+                'archive_member': member,
+                'dest_dir': extract_to_path,
+                'dest_filename': namespaced_role_rel_path,
+                'force_overwrite': force_overwrite})
+
+        file_extractor = archive.extract_files(self.tarfile, files_to_extract)
+
+        install_datetime = datetime.datetime.utcnow()
+
+        installed_paths = [x for x in file_extractor]
+        all_installed_paths.extend(installed_paths)
+
+        # TODO: InstallResults object? installedPaths, InstallInfo, etc?
+        return all_installed_paths, install_datetime
+
+    def install_info(self, content_namespace, content_name, install_datetime, extract_to_path):
+        namespaced_content_path = '%s/%s' % (content_namespace,
+                                             content_name)
+
+        info_path = os.path.join(extract_to_path,
+                                 namespaced_content_path,
+                                 self.META_INSTALL)
+
+        content_install_info = InstallInfo.from_version_date(version=content_meta.version,
+                                                             install_datetime=install_datetime)
+
+        install_info.save(content_install_info, info_path)
+
+    def install(self, content_namespace, content_name, extract_to_path, force_overwrite=False):
+        all_installed_files, install_datetime = \
+            self.extract(content_namespace, content_name,
+                         extract_to_path, force_overwrite=force_overwrite)
+
+        install_info = self.install_info(content_namespace, content_name,
+                                         install_datetime=install_datetime,
+                                         extract_to_path=extract_to_path)
+        return install_info
 
 
 def detect_content_archive_type(archive_path, archive_members):
@@ -63,23 +135,12 @@ def load_archive(archive_path):
     archive_parent_dir = members[0].name
 
     archive_type = detect_content_archive_type(archive_path, members)
-    log.debug('archive_type: %s', archive_type)
-
-    # log.debug('self.content_type: %s', self.content_type)
-    # if not archive_parent_dir:
-    #    archive_parent_dir = archive.find_archive_parent_dir(members,
-    #                                                         content_type=content_meta.content_type,
-    #                                                         content_dir=content_meta.content_dir)
 
     log.debug('archive_type: %s', archive_type)
     log.debug("archive_parent_dir: %s", archive_parent_dir)
 
     # looks like we are a role, update the default content_type from all -> role
     if archive_type == 'role':
-        # Look for top level role metadata
-        # archive_role_metadata = \
-        #    archive.load_archive_role_metadata(content_tar_file,
-        #                                       os.path.join(archive_parent_dir, archive.META_MAIN))
         log.debug('Found role metadata in the archive, so installing it as role content_type')
 
     archive_meta = content_archive.ContentArchiveMeta(top_dir=archive_parent_dir,
@@ -88,4 +149,9 @@ def load_archive(archive_path):
 
     log.debug('role archive_meta: %s', archive_meta)
 
-    return content_tar_file, archive_meta
+    content_archive_ = ContentArchive(info=archive_meta,
+                                      tarfile=tarfile)
+    log.debug('content archive_: %s', content_archive_)
+
+    return content_archive_
+    # return content_tar_file, archive_meta

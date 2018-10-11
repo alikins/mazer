@@ -299,6 +299,12 @@ def install_collection(galaxy_context, content,
                     # continue
                     return None
 
+
+    # FIXME: exc handling
+    installed = install.install(fetcher, fetch_results,
+                                content.content_meta, force_overwrite=force_overwrite)
+
+
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
     #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
@@ -324,6 +330,7 @@ def install_collection(galaxy_context, content,
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
                     content.name)
 
+    # TODO?: update the install receipt for 'installed' if succesull?
     # oh dear god, a dep solver...
 
     #
