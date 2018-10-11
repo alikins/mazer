@@ -9,7 +9,7 @@ from ansible_galaxy.models.content_spec import ContentSpec
 log = logging.getLogger(__name__)
 
 
-def get_repository_paths(namespace_path):
+def get_collection_paths(namespace_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
@@ -18,14 +18,14 @@ def get_repository_paths(namespace_path):
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
         #
-        repository_paths = os.listdir(namespace_path)
+        collection_paths = os.listdir(namespace_path)
     except OSError as e:
         log.exception(e)
-        log.warn('The namespace path %s did not exist so no content or repositories were found.',
+        log.warn('The namespace path %s did not exist so no content or collections were found.',
                  namespace_path)
-        repository_paths = []
+        collection_paths = []
 
-    return repository_paths
+    return collection_paths
 
 
 def installed_collection_iterator(galaxy_context,
@@ -39,31 +39,29 @@ def installed_collection_iterator(galaxy_context,
 
     installed_namespace_db = installed_namespaces_db.InstalledNamespaceDatabase(galaxy_context)
 
-    # repository_paths = get_repository_paths(content_path)
-
-    # log.debug('repository_paths for content_path=%s: %s', content_path, repository_paths)
+    # log.debug('collection_paths for content_path=%s: %s', content_path, collection_paths)
 
     for namespace in installed_namespace_db.select(namespace_match_filter=namespace_match_filter):
         # log.debug('namespace: %s', namespace)
         log.debug('Looking for repos in namespace "%s"', namespace.namespace)
 
-        repository_paths = get_repository_paths(namespace.path)
+        collection_paths = get_collection_paths(namespace.path)
 
-        for repository_path in repository_paths:
+        for collection_path in collection_paths:
             # use the default 'local' style content_spec_parse and name resolver
-            # spec_data = content_spec_parse.spec_data_from_string(repository_path)
+            # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
-            repository_full_path = os.path.join(content_path, namespace.namespace, repository_path)
-            # log.debug('repo_fll_path: %s', repository_full_path)
+            collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
+            # log.debug('repo_fll_path: %s', collection_full_path)
             content_spec = ContentSpec(namespace=namespace.namespace,
-                                       name=repository_path)
+                                       name=collection_path)
             collection = Collection(content_spec=content_spec,
-                                    path=repository_full_path)
+                                    path=collection_full_path)
 
             # log.debug('content_repo: %s', collection)
             # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
             if collection_match_filter(collection):
-                log.debug('Found collection "%s" in namespace "%s"', repository_path, namespace.namespace)
+                log.debug('Found collection "%s" in namespace "%s"', collection_path, namespace.namespace)
                 yield collection
 
 
