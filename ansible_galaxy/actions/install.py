@@ -5,6 +5,7 @@ import pprint
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import content_spec
+from ansible_galaxy import install
 from ansible_galaxy import installed_collection_db
 from ansible_galaxy import matchers
 from ansible_galaxy.utils import yaml_parse
@@ -222,10 +223,14 @@ def install_collection(galaxy_context, content,
 
     log.debug('About to find() requested content: %s', content)
 
+    fetcher = install.fetcher(galaxy_context, content_spec=content.content_spec)
+
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        content.find()
+        find_results = install.find(fetcher, collection=content)
+        log.debug('standalone find_results: %s', find_results)
+        # content.find()
     except exceptions.GalaxyError as e:
         log.warning('Unable to find metadata for %s: %s', content.name, e)
         # FIXME: raise dep error exception?
