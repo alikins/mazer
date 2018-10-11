@@ -167,9 +167,9 @@ def info_content_specs(galaxy_context,
     # matcher = matchers.MatchNamespacesOrLabels([label_and_spec[0] for label_and_spec in labels_to_match])
     matcher = matchers.MatchContentSpec([label_and_spec[1] for label_and_spec in labels_to_match])
 
-    matched_repos = icdb.select(repository_match_filter=matcher)
+    matched_repos = icdb.select(collection_match_filter=matcher)
 
-    # matched_contents = icdb.select(repository_match_filter=matcher)
+    # matched_contents = icdb.select(collection_match_filter=matcher)
     # log.debug('matched_contents: %s', list(matched_contents))
 
     # content_path = os.path.join(content_path, '%s.%s' % (galaxy_namespace, repo_name))

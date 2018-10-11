@@ -24,13 +24,13 @@ installed_repository_content_iterator_map = {'roles': installed_repository_role_
 
 def installed_content_iterator(galaxy_context,
                                namespace_match_filter=None,
-                               repository_match_filter=None,
+                               collection_match_filter=None,
                                content_match_filter=None,
                                content_type=None):
 
     # match_all works for all types
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
-    repository_match_filter = repository_match_filter or matchers.MatchAll()
+    collection_match_filter = collection_match_filter or matchers.MatchAll()
     content_match_filter = content_match_filter or matchers.MatchAll()
 
     content_type = content_type or 'roles'
@@ -39,12 +39,12 @@ def installed_content_iterator(galaxy_context,
 
     # for namespace_full_path in namespace_paths_iterator:
     for installed_repository in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
-                                                         repository_match_filter=repository_match_filter):
+                                                         collection_match_filter=collection_match_filter):
         log.debug('Found repo "%s" at %s', installed_repository.content_spec.label, installed_repository.path)
         installed_repository_full_path = installed_repository.path
 
-        if not repository_match_filter(installed_repository):
-            log.debug('The repo_match_filter %s failed to match for %s', repository_match_filter, installed_repository)
+        if not collection_match_filter(installed_repository):
+            log.debug('The repo_match_filter %s failed to match for %s', collection_match_filter, installed_repository)
             continue
 
         # since we will need a different iterator for each specific type of content, consult
@@ -96,14 +96,14 @@ class InstalledContentDatabase(object):
         self.installed_context = installed_context
 
     # select content based on matching the installed namespace.repository and/or the content itself
-    def select(self, repository_match_filter=None, content_match_filter=None):
+    def select(self, collection_match_filter=None, content_match_filter=None):
         # ie, default to select * more or less
-        repository_match_filter = repository_match_filter or matchers.MatchAll()
+        collection_match_filter = collection_match_filter or matchers.MatchAll()
         content_match_filter = content_match_filter or matchers.MatchAll()
 
         roles_content_iterator = installed_content_iterator(self.installed_context,
                                                             content_type='roles',
-                                                            repository_match_filter=repository_match_filter,
+                                                            collection_match_filter=collection_match_filter,
                                                             content_match_filter=content_match_filter)
 
         for matched_content in roles_content_iterator:

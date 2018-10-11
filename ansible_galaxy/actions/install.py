@@ -90,10 +90,10 @@ def install_content_specs(galaxy_context, content_spec_strings, install_content_
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    repository_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
+    collection_match_filter = matchers.MatchContentSpec([x.content_spec for x in requested_contents])
 
     icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
-    already_installed_generator = icdb.select(repository_match_filter=repository_match_filter)
+    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('requested_contents before: %s', requested_contents)
 

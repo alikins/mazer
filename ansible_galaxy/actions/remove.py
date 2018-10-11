@@ -29,14 +29,14 @@ def remove_repository(installed_repository,
 
 
 def remove(galaxy_context,
-           repository_match_filter=None,
+           collection_match_filter=None,
            display_callback=None):
 
-    repository_match_filter = repository_match_filter or matchers.MatchNone()
+    collection_match_filter = collection_match_filter or matchers.MatchNone()
 
     icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
 
-    for matched_repository in icdb.select(repository_match_filter=repository_match_filter):
+    for matched_repository in icdb.select(collection_match_filter=collection_match_filter):
         log.debug('removing %s', matched_repository)
         # content_info['content_data'].remove()
         remove_repository(matched_repository,
