@@ -32,7 +32,7 @@ def get_repository_paths(namespace_path):
     return repository_paths
 
 
-def installed_repository_iterator(galaxy_context,
+def installed_collection_iterator(galaxy_context,
                                   namespace_match_filter=None,
                                   collection_match_filter=None):
 
@@ -81,9 +81,9 @@ class InstalledCollectionDatabase(object):
         collection_match_filter = collection_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
 
-        installed_repositories = installed_repository_iterator(self.installed_context,
-                                                               namespace_match_filter=namespace_match_filter,
-                                                               collection_match_filter=collection_match_filter)
+        installed_collections = installed_collection_iterator(self.installed_context,
+                                                              namespace_match_filter=namespace_match_filter,
+                                                              collection_match_filter=collection_match_filter)
 
-        for matched_repository in installed_repositories:
-            yield matched_repository
+        for matched_collection in installed_collections:
+            yield matched_collection
