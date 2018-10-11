@@ -19,7 +19,7 @@ def _list(galaxy_context,
     repo_list = []
     for content_info in icdb.select(collection_match_filter=collection_match_filter):
         content_dict = content_info.copy()
-        repo = content_dict.pop('installed_repository')
+        collection = content_dict.pop('installed_collection')
 
         # revisit this output format once we get some feedback
         content_dict.update({'type': content_dict['content_data'].content_type,
@@ -28,9 +28,9 @@ def _list(galaxy_context,
                              # 'installed_repo_name': repo.name,
                              # 'installed_repo_path': repo.path,
                              # 'installed_repo_id': repo.content_spec.label,
-                             'installed_repo': repo,
+                             'installed_collection': collection,
                              })
-        display_callback("repo={installed_repo.content_spec.label}, type={type}, name={name}, version={version}".format(**content_dict))
+        display_callback("repo={installed_collection.content_spec.label}, type={type}, name={name}, version={version}".format(**content_dict))
         repo_list.append(content_dict)
 
     return repo_list

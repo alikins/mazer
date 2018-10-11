@@ -90,9 +90,9 @@ def _repr_installed_repo(installed_repo):
 
 
 def _repr_installed_content(installed_content):
-    installed_data = {'name': installed_content['installed_repository'].name,
+    installed_data = {'name': installed_content['installed_collection'].name,
                       'version': installed_content['version'],
-                      'path': installed_content['installed_repository'].path}
+                      'path': installed_content['installed_collection'].path}
     return INSTALLED_CONTENT_TEMPLATE.format(**installed_data)
 
 
