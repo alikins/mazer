@@ -20,6 +20,10 @@ GALAXY_FILE = 'ansible-galaxy.yml'
 APB_YAML = 'apb.yml'
 
 
+def null_display_callback(*args, **kwargs):
+    log.debug('display_callback: %s', args)
+
+
 @attr.s()
 class ContentArchive(object):
     info = attr.ib(type=ContentArchiveInfo)
@@ -27,16 +31,82 @@ class ContentArchive(object):
     install_datetime = attr.ib(type=datetime.datetime,
                                default=None)
 
+    display_callback = attr.ib(default=null_display_callback)
+    META_INSTALL = os.path.join('meta', '.galaxy_install_info')
+
     def extract(self):
         '''do the file extraction bits'''
         pass
 
-    def install_info(self):
-        pass
+    def install_info(self, content_namespace, content_name, content_version, install_datetime, extract_to_path):
+        namespaced_content_path = '%s/%s' % (content_namespace,
+                                             content_name)
+
+        info_path = os.path.join(extract_to_path,
+                                 namespaced_content_path,
+                                 self.META_INSTALL)
+
+        content_install_info = InstallInfo.from_version_date(version=content_version,
+                                                             install_datetime=install_datetime)
+
+        # TODO: this save will need to be moved to a step later. after validating install?
+        install_info.save(content_install_info, info_path)
+
+    def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
+        all_installed_files, install_datetime = \
+            self.extract(content_namespace, content_name,
+                         extract_to_path, force_overwrite=force_overwrite)
+
+        install_info = self.install_info(content_namespace, content_name, content_version,
+                                         install_datetime=install_datetime,
+                                         extract_to_path=extract_to_path)
+        return install_info
 
 
-def null_display_callback(*args, **kwargs):
-    pass
+@attr.s()
+class TraditionalRoleContentArchive(ContentArchive):
+
+    def extract(self, content_namespace, content_name, extract_to_path,
+                display_callback=None, force_overwrite=False):
+
+        label = "%s.%s" % (content_namespace, content_name)
+        # log.debug('content_meta: %s', content_meta)
+
+        log.info('About to extract "%s" to %s', label, extract_to_path)
+
+        tar_members = self.tar_file.members
+        parent_dir = tar_members[0].name
+
+        namespaced_content_path = '%s/%s/%s/%s' % (content_namespace,
+                                                   content_name,
+                                                   'roles',
+                                                   content_name)
+
+        log.debug('namespaced role path: %s', namespaced_content_path)
+
+        all_installed_paths = []
+        files_to_extract = []
+        for member in tar_members:
+            # rel_path ~  roles/some-role/meta/main.yml for ex
+            rel_path = member.name[len(parent_dir) + 1:]
+
+            namespaced_role_rel_path = os.path.join(content_namespace, content_name, 'roles',
+                                                    content_name, rel_path)
+            files_to_extract.append({
+                'archive_member': member,
+                'dest_dir': extract_to_path,
+                'dest_filename': namespaced_role_rel_path,
+                'force_overwrite': force_overwrite})
+
+        file_extractor = archive.extract_files(self.tar_file, files_to_extract)
+
+        installed_paths = [x for x in file_extractor]
+        install_datetime = datetime.datetime.utcnow()
+
+        all_installed_paths.extend(installed_paths)
+
+        # TODO: InstallResults object? installedPaths, InstallInfo, etc?
+        return all_installed_paths, install_datetime
 
 
 @attr.s()
@@ -71,29 +141,7 @@ class CollectionContentArchive(ContentArchive):
         # TODO: InstallResults object? installedPaths, InstallInfo, etc?
         return all_installed_paths, install_datetime
 
-    def install_info(self, content_namespace, content_name, content_version, install_datetime, extract_to_path):
-        namespaced_content_path = '%s/%s' % (content_namespace,
-                                             content_name)
 
-        info_path = os.path.join(extract_to_path,
-                                 namespaced_content_path,
-                                 self.META_INSTALL)
-
-        content_install_info = InstallInfo.from_version_date(version=content_version,
-                                                             install_datetime=install_datetime)
-
-        # TODO: this save will need to be moved to a step later. after validating install?
-        install_info.save(content_install_info, info_path)
-
-    def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
-        all_installed_files, install_datetime = \
-            self.extract(content_namespace, content_name,
-                         extract_to_path, force_overwrite=force_overwrite)
-
-        install_info = self.install_info(content_namespace, content_name, content_version,
-                                         install_datetime=install_datetime,
-                                         extract_to_path=extract_to_path)
-        return install_info
 
 
 def detect_content_archive_type(archive_path, archive_members):
@@ -163,6 +211,9 @@ def load_archive(archive_path):
     if archive_type in ['multi-content']:
         content_archive_ = CollectionContentArchive(info=archive_info,
                                                     tar_file=content_tar_file)
+    elif archive_type in ['role']:
+        content_archive_ = TraditionalRoleContentArchive(info=archive_info,
+                                                         tar_file=content_tar_file)
     else:
         content_archive_ = ContentArchive(info=archive_info,
                                           tar_file=content_tar_file)
