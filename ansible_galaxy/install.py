@@ -13,6 +13,9 @@ from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy import install_info
 from ansible_galaxy.models.install_info import InstallInfo
 
+# FIXME: remove
+from ansible_galaxy.flat_rest_api.content import InstalledContent
+
 log = logging.getLogger(__name__)
 
 # This should probably be a state machine for stepping through the install states
@@ -129,7 +132,8 @@ def verify(fetch_results,
     return content_meta
 
 
-def install(fetcher,
+def install(galaxy_context,
+            fetcher,
             fetch_results,
             content_meta,
             force_overwrite=False):
@@ -178,8 +182,10 @@ def install(fetcher,
 
         os.makedirs(content_meta.path)
 
+    # FIXME: guess might as well pass in content_meta
     res = content_archive_.install(content_namespace=content_meta.namespace,
                                    content_name=content_meta.name,
+                                   content_version=content_meta.version,
                                    # surely wrong...
                                    extract_to_path=content_meta.path,
                                    force_overwrite=force_overwrite)
@@ -199,10 +205,13 @@ def install(fetcher,
 
         # TODO: Replace with InstalledCollection ?
         # FIXME:
-        installed_content = InstalledContent(self.galaxy,
+        installed_content = InstalledContent(galaxy_context,
                                              name=installed_content_meta.name,
                                              namespace=installed_content_meta.namespace,
-                                             path=repo_install_path)
+                                             # TESTME:
+                                             path=content_meta.path,
+                                             # path=repo_install_path,
+                                             )
         installed_contents.append(installed_content)
         # log.debug('Installed files: %s', pprint.pformat(item[1]))
 

@@ -300,19 +300,19 @@ def install_collection(galaxy_context, content,
                     return None
 
 
-    # FIXME: exc handling
-    installed = install.install(fetcher, fetch_results,
-                                content.content_meta, force_overwrite=force_overwrite)
-
-
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
     #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
     #        the file, which we dont do until somewhere in the begin of content.install (fetch).
     #        We can get that from the galaxy API though.
     #
+    # FIXME: exc handling
     try:
-        installed = content.install(force_overwrite=force_overwrite)
+        installed = install.install(galaxy_context,
+                                    fetcher,
+                                    fetch_results,
+                                    content.content_meta,
+                                    force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.warning("- %s was NOT installed successfully: %s ", content.name, str(e))
         raise_without_ignore(ignore_errors, e)

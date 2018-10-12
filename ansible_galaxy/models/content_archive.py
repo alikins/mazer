@@ -20,4 +20,3 @@ class ContentArchive(object):
     # Can be created from a collection archive, a collection artifact archive,
     # or a trad role archive, or a trad role archive artifact.
     info = attr.ib(type=ContentArchiveInfo)
-

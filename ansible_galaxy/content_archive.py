@@ -7,8 +7,10 @@ import attr
 
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
+from ansible_galaxy import install_info
 from ansible_galaxy.models import content
 from ansible_galaxy.models.content_archive import ContentArchiveInfo
+from ansible_galaxy.models.install_info import InstallInfo
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +42,7 @@ def null_display_callback(*args, **kwargs):
 @attr.s()
 class CollectionContentArchive(ContentArchive):
     display_callback = attr.ib(default=null_display_callback)
+    META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
     def extract(self, content_namespace, content_name, extract_to_path,
                 display_callback=None, force_overwrite=False):
@@ -68,7 +71,7 @@ class CollectionContentArchive(ContentArchive):
         # TODO: InstallResults object? installedPaths, InstallInfo, etc?
         return all_installed_paths, install_datetime
 
-    def install_info(self, content_namespace, content_name, install_datetime, extract_to_path):
+    def install_info(self, content_namespace, content_name, content_version, install_datetime, extract_to_path):
         namespaced_content_path = '%s/%s' % (content_namespace,
                                              content_name)
 
@@ -76,17 +79,18 @@ class CollectionContentArchive(ContentArchive):
                                  namespaced_content_path,
                                  self.META_INSTALL)
 
-        content_install_info = InstallInfo.from_version_date(version=content_meta.version,
+        content_install_info = InstallInfo.from_version_date(version=content_version,
                                                              install_datetime=install_datetime)
 
+        # TODO: this save will need to be moved to a step later. after validating install?
         install_info.save(content_install_info, info_path)
 
-    def install(self, content_namespace, content_name, extract_to_path, force_overwrite=False):
+    def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
         all_installed_files, install_datetime = \
             self.extract(content_namespace, content_name,
                          extract_to_path, force_overwrite=force_overwrite)
 
-        install_info = self.install_info(content_namespace, content_name,
+        install_info = self.install_info(content_namespace, content_name, content_version,
                                          install_datetime=install_datetime,
                                          extract_to_path=extract_to_path)
         return install_info
