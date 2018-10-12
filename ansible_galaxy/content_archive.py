@@ -8,7 +8,7 @@ import attr
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy.models import content
-from ansible_galaxy.models import content_archive
+from ansible_galaxy.models.content_archive import ContentArchiveInfo
 
 log = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ APB_YAML = 'apb.yml'
 
 @attr.s()
 class ContentArchive(object):
-    info = attr.ib(type=content_archive.ContentArchiveMeta)
-    tarfile = attr.ib(type=tarfile.TarFile, default=None)
-    install_datetime = attr.ib(type=datetime.datetime.DateTime,
+    info = attr.ib(type=ContentArchiveInfo)
+    tar_file = attr.ib(type=tarfile.TarFile, default=None)
+    install_datetime = attr.ib(type=datetime.datetime,
                                default=None)
 
     def extract(self):
@@ -33,14 +33,20 @@ class ContentArchive(object):
         pass
 
 
+def null_display_callback(*args, **kwargs):
+    pass
+
+
 @attr.s()
 class CollectionContentArchive(ContentArchive):
-    def extract(self, content_namespace, content_name, display_callback,
-                extract_to_path, force_overwrite=False):
-        display_callback('- extracting all content from "%s" to %s' % (content_name, self.path))
+    display_callback = attr.ib(default=null_display_callback)
+
+    def extract(self, content_namespace, content_name, extract_to_path,
+                display_callback=None, force_overwrite=False):
+        self.display_callback('- extracting all content from "%s"' % (content_name))
         all_installed_paths = []
         files_to_extract = []
-        tar_members = self.tarfile.getmembers()
+        tar_members = self.tar_file.getmembers()
         parent_dir = tar_members[0].name
 
         for member in tar_members:
@@ -52,7 +58,7 @@ class CollectionContentArchive(ContentArchive):
                 'dest_filename': namespaced_role_rel_path,
                 'force_overwrite': force_overwrite})
 
-        file_extractor = archive.extract_files(self.tarfile, files_to_extract)
+        file_extractor = archive.extract_files(self.tar_file, files_to_extract)
 
         install_datetime = datetime.datetime.utcnow()
 
@@ -143,15 +149,21 @@ def load_archive(archive_path):
     if archive_type == 'role':
         log.debug('Found role metadata in the archive, so installing it as role content_type')
 
-    archive_meta = content_archive.ContentArchiveMeta(top_dir=archive_parent_dir,
-                                                      archive_type=archive_type,
-                                                      archive_path=archive_path)
+    archive_info = ContentArchiveInfo(top_dir=archive_parent_dir,
+                                      archive_type=archive_type,
+                                      archive_path=archive_path)
 
-    log.debug('role archive_meta: %s', archive_meta)
+    log.debug('role archive_info: %s', archive_info)
 
-    content_archive_ = ContentArchive(info=archive_meta,
-                                      tarfile=tarfile)
+    # factory-ish
+    if archive_type in ['multi-content']:
+        content_archive_ = CollectionContentArchive(info=archive_info,
+                                                    tar_file=content_tar_file)
+    else:
+        content_archive_ = ContentArchive(info=archive_info,
+                                          tar_file=content_tar_file)
+
     log.debug('content archive_: %s', content_archive_)
 
     return content_archive_
-    # return content_tar_file, archive_meta
+    # return content_tar_file, archive_info
