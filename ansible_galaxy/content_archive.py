@@ -69,6 +69,11 @@ class TraditionalRoleContentArchive(ContentArchive):
     def extract(self, content_namespace, content_name, extract_to_path,
                 display_callback=None, force_overwrite=False):
 
+        # TODO: move to content info validate step in install states?
+        if not content_namespace:
+            # TODO: better error
+            raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
+
         label = "%s.%s" % (content_namespace, content_name)
         # log.debug('content_meta: %s', content_meta)
 

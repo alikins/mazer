@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 
 # TODO: add InstalledContent
 #       get rid of GalaxyContent.metadata / GalaxyContent.install_info
-#       for InstalledContent add a from_install_info() to build it from file at creation
+#       for Instal\bledContent add a from_install_info() to build it from file at creation
 #        get rid of deferred install_info load? or maybe a special InstallInfo instance?
 #       ditto for 'self.metadata'
 #
@@ -369,61 +369,6 @@ class GalaxyContent(object):
 
         install_info.save(content_install_info, info_path)
         return all_installed_paths
-
-    # FIXME: This should really be shared with the bulk of install_for_content_type()
-    #        and like a content type specific impl in a GalaxyContent subclass
-    def _install_role_archive(self, content_tar_file, archive_meta, content_meta,
-                              force_overwrite=False):
-
-        if not content_meta.namespace:
-            raise exceptions.GalaxyError('While installing a role from %s, no namespace was found. Try providing one with --namespace' %
-                                         content_meta.src)
-
-        label = "%s.%s" % (content_meta.namespace, content_meta.name)
-        log.debug('content_meta: %s', content_meta)
-
-        log.info('About to extract "%s" to %s', label, content_meta.path)
-
-        tar_members = content_tar_file.members
-        parent_dir = tar_members[0].name
-
-        namespaced_content_path = '%s/%s/%s/%s' % (content_meta.namespace,
-                                                   content_meta.name,
-                                                   'roles',
-                                                   content_meta.name)
-
-        log.debug('namespaced role path: %s', namespaced_content_path)
-
-        files_to_extract = []
-        for member in tar_members:
-            # rel_path ~  roles/some-role/meta/main.yml for ex
-            rel_path = member.name[len(parent_dir) + 1:]
-
-            namespaced_role_rel_path = os.path.join(content_meta.namespace, content_meta.name, 'roles',
-                                                    content_meta.name, rel_path)
-            files_to_extract.append({
-                'archive_member': member,
-                'dest_dir': content_meta.path,
-                'dest_filename': namespaced_role_rel_path,
-                'force_overwrite': force_overwrite})
-
-        file_extractor = archive.extract_files(content_tar_file, files_to_extract)
-
-        installed_paths = [x for x in file_extractor]
-        installed = [(content_meta, installed_paths)]
-
-        info_path = os.path.join(content_meta.path,
-                                 namespaced_content_path,
-                                 self.META_INSTALL)
-
-        install_datetime = datetime.datetime.utcnow()
-
-        content_install_info = InstallInfo.from_version_date(version=content_meta.version,
-                                                             install_datetime=install_datetime)
-
-        install_info.save(content_install_info, info_path)
-
-        return installed
 
     def fetch(self):
         """download the archive and side effect set self._archive_path to where it was downloaded to.
