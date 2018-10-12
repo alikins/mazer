@@ -370,35 +370,6 @@ class GalaxyContent(object):
         install_info.save(content_install_info, info_path)
         return all_installed_paths
 
-    def fetch(self):
-        """download the archive and side effect set self._archive_path to where it was downloaded to.
-
-        MUST be called after self.find()."""
-
-        log.debug('Fetching %s', self.content_spec)
-
-        try:
-            # FIXME: note that ignore_certs for the galaxy
-            # server(galaxy_context.server['ignore_certs'])
-            # does not really imply that the repo archive download should ignore certs as well
-            # (galaxy api server vs cdn) but for now, we use the value for both
-            fetch_results = self._fetcher.fetch(find_results=self._find_results)
-        except exceptions.GalaxyDownloadError as e:
-            log.exception(e)
-
-            blurb = 'Failed to fetch the content archive "%s": %s'
-            log.error(blurb, self._fetcher.remote_resource, e)
-
-            # reraise, currently handled in main
-            # TODO: if we support more than one archive per invocation, will need to accumulate errors
-            #       if we want to skip some of them
-            raise
-
-        self._fetch_results = fetch_results
-        self._archive_path = fetch_results['archive_path']
-
-        return fetch_results
-
     def install(self, content_meta=None, force_overwrite=False):
         """extract the archive to the filesystem and write out install metadata.
 
