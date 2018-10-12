@@ -166,7 +166,7 @@ def install(fetcher,
     content_archive_ = content_archive.load_archive(archive_path)
     log.debug('content_archive_: %s', content_archive_)
 
-    log.debug('content_archive_.archive_meta: %s', content_archive_.archive_meta)
+    log.debug('content_archive_.archive_meta: %s', content_archive_.info)
 
     # we strip off any higher-level directories for all of the files contained within
     # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
@@ -178,11 +178,11 @@ def install(fetcher,
 
         os.makedirs(content_meta.path)
 
-    res = content_archive.install(content_namespace=content_meta.namespace,
-                                  content_name=content_meta.name,
-                                  # surely wrong...
-                                  extract_to_path=content_meta.path,
-                                  force_overwrite=force_overwrite)
+    res = content_archive_.install(content_namespace=content_meta.namespace,
+                                   content_name=content_meta.name,
+                                   # surely wrong...
+                                   extract_to_path=content_meta.path,
+                                   force_overwrite=force_overwrite)
     installed.append((content_meta, res))
 
     # self.display_callback("- all content was succssfully installed to %s" % self.path)
