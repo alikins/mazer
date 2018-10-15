@@ -6,7 +6,9 @@ import yaml
 
 from ansible_galaxy import collection_info
 from ansible_galaxy import install_info
+from ansible_galaxy import role_metadata
 from ansible_galaxy import yaml_persist
+
 
 from ansible_galaxy.models.content_spec import ContentSpec
 from ansible_galaxy.models.collection import Collection
@@ -52,6 +54,23 @@ def load_from_name(content_dir, namespace, name, installed=True):
 
     log.debug('requirements_data: %s', requirements_data)
 
+    # Now try the collection as a role-as-collection
+    # look for
+    role_meta_main_filename = os.path.join(path_name, 'roles', name, 'meta', 'main.yml')
+    role_meta_main_data = None
+    role_name = '%s.%s' % (namespace, name)
+
+    try:
+        with open(role_meta_main_filename, 'r') as rmfd:
+            role_meta_main_data = role_metadata.load(rmfd, role_name=role_name)
+    except Exception as e:
+        log.exception(e)
+
+    role_deps = []
+    log.debug('role_meta_main_data: %s', role_meta_main_data)
+    if role_meta_main_data:
+        role_deps = role_meta_main_data.dependencies
+
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
     with open(install_info_filename, 'r') as ifd:
         install_info_data = install_info.load(ifd)
@@ -66,7 +85,7 @@ def load_from_name(content_dir, namespace, name, installed=True):
                             path=path_name,
                             installed=installed,
                             requirements=requirements_data,
-                            dependencies=[])
+                            dependencies=role_deps)
 
     log.debug('collection: %s', collection)
 

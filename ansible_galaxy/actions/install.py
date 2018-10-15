@@ -353,9 +353,9 @@ def install_collection(galaxy_context,
         #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
         #       InstalledCollection.requirements for install time requirements
         #        so collections and trad roles have same interface
-        collection_dependencies = []
-        if installed_content.meta_main:
-            collection_dependencies = installed_content.meta_main.dependencies or []
+        collection_dependencies = installed_content.requirements or []
+        # if installed_content.meta_main:
+        #    collection_dependencies = installed_content.meta_main.dependencies or []
         log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
 
         # TODO: also check for Collections requirements.yml via Collection.requirements?

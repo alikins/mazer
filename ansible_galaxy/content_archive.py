@@ -126,14 +126,15 @@ class BaseContentArchive(object):
 
         return content_install_info
 
-    def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
+    def install(self, content_spec, extract_to_path, force_overwrite=False):
 
         all_installed_files, install_datetime = \
-            self.extract(content_namespace, content_name,
+            self.extract(content_spec.namespace, content_spec.name,
+
                          extract_to_path, force_overwrite=force_overwrite)
 
-        namespaced_content_path = '%s/%s' % (content_namespace,
-                                             content_name)
+        namespaced_content_path = '%s/%s' % (content_spec.namespace,
+                                             content_spec.name)
 
         info_path = os.path.join(extract_to_path,
                                  namespaced_content_path,
@@ -142,7 +143,7 @@ class BaseContentArchive(object):
         meta_main_path = os.path.join(extract_to_path,
                                       namespaced_content_path,
                                       'roles',
-                                      content_name,
+                                      content_spec.name,
                                       'meta',
                                       'main.yml')
 
@@ -155,7 +156,7 @@ class BaseContentArchive(object):
         installed_to_path = os.path.join(extract_to_path,
                                          namespaced_content_path)
 
-        install_info_ = self.install_info(content_version,
+        install_info_ = self.install_info(content_spec.version,
                                           install_datetime=install_datetime)
 
         # TODO: this save will need to be moved to a step later. after validating install?
