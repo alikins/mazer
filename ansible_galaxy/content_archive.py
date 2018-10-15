@@ -34,9 +34,86 @@ class ContentArchive(object):
     display_callback = attr.ib(default=null_display_callback)
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
-    def extract(self):
-        '''do the file extraction bits'''
-        pass
+    def content_dest_root_subpath(self, content_namespace, content_name):
+        '''The relative path inside the installed content where extract should consider the root
+
+        A collection archive for 'my_namespace.my_content' will typically be extracted to
+        '~/.ansible/content/my_namespace/my_content' in which case the content_dest_root_subpath
+        should return just '/'.
+
+        But Role archives will be extracted into a 'roles' sub dir of the typical path.
+        ie, a 'my_namespace.my_role' role archive will need to be extracted to
+        '~/.ansible/content/my_namespace/roles/my_role/' in which case the content_dest_root_subpatch
+        should return 'roles/my_roles' (ie, 'roles/%s' % content_name)
+        '''
+        return ''
+
+    def extract(self, content_namespace, content_name, extract_to_path,
+                display_callback=None, force_overwrite=False):
+
+        all_installed_paths = []
+
+        # TODO: move to content info validate step in install states?
+        if not content_namespace:
+            # TODO: better error
+            raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
+
+        label = "%s.%s" % (content_namespace, content_name)
+
+        # 'extract_to_path' is for ex, ~/.ansible/content
+        log.info('About to extract %s "%s" to %s', self.info.archive_type, label, extract_to_path)
+        self.display_callback('- extracting %s content from "%s"' % (self.info.archive_type, label))
+
+        tar_members = self.tar_file.members
+
+        # This assumes the first entry in the tar archive / tar members
+        # is the top dir of the content, ie 'my_content_name-branch' for collection
+        # or 'ansible-role-my_content-1.2.3' for a traditional role.
+        parent_dir = tar_members[0].name
+
+        content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
+        log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
+
+        content_dest_root_path = os.path.join(content_namespace,
+                                              content_name,
+                                              content_dest_root_subpath)
+
+        log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
+
+        # TODO: need to support deleting all content in the dirs we are targetting
+        #       first (and/or delete the top dir) so that we clean up any files not
+        #       part of the content. At the moment, this will add or update the files
+        #       that are in the archive, but it will not delete files on the fs that are
+        #       not in the archive
+        files_to_extract = []
+        for member in tar_members:
+            # rel_path ~  roles/some-role/meta/main.yml for ex
+            rel_path = member.name[len(parent_dir) + 1:]
+
+            # log.debug('rel_path: %s', rel_path)
+
+            content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
+            log.debug('content_dest_root_path: %s', content_dest_root_path)
+            log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
+
+            files_to_extract.append({
+                'archive_member': member,
+                'dest_dir': extract_to_path,
+                'dest_filename': content_dest_root_rel_path,
+                'force_overwrite': force_overwrite})
+
+        file_extractor = archive.extract_files(self.tar_file, files_to_extract)
+
+        installed_paths = [x for x in file_extractor]
+        install_datetime = datetime.datetime.utcnow()
+
+        all_installed_paths.extend(installed_paths)
+
+        log.info('Extracted %s files from %s %s to %s',
+                 len(all_installed_paths), self.info.archive_type, label, content_dest_root_path)
+
+        # TODO: InstallResults object? installedPaths, InstallInfo, etc?
+        return all_installed_paths, install_datetime
 
     def install_info(self, content_namespace, content_name, content_version, install_datetime, extract_to_path):
         namespaced_content_path = '%s/%s' % (content_namespace,
@@ -53,6 +130,7 @@ class ContentArchive(object):
         install_info.save(content_install_info, info_path)
 
     def install(self, content_namespace, content_name, content_version, extract_to_path, force_overwrite=False):
+
         all_installed_files, install_datetime = \
             self.extract(content_namespace, content_name,
                          extract_to_path, force_overwrite=force_overwrite)
@@ -65,53 +143,12 @@ class ContentArchive(object):
 
 @attr.s()
 class TraditionalRoleContentArchive(ContentArchive):
+    ROLES_SUBPATH = 'roles'
 
-    def extract(self, content_namespace, content_name, extract_to_path,
-                display_callback=None, force_overwrite=False):
+    def content_dest_root_subpath(self, content_namespace, content_name):
+        '''Traditional role archive content goes into subpath of 'roles/CONTENT_NAME/'''
+        return os.path.join(self.ROLES_SUBPATH, content_name)
 
-        # TODO: move to content info validate step in install states?
-        if not content_namespace:
-            # TODO: better error
-            raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
-
-        label = "%s.%s" % (content_namespace, content_name)
-        # log.debug('content_meta: %s', content_meta)
-
-        log.info('About to extract "%s" to %s', label, extract_to_path)
-
-        tar_members = self.tar_file.members
-        parent_dir = tar_members[0].name
-
-        namespaced_content_path = '%s/%s/%s/%s' % (content_namespace,
-                                                   content_name,
-                                                   'roles',
-                                                   content_name)
-
-        log.debug('namespaced role path: %s', namespaced_content_path)
-
-        all_installed_paths = []
-        files_to_extract = []
-        for member in tar_members:
-            # rel_path ~  roles/some-role/meta/main.yml for ex
-            rel_path = member.name[len(parent_dir) + 1:]
-
-            namespaced_role_rel_path = os.path.join(content_namespace, content_name, 'roles',
-                                                    content_name, rel_path)
-            files_to_extract.append({
-                'archive_member': member,
-                'dest_dir': extract_to_path,
-                'dest_filename': namespaced_role_rel_path,
-                'force_overwrite': force_overwrite})
-
-        file_extractor = archive.extract_files(self.tar_file, files_to_extract)
-
-        installed_paths = [x for x in file_extractor]
-        install_datetime = datetime.datetime.utcnow()
-
-        all_installed_paths.extend(installed_paths)
-
-        # TODO: InstallResults object? installedPaths, InstallInfo, etc?
-        return all_installed_paths, install_datetime
 
 
 @attr.s()
@@ -119,17 +156,48 @@ class CollectionContentArchive(ContentArchive):
     display_callback = attr.ib(default=null_display_callback)
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
-    def extract(self, content_namespace, content_name, extract_to_path,
+    def not_extract(self, content_namespace, content_name, extract_to_path,
                 display_callback=None, force_overwrite=False):
-        self.display_callback('- extracting all content from "%s"' % (content_name))
+        self.display_callback('- extracting collection content from "%s"' % (content_name))
         all_installed_paths = []
         files_to_extract = []
         tar_members = self.tar_file.getmembers()
         parent_dir = tar_members[0].name
 
+        # TODO: This is the main diff between handling of a RoleArchive and a CollectionArchive
+        #       Extract it and share the rest of the code...
+        #       content_rel_path (where with in the installed collection dir will be the new root)
+        #       for ex, for extracting README.md
+        #       for collection archive:
+        #          content_root_path: my_namespace/my_collection/README.md
+        #       for role archive:
+        #          content_root_path: my_namespace/my_collection/roles/my_collection
+        content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
+        log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
+
+        content_dest_root_path = os.path.join(content_namespace,
+                                              content_name,
+                                              content_dest_root_subpath)
+        content_dest_root_path2 = os.path.join(content_namespace, content_name)
+        log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
+        log.debug('content_dest_root_path2: |%s|', content_dest_root_path2)
+
+
         for member in tar_members:
+            log.debug('member.name: %s parent_dir: %s', member.name, parent_dir)
+
             rel_path = member.name[len(parent_dir) + 1:]
+
+            log.debug('rel_path: %s', rel_path)
+
+            content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
+
+            log.debug('content_dest_root_path: %s', content_dest_root_path)
+            log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
+
             namespaced_role_rel_path = os.path.join(content_namespace, content_name, rel_path)
+            log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
+
             files_to_extract.append({
                 'archive_member': member,
                 'dest_dir': extract_to_path,
