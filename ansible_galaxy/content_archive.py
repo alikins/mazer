@@ -25,7 +25,7 @@ def null_display_callback(*args, **kwargs):
 
 
 @attr.s()
-class ContentArchive(object):
+class BaseContentArchive(object):
     info = attr.ib(type=ContentArchiveInfo)
     tar_file = attr.ib(type=tarfile.TarFile, default=None)
     install_datetime = attr.ib(type=datetime.datetime,
@@ -75,13 +75,13 @@ class ContentArchive(object):
         parent_dir = tar_members[0].name
 
         content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
-        self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
+        # self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
 
         content_dest_root_path = os.path.join(content_namespace,
                                               content_name,
                                               content_dest_root_subpath)
 
-        self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
+        # self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
 
         # TODO: need to support deleting all content in the dirs we are targetting
         #       first (and/or delete the top dir) so that we clean up any files not
@@ -93,11 +93,10 @@ class ContentArchive(object):
             # rel_path ~  roles/some-role/meta/main.yml for ex
             rel_path = member.name[len(parent_dir) + 1:]
 
-            # log.debug('rel_path: %s', rel_path)
-
             content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
-            self.log.debug('content_dest_root_path: %s', content_dest_root_path)
-            self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
+
+            # self.log.debug('content_dest_root_path: %s', content_dest_root_path)
+            # self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
 
             files_to_extract.append({
                 'archive_member': member,
@@ -145,7 +144,7 @@ class ContentArchive(object):
 
 
 @attr.s()
-class TraditionalRoleContentArchive(ContentArchive):
+class TraditionalRoleContentArchive(BaseContentArchive):
     ROLES_SUBPATH = 'roles'
 
     def content_dest_root_subpath(self, content_namespace, content_name):
@@ -154,10 +153,9 @@ class TraditionalRoleContentArchive(ContentArchive):
 
 
 @attr.s()
-class CollectionContentArchive(ContentArchive):
+class CollectionContentArchive(BaseContentArchive):
     # TODO: should we create a meta/ for a collection just for .galaxy_install_info?
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
-
 
 
 def detect_content_archive_type(archive_path, archive_members):
