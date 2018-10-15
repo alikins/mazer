@@ -184,9 +184,10 @@ def install(galaxy_context,
         os.makedirs(galaxy_context.content_path)
 
     # FIXME: guess might as well pass in content_spec
-    res = content_archive_.install(content_namespace=content_spec.namespace,
-                                   content_name=content_spec.name,
-                                   content_version=content_spec.version,
+    res = content_archive_.install(content_spec=content_spec,
+                                   # content_namespace=content_spec.namespace,
+                                   # content_name=content_spec.name,
+                                   # content_version=content_spec.version,
                                    # surely wrong...
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
@@ -202,7 +203,7 @@ def install(galaxy_context,
     installed_content_specs = [x[0] for x in installed]
     log.debug('installed_content_specs: %s', installed_content_specs)
 
-    collection_match_filter = matchers.MatchContentSpec([x for x in installed_content_specs])
+    collection_match_filter = matchers.MatchContentSpecsNamespaceNameVersion(installed_content_specs)
 
     log.debug('collectio_match_filter: %s', collection_match_filter)
 
@@ -213,7 +214,7 @@ def install(galaxy_context,
 
     installed_contents = []
 
-    log.debug('FOOO: %s', [x for x in already_installed_generator])
+    # log.debug('FOOO: %s', [x for x in already_installed_generator])
     for collection_item in already_installed_generator:
         log.debug('installed collection item: %s', pprint.pformat(collection_item))
 
@@ -229,9 +230,15 @@ def install(galaxy_context,
 
         # TODO: Replace with InstalledCollection ?
         # FIXME:
+
+        all_deps = collection_item.requirements or []
+        all_deps.extend(collection_item.dependencies or [])
+
         installed_content = InstalledContent(name=installed_content_spec.name,
                                              namespace=installed_content_spec.namespace,
                                              version=installed_content_spec.version,
+                                             # dependencies=collection_item.dependencies,
+                                             requirements=all_deps,
                                              # install_info=installation_results.install_info,
                                              # meta_main=installation_results.meta_main,
                                              # content_type=installed_content_spec.content_type,
