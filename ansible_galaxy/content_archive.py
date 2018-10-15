@@ -34,6 +34,9 @@ class ContentArchive(object):
     display_callback = attr.ib(default=null_display_callback)
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
+    def __attrs_post_init__(self):
+        self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
+
     def content_dest_root_subpath(self, content_namespace, content_name):
         '''The relative path inside the installed content where extract should consider the root
 
@@ -61,7 +64,7 @@ class ContentArchive(object):
         label = "%s.%s" % (content_namespace, content_name)
 
         # 'extract_to_path' is for ex, ~/.ansible/content
-        log.info('About to extract %s "%s" to %s', self.info.archive_type, label, extract_to_path)
+        self.log.info('About to extract %s "%s" to %s', self.info.archive_type, label, extract_to_path)
         self.display_callback('- extracting %s content from "%s"' % (self.info.archive_type, label))
 
         tar_members = self.tar_file.members
@@ -72,13 +75,13 @@ class ContentArchive(object):
         parent_dir = tar_members[0].name
 
         content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
-        log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
+        self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
 
         content_dest_root_path = os.path.join(content_namespace,
                                               content_name,
                                               content_dest_root_subpath)
 
-        log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
+        self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
 
         # TODO: need to support deleting all content in the dirs we are targetting
         #       first (and/or delete the top dir) so that we clean up any files not
@@ -93,8 +96,8 @@ class ContentArchive(object):
             # log.debug('rel_path: %s', rel_path)
 
             content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
-            log.debug('content_dest_root_path: %s', content_dest_root_path)
-            log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
+            self.log.debug('content_dest_root_path: %s', content_dest_root_path)
+            self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
 
             files_to_extract.append({
                 'archive_member': member,
@@ -109,8 +112,8 @@ class ContentArchive(object):
 
         all_installed_paths.extend(installed_paths)
 
-        log.info('Extracted %s files from %s %s to %s',
-                 len(all_installed_paths), self.info.archive_type, label, content_dest_root_path)
+        self.log.info('Extracted %s files from %s %s to %s',
+                      len(all_installed_paths), self.info.archive_type, label, content_dest_root_path)
 
         # TODO: InstallResults object? installedPaths, InstallInfo, etc?
         return all_installed_paths, install_datetime
@@ -150,70 +153,10 @@ class TraditionalRoleContentArchive(ContentArchive):
         return os.path.join(self.ROLES_SUBPATH, content_name)
 
 
-
 @attr.s()
 class CollectionContentArchive(ContentArchive):
-    display_callback = attr.ib(default=null_display_callback)
+    # TODO: should we create a meta/ for a collection just for .galaxy_install_info?
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
-
-    def not_extract(self, content_namespace, content_name, extract_to_path,
-                display_callback=None, force_overwrite=False):
-        self.display_callback('- extracting collection content from "%s"' % (content_name))
-        all_installed_paths = []
-        files_to_extract = []
-        tar_members = self.tar_file.getmembers()
-        parent_dir = tar_members[0].name
-
-        # TODO: This is the main diff between handling of a RoleArchive and a CollectionArchive
-        #       Extract it and share the rest of the code...
-        #       content_rel_path (where with in the installed collection dir will be the new root)
-        #       for ex, for extracting README.md
-        #       for collection archive:
-        #          content_root_path: my_namespace/my_collection/README.md
-        #       for role archive:
-        #          content_root_path: my_namespace/my_collection/roles/my_collection
-        content_dest_root_subpath = self.content_dest_root_subpath(content_namespace, content_name)
-        log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
-
-        content_dest_root_path = os.path.join(content_namespace,
-                                              content_name,
-                                              content_dest_root_subpath)
-        content_dest_root_path2 = os.path.join(content_namespace, content_name)
-        log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
-        log.debug('content_dest_root_path2: |%s|', content_dest_root_path2)
-
-
-        for member in tar_members:
-            log.debug('member.name: %s parent_dir: %s', member.name, parent_dir)
-
-            rel_path = member.name[len(parent_dir) + 1:]
-
-            log.debug('rel_path: %s', rel_path)
-
-            content_dest_root_rel_path = os.path.join(content_dest_root_path, rel_path)
-
-            log.debug('content_dest_root_path: %s', content_dest_root_path)
-            log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
-
-            namespaced_role_rel_path = os.path.join(content_namespace, content_name, rel_path)
-            log.debug('namespaced_role_rel_path: %s', namespaced_role_rel_path)
-
-            files_to_extract.append({
-                'archive_member': member,
-                'dest_dir': extract_to_path,
-                'dest_filename': namespaced_role_rel_path,
-                'force_overwrite': force_overwrite})
-
-        file_extractor = archive.extract_files(self.tar_file, files_to_extract)
-
-        install_datetime = datetime.datetime.utcnow()
-
-        installed_paths = [x for x in file_extractor]
-        all_installed_paths.extend(installed_paths)
-
-        # TODO: InstallResults object? installedPaths, InstallInfo, etc?
-        return all_installed_paths, install_datetime
-
 
 
 
