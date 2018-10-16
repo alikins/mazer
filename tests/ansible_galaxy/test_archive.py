@@ -297,7 +297,7 @@ def test_extract_by_content_type():
                                                                version="3.1.0",
                                                                src="alikins.ansible-testing-content",
                                                                scm=None,
-                                                               content_type="all",
+                                                               # content_type="all",
                                                                content_dir=None,
                                                                content_sub_dir=None,
                                                                path="/home/adrian/.ansible/content",
