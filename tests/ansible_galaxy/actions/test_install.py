@@ -5,13 +5,9 @@ import tempfile
 
 from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
+from ansible_galaxy.models.content import InstalledContent
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.role_metadata import RoleMetadata
-
-# FIXME: get rid of GalaxyContentMeta
-from ansible_galaxy.models.content import GalaxyContentMeta
-
-from ansible_galaxy.flat_rest_api.content import InstalledContent
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +35,6 @@ def test_install_contents_empty_contents(galaxy_context):
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
     assert ret == []
-
 
 
 # TODO: replace InstalledContent with @attr thing, then shouldn't need a mock
