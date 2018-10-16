@@ -7,7 +7,6 @@ import yaml
 from ansible_galaxy import collection_info
 from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
-from ansible_galaxy import yaml_persist
 
 
 from ansible_galaxy.models.content_spec import ContentSpec
@@ -28,8 +27,9 @@ def load_from_name(content_dir, namespace, name, installed=True):
 
     path_name = os.path.join(content_dir, namespace, name)
 
-    if not os.path.isdir(path_name):
-        return None
+    # if not os.path.isdir(path_name):
+    #    log.debug('No collection found at %s', path_name)
+    #    return None
 
     # load galaxy.yml
     galaxy_filename = os.path.join(path_name, collection_info.COLLECTION_INFO_FILENAME)
@@ -71,15 +71,20 @@ def load_from_name(content_dir, namespace, name, installed=True):
     if role_meta_main_data:
         role_deps = role_meta_main_data.dependencies
 
+    install_info_data = None
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
-    with open(install_info_filename, 'r') as ifd:
-        install_info_data = install_info.load(ifd)
+    try:
+        with open(install_info_filename, 'r') as ifd:
+            install_info_data = install_info.load(ifd)
+    except Exception as e:
+        log.exception(e)
 
     log.debug('install_info: %s', install_info_data)
+    install_info_version = getattr(install_info, 'version', None)
 
     content_spec = ContentSpec(namespace=namespace,
                                name=name,
-                               version=install_info_data.version)
+                               version=install_info_version)
 
     collection = Collection(content_spec=content_spec,
                             path=path_name,
