@@ -38,8 +38,9 @@ def load_from_name(content_dir, namespace, name, installed=True):
     try:
         with open(galaxy_filename, 'r') as gfd:
             collection_info_data = collection_info.load(gfd)
-    except Exception as e:
-        log.exception(e)
+    except EnvironmentError as e:
+        log.warning('No galaxy.yml found for collection %s.%s: %s', namespace, name, e)
+        # log.exception(e)
 
     log.debug('collection_info_data: %s', collection_info_data)
 
@@ -49,8 +50,8 @@ def load_from_name(content_dir, namespace, name, installed=True):
     try:
         with open(requirements_filename, 'r') as rfd:
             requirements_data = yaml.safe_load(rfd)
-    except Exception as e:
-        log.exception(e)
+    except EnvironmentError as e:
+        log.warning('No requirements.yml found for collection %s.%s: %s', namespace, name, e)
 
     log.debug('requirements_data: %s', requirements_data)
 
@@ -63,8 +64,8 @@ def load_from_name(content_dir, namespace, name, installed=True):
     try:
         with open(role_meta_main_filename, 'r') as rmfd:
             role_meta_main_data = role_metadata.load(rmfd, role_name=role_name)
-    except Exception as e:
-        log.exception(e)
+    except EnvironmentError as e:
+        log.warning('Unable to find or load meta/main.yml for collection %s.%s: %s', namespace, name, e)
 
     role_deps = []
     log.debug('role_meta_main_data: %s', role_meta_main_data)
@@ -76,8 +77,8 @@ def load_from_name(content_dir, namespace, name, installed=True):
     try:
         with open(install_info_filename, 'r') as ifd:
             install_info_data = install_info.load(ifd)
-    except Exception as e:
-        log.exception(e)
+    except EnvironmentError as e:
+        log.warning('Unable to find or load meta/.galaxy_install_info for collection %s.%s: %s', namespace, name, e)
 
     log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info, 'version', None)
