@@ -75,6 +75,8 @@ def load_from_name(content_dir, namespace, name, installed=True):
     if role_meta_main_data:
         role_deps = role_meta_main_data.dependencies
 
+    log.debug('role_deps: %s', role_deps)
+
     install_info_data = None
     install_info_filename = os.path.join(path_name, 'meta/.galaxy_install_info')
     try:
