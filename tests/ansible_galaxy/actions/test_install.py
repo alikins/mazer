@@ -1,13 +1,10 @@
-
 import logging
 import mock
-import tempfile
 
 from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content import InstalledContent
-from ansible_galaxy.models.context import GalaxyContext
-from ansible_galaxy.models.role_metadata import RoleMetadata
+from ansible_galaxy import content_spec
+from ansible_galaxy import requirements
 
 log = logging.getLogger(__name__)
 
@@ -16,19 +13,11 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def _galaxy_context():
-    tmp_content_path = tempfile.mkdtemp()
-    # FIXME: mock
-    server = {'url': 'http://localhost:8000',
-              'ignore_certs': False}
-    return GalaxyContext(server=server, content_path=tmp_content_path)
-
-
 def test_install_contents_empty_contents(galaxy_context):
-    contents = []
+    content_specs_to_install = []
 
     ret = install.install_collections(galaxy_context,
-                                      content_specs_to_install=contents,
+                                      content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -36,21 +25,17 @@ def test_install_contents_empty_contents(galaxy_context):
     assert ret == []
 
 
-# TODO: replace InstalledContent with @attr thing, then shouldn't need a mock
-def test_install_collections(galaxy_context):
-    needed_deps = ['some_namespace.some_name']
-    mock_role_metadata = RoleMetadata(name='some_role', dependencies=needed_deps)
-    mock_installed = [mock.Mock(name='a mock InstalledCollection maybe',
-                                spec=InstalledContent,
-                                metadata=mock_role_metadata)]
-    contents = [mock.Mock(content_type='role',
-                          # FIXME: install bases update on install_info existing, so will fail for other content
-                          install_info=None,
-                          install=mock.Mock(return_value=mock_installed),
-                          metadata={'content_type': 'role'})]
+def test_install_collections(galaxy_context, mocker):
+    needed_deps = requirements.from_requirement_spec_strings(['some_namespace.some_name'])
+
+    content_specs_to_install = \
+        [content_spec.content_spec_from_string('some_namespace.this_requires_some_name')]
+
+    mocker.patch('ansible_galaxy.actions.install.install_collection',
+                 return_value=needed_deps)
 
     ret = install.install_collections(galaxy_context,
-                                      content_specs_to_install=contents,
+                                      content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -58,20 +43,18 @@ def test_install_collections(galaxy_context):
     assert ret == needed_deps
 
 
-def test_install_collections_no_deps_required(galaxy_context):
+def test_install_collections_no_deps_required(galaxy_context, mocker):
     needed_deps = []
-    mock_role_metadata = RoleMetadata(name='some_role', dependencies=needed_deps)
-    mock_installed = [mock.Mock(name='a mock InstalledCollection maybe',
-                                spec=InstalledContent,
-                                metadata=mock_role_metadata)]
-    contents = [mock.Mock(content_type='role',
-                          # FIXME: install bases update on install_info existing, so will fail for other content
-                          install_info=None,
-                          install=mock.Mock(return_value=mock_installed),
-                          metadata={'content_type': 'role'})]
+
+    content_specs_to_install = \
+        [content_spec.content_spec_from_string('some_namespace.this_requires_nothing')]
+
+    # mock out install_collection
+    mocker.patch('ansible_galaxy.actions.install.install_collection',
+                 return_value=[])
 
     ret = install.install_collections(galaxy_context,
-                                      content_specs_to_install=contents,
+                                      content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
