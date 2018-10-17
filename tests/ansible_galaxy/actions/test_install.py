@@ -28,8 +28,7 @@ def test_install_contents_empty_contents(galaxy_context):
     contents = []
 
     ret = install.install_collections(galaxy_context,
-                                      requested_contents=contents,
-                                      install_content_type='role',
+                                      content_specs_to_install=contents,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -51,8 +50,7 @@ def test_install_collections(galaxy_context):
                           metadata={'content_type': 'role'})]
 
     ret = install.install_collections(galaxy_context,
-                                      requested_contents=contents,
-                                      # install_content_type='role',
+                                      content_specs_to_install=contents,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -73,8 +71,7 @@ def test_install_collections_no_deps_required(galaxy_context):
                           metadata={'content_type': 'role'})]
 
     ret = install.install_collections(galaxy_context,
-                                      requested_contents=contents,
-                                      # install_content_type='role',
+                                      content_specs_to_install=contents,
                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -82,8 +79,8 @@ def test_install_collections_no_deps_required(galaxy_context):
     assert ret == needed_deps
 
 
-def test_build_content_set_empty(galaxy_context):
-    ret = install._build_content_set([], 'role', galaxy_context)
+def test_verify_content_specs_have_namespace_empty(galaxy_context):
+    ret = install._verify_content_specs_have_namespace([])
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
@@ -91,10 +88,10 @@ def test_build_content_set_empty(galaxy_context):
 
 
 # even though 'blrp' isnt a valid spec, _build_content_set return something for now
-def test_build_content_set_malformed(galaxy_context):
-    content_spec = 'no_namespace_here'
+def test_verify_content_specs_have_namespace(galaxy_context):
+    content_spec = mock.Mock(namespace=None)
     try:
-        install._build_content_set([content_spec], 'role', galaxy_context)
+        install._verify_content_specs_have_namespace([content_spec])
     except exceptions.GalaxyError as e:
         log.exception(e)
         return
