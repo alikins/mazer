@@ -331,24 +331,12 @@ def install_collection(galaxy_context,
             log.warning("Meta file %s is empty. Skipping meta main dependencies.", installed_content.path)
             # continue
 
-        # TODO: InstalledContent -> InstalledCollection
-        #       GalaxyContent -> GalaxyCollection (and general getting rid of GalaxyContent)
-        #       InstalledCollection.requirements for install time requirements
-        #        so collections and trad roles have same interface
-        collection_dependencies = installed_content.requirements or []
-
         # convert deps/reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_content.requirements)
         log.debug('reqs_set: %s', reqs_set)
 
         deps_set = set(installed_content.dependencies)
         log.debug('deps_set: %s', deps_set)
-        # if installed_content.meta_main:
-        #    collection_dependencies = installed_content.meta_main.dependencies or []
-        # log.debug('collection_dependencies: %s', pprint.pformat(collection_dependencies))
-
-        # TODO: also check for Collections requirements.yml via Collection.requirements?
-        #       and/or requirements in its MANIFEST.json
 
         for dep in sorted(deps_set):
             log.debug('Installing dep %s', dep)
@@ -358,21 +346,12 @@ def install_collection(galaxy_context,
         deps_and_reqs_set = deps_set.union(reqs_set)
         for dep_req in sorted(deps_and_reqs_set):
             log.debug('dep_req: %s', dep_req)
-            # dep_info = yaml_parse.yaml_parse(dep)
-            # log.debug('dep_info: %s', pprint.pformat(dep_info))
-
-            # if '.' not in dep_info['name'] and '.' not in dep_info['src'] and dep_info['scm'] is None:
-            #    log.debug('the dep %s doesnt look like a galaxy dep, skipping for now', dep_info)
-            #    # we know we can skip this, as it's not going to
-            #    # be found on galaxy.ansible.com
-            #    continue
-
-            # dep_requirement_content_specs.append(dep)
 
     dep_req_content_specs = sorted(list(deps_and_reqs_set))
+
     log.debug('dep_and_req_set: %s', pprint.pformat(dep_req_content_specs))
+
     return dep_req_content_specs
-    # return 0
 
 # def role_install_post_check():
 #    if False:
