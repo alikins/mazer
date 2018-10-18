@@ -3,7 +3,7 @@ import logging
 
 from ansible_galaxy import display
 from ansible_galaxy import matchers
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import ContentSpec
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.utils.content_name import parse_content_name
 from ansible_galaxy.utils.text import to_text
@@ -164,7 +164,7 @@ def info_content_specs(galaxy_context,
     matched_labels = []
     for matched_repository in matched_repositories:
         display_callback(_repr_installed_repository(matched_repository))
-        matched_labels.append(matched_repository.content_spec.label)
+        matched_labels.append(matched_repository.repository_spec.label)
 
     unmatched_labels = set(all_labels_to_match).difference(set(matched_labels))
 

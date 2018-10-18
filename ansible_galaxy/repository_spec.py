@@ -4,13 +4,13 @@ import os
 from ansible_galaxy import galaxy_content_spec
 from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import ContentSpec
 
 log = logging.getLogger(__name__)
 
 
-def is_scm(content_spec_string):
-    if '://' in content_spec_string or '@' in content_spec_string:
+def is_scm(repository_spec_string):
+    if '://' in repository_spec_string or '@' in repository_spec_string:
         return True
 
     return False
@@ -25,14 +25,14 @@ class FetchMethods(object):
     EDITABLE = 'EDITABLE'
 
 
-def choose_content_fetch_method(content_spec_string, editable=False):
-    log.debug('content_spec_string: %s', content_spec_string)
+def chose_repository_fetch_method(repository_spec_string, editable=False):
+    log.debug('content_spec_string: %s', repository_spec_string)
 
-    if is_scm(content_spec_string):
+    if is_scm(repository_spec_string):
         # create tar file from scm url
         return FetchMethods.SCM_URL
 
-    comma_parts = content_spec_string.split(',', 1)
+    comma_parts = repository_spec_string.split(',', 1)
     potential_filename = comma_parts[0]
     fetch_method = None
     if editable and os.path.isdir(potential_filename):
@@ -40,14 +40,14 @@ def choose_content_fetch_method(content_spec_string, editable=False):
     elif os.path.isfile(potential_filename):
         # installing a local tar.gz
         fetch_method = FetchMethods.LOCAL_FILE
-    elif '://' in content_spec_string:
+    elif '://' in repository_spec_string:
         fetch_method = FetchMethods.REMOTE_URL
-    elif '.' in content_spec_string and len(content_spec_string.split('.', 1)) == 2:
+    elif '.' in repository_spec_string and len(repository_spec_string.split('.', 1)) == 2:
         fetch_method = FetchMethods.GALAXY_URL
     else:
         msg = ('Failed to determine fetch method for content spec %s. '
                'Expecting a Galaxy name, SCM path, remote URL, path to a local '
-               'archive file, or -e option and a directory path' % content_spec_string)
+               'archive file, or -e option and a directory path' % repository_spec_string)
         raise exceptions.GalaxyError(msg)
     return fetch_method
 
@@ -79,12 +79,12 @@ def resolve(data):
     return data
 
 
-def spec_data_from_string(content_spec_string, namespace_override=None, editable=False):
-    fetch_method = choose_content_fetch_method(content_spec_string, editable=editable)
+def spec_data_from_string(repository_spec_string, namespace_override=None, editable=False):
+    fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable)
 
     log.debug('fetch_method: %s', fetch_method)
 
-    spec_data = repository_spec_parse.parse_string(content_spec_string)
+    spec_data = repository_spec_parse.parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
     log.debug('spec_data: %s', spec_data)
@@ -105,15 +105,15 @@ def spec_data_from_string(content_spec_string, namespace_override=None, editable
         else:
             log.debug('using --namespace provided namespace "%s" to since there was no namespace in "%s"',
                       namespace_override,
-                      content_spec_string)
+                      repository_spec_string)
 
         spec_data['namespace'] = namespace_override
 
     return spec_data
 
 
-def content_spec_from_string(content_spec_string, namespace_override=None, editable=False):
-    spec_data = spec_data_from_string(content_spec_string, namespace_override=None, editable=editable)
+def repository_spec_from_string(repository_spec_string, namespace_override=None, editable=False):
+    spec_data = spec_data_from_string(repository_spec_string, namespace_override=None, editable=editable)
 
     log.debug('spec_data: %s', spec_data)
 

@@ -38,7 +38,7 @@ def installed_content_item_iterator(galaxy_context,
     # for namespace_full_path in namespace_paths_iterator:
     for installed_repository in installed_repo_db.select(namespace_match_filter=namespace_match_filter,
                                                          repository_match_filter=repository_match_filter):
-        log.debug('Found repository "%s" at %s', installed_repository.content_spec.label, installed_repository.path)
+        log.debug('Found repository "%s" at %s', installed_repository.repository_spec.label, installed_repository.path)
         installed_repository_full_path = installed_repository.path
 
         if not repository_match_filter(installed_repository):
@@ -58,13 +58,13 @@ def installed_content_item_iterator(galaxy_context,
         log.debug('Looking for %s in repository at %s', content_item_type, installed_repository_full_path)
         for installed_content_full_path in installed_repository_content_iterator:
 
-            repo_namespace = installed_repository.content_spec.namespace
+            repo_namespace = installed_repository.repository_spec.namespace
             path_file = os.path.basename(installed_content_full_path)
 
             gr = ContentItem(namespace=repo_namespace, name=path_file,
                              path=installed_content_full_path,
                              content_item_type=content_item_type,
-                             version=installed_repository.content_spec.version)
+                             version=installed_repository.repository_spec.version)
 
             log.debug('Found %s "%s" at %s', gr, gr.name, installed_content_full_path)
 

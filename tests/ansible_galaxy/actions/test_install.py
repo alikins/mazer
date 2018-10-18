@@ -17,7 +17,7 @@ def test_install_repos_empty_repo_specs(galaxy_context):
     content_specs_to_install = []
 
     ret = install.install_repositories(galaxy_context,
-                                       content_specs_to_install=content_specs_to_install,
+                                       repository_specs_to_install=content_specs_to_install,
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -29,13 +29,13 @@ def test_install_repositories(galaxy_context, mocker):
     needed_deps = requirements.from_requirement_spec_strings(['some_namespace.some_name'])
 
     content_specs_to_install = \
-        [repository_spec.content_spec_from_string('some_namespace.this_requires_some_name')]
+        [repository_spec.repository_spec_from_string('some_namespace.this_requires_some_name')]
 
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=needed_deps)
 
     ret = install.install_repositories(galaxy_context,
-                                       content_specs_to_install=content_specs_to_install,
+                                       repository_specs_to_install=content_specs_to_install,
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -47,14 +47,14 @@ def test_install_repositories_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
     content_specs_to_install = \
-        [repository_spec.content_spec_from_string('some_namespace.this_requires_nothing')]
+        [repository_spec.repository_spec_from_string('some_namespace.this_requires_nothing')]
 
     # mock out install_repository
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=[])
 
     ret = install.install_repositories(galaxy_context,
-                                       content_specs_to_install=content_specs_to_install,
+                                       repository_specs_to_install=content_specs_to_install,
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)

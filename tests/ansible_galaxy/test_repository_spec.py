@@ -5,7 +5,7 @@ import pytest
 
 from ansible_galaxy import repository_spec
 from ansible_galaxy import exceptions
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import ContentSpec
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ def content_spec_case(request):
 
 
 def test_content_spec_from_string(content_spec_case):
-    result = repository_spec.content_spec_from_string(content_spec_case['spec'])
+    result = repository_spec.repository_spec_from_string(content_spec_case['spec'])
     log.debug('spec=%s result=%s exp=%s', content_spec_case['spec'], result, content_spec_case['expected'])
 
     # assert attr.asdict(result) == attr.asdict(content_spec_case['expected'])
@@ -68,7 +68,7 @@ def test_content_spec_from_string(content_spec_case):
 
 def test_content_spec_editable():
     tmpdir = tempfile.mkdtemp()
-    result = repository_spec.content_spec_from_string(tmpdir, editable=True)
+    result = repository_spec.repository_spec_from_string(tmpdir, editable=True)
     os.rmdir(tmpdir)
     assert result.name == tmpdir
     assert result.fetch_method == 'EDITABLE'
@@ -76,9 +76,9 @@ def test_content_spec_editable():
 
 @pytest.mark.xfail(raises=exceptions.GalaxyError)
 def test_content_spec_fail():
-    repository_spec.content_spec_from_string('foo.')
+    repository_spec.repository_spec_from_string('foo.')
 
 
 @pytest.mark.xfail(raises=exceptions.GalaxyError)
 def test_content_editable_fail():
-    repository_spec.content_spec_from_string('foo', editable=True)
+    repository_spec.repository_spec_from_string('foo', editable=True)
