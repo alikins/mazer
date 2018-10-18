@@ -13,14 +13,14 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture
 def csf(request):
-    _cs = repository_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
+    _cs = repository_spec.RepositorySpec(namespace='somenamespace', name='somename', version='1.2.3')
     yield _cs
 
 
 def test_frozen(csf):
     cr = repository.Repository(repository_spec=csf)
 
-    new_cr = repository_spec.ContentSpec(namespace='somenamespace', name='somename', version='1.2.3')
+    new_cr = repository_spec.RepositorySpec(namespace='somenamespace', name='somename', version='1.2.3')
 
     with pytest.raises(attr.exceptions.FrozenInstanceError):
         cr.repository_spec = new_cr
@@ -70,11 +70,11 @@ def CR(repository_spec=None, path=None):
     return repository.Repository(repository_spec=repository_spec)
 
 
-ns_n = repository_spec.ContentSpec(namespace='ns', name='n', version='1.0.0')
-diffns_n = repository_spec.ContentSpec(namespace='diffns', name='n', version='1.0.0')
+ns_n = repository_spec.RepositorySpec(namespace='ns', name='n', version='1.0.0')
+diffns_n = repository_spec.RepositorySpec(namespace='diffns', name='n', version='1.0.0')
 ns_n_1_0_0 = ns_n
 diffns_n_1_0_0 = diffns_n
-ns_n_1_0_1 = repository_spec.ContentSpec(namespace='ns', name='n', version='1.0.1')
+ns_n_1_0_1 = repository_spec.RepositorySpec(namespace='ns', name='n', version='1.0.1')
 
 
 path1 = '/dev/null/1'

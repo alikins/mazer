@@ -134,7 +134,7 @@ class BaseContentArchive(object):
                          extract_to_path, force_overwrite=force_overwrite)
 
         namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
-                                             repository_spec.name)
+                                                repository_spec.name)
 
         info_path = os.path.join(extract_to_path,
                                  namespaced_repository_path,
