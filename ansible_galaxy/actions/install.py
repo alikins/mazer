@@ -213,7 +213,7 @@ def install_repository(galaxy_context,
 
     log.debug('About to find() requested repository_spec_to_install: %s', repository_specs_to_install)
 
-    fetcher = install.fetcher(galaxy_context, content_spec=repository_specs_to_install)
+    fetcher = install.fetcher(galaxy_context, repository_spec=repository_specs_to_install)
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
     # and make the steps of mapping repository spec -> fetcher method part of the
@@ -224,7 +224,7 @@ def install_repository(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = install.find(fetcher, content_spec=repository_specs_to_install)
+        find_results = install.find(fetcher)
         # log.debug('standalone find_results: %s', pprint.pformat(find_results))
     except exceptions.GalaxyError as e:
         log.warning('Unable to find metadata for %s: %s', repository_specs_to_install.name, e)
@@ -243,7 +243,7 @@ def install_repository(galaxy_context,
     # FETCH state
     try:
         fetch_results = install.fetch(fetcher,
-                                      content_spec=repository_specs_to_install,
+                                      repository_spec=repository_specs_to_install,
                                       find_results=find_results)
         log.debug('fetch_results: %s', fetch_results)
         # fetch_results will include a 'archive_path' pointing to where the artifact
