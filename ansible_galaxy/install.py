@@ -219,7 +219,7 @@ def install(galaxy_context,
         log.debug('installed collection item: %s', pprint.pformat(collection_item))
 
         # TODO: InstallationResults object
-        installed_content_spec = collection_item.content_spec
+        installed_content_spec = collection_item.repository_spec
         # installation_results = item[1]
         path = collection_item.path
 

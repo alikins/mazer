@@ -2,7 +2,7 @@ import logging
 
 import attr
 
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import ContentSpec
 
 log = logging.getLogger(__name__)
 

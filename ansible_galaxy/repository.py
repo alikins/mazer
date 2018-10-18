@@ -9,7 +9,7 @@ from ansible_galaxy import install_info
 from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
-from ansible_galaxy.models.content_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import ContentSpec
 from ansible_galaxy.models.repository import Repository
 
 
@@ -101,11 +101,11 @@ def load_from_dir(content_dir, namespace, name, installed=True):
     log.debug('install_info: %s', install_info_data)
     install_info_version = getattr(install_info_data, 'version', None)
 
-    content_spec = ContentSpec(namespace=namespace,
-                               name=name,
-                               version=install_info_version)
+    repository_spec = ContentSpec(namespace=namespace,
+                                  name=name,
+                                  version=install_info_version)
 
-    repository = Repository(content_spec=content_spec,
+    repository = Repository(repository_spec=repository_spec,
                             path=path_name,
                             installed=installed,
                             requirements=requirements_list,

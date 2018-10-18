@@ -27,12 +27,12 @@ def _list(galaxy_context,
                              # 'installed_repo_namespace': repo.namespace,
                              # 'installed_repo_name': repo.name,
                              # 'installed_repo_path': repo.path,
-                             # 'installed_repo_id': repo.content_spec.label,
+                             # 'installed_repo_id': repo.repository_spec.label,
                              'installed_repository': repository,
                              })
 
-        msg = "repo={installed_repository.content_spec.label}, type={type}, name={name}, "
-        "version={installed_repository.content_spec.version}"
+        msg = "repo={installed_repository.repository_spec.label}, type={type}, name={name}, "
+        "version={installed_repository.repository_spec.version}"
 
         display_callback(msg.format(**content_dict))
 
