@@ -18,14 +18,14 @@ def get_repository_paths(namespace_path):
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
         #
-        collection_paths = os.listdir(namespace_path)
+        repository_paths = os.listdir(namespace_path)
     except OSError as e:
         log.exception(e)
-        log.warn('The namespace path %s did not exist so no content or collections were found.',
+        log.warn('The namespace path %s did not exist so no content or repositories were found.',
                  namespace_path)
-        collection_paths = []
+        repository_paths = []
 
-    return collection_paths
+    return repository_paths
 
 
 def installed_repository_iterator(galaxy_context,
@@ -51,23 +51,15 @@ def installed_repository_iterator(galaxy_context,
         repository_paths = get_repository_paths(namespace.path)
 
         for repository_path in repository_paths:
-            # use the default 'local' style content_spec_parse and name resolver
-            # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
             # TODO: if we need to distinquish repo from collection, we could do it here
             repository_ = repository.load_from_dir(content_path,
                                                    namespace=namespace.namespace,
                                                    name=repository_path,
                                                    installed=True)
-            # collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
-            # log.debug('repo_fll_path: %s', collection_full_path)
-            # content_spec = ContentSpec(namespace=namespace.namespace,
-            #                           name=collection_path)
-            # collection_ = Collection(content_spec=content_spec,
-            #                         path=collection_full_path)
 
             log.debug('content_repo(collection): %s', repository_)
-            # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
+
             if repository_match_filter(repository_):
                 log.debug('Found repository "%s" in namespace "%s"', repository_path, namespace.namespace)
                 yield repository_
