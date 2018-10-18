@@ -11,7 +11,7 @@ from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.content_spec import ContentSpec
-from ansible_galaxy.models.collection import Collection
+from ansible_galaxy.models.repository import Collection
 
 
 log = logging.getLogger(__name__)
