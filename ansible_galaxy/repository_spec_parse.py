@@ -2,7 +2,7 @@ import logging
 import os
 
 from ansible_galaxy import exceptions
-from ansible_galaxy import galaxy_content_spec
+from ansible_galaxy import galaxy_repository_spec
 
 log = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ def spec_data_from_string(repository_spec_string, resolver=None):
     if resolver is None:
         resolver = resolve
         if fetch_method == FetchMethods.GALAXY_URL:
-            resolver = galaxy_content_spec.resolve
+            resolver = galaxy_repository_spec.resolve
 
     log.debug('resolver: %s', resolver)
     resolved_name = resolver(spec_data)
