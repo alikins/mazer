@@ -31,25 +31,21 @@ log = logging.getLogger(__name__)
 # def update_dbs
 
 
-def fetcher(galaxy_context, content_spec):
-    log.debug('Attempting to get fetcher for content_spec=%s', content_spec)
+def fetcher(galaxy_context, repository_spec):
+    log.debug('Attempting to get fetcher for repository_spec=%s', repository_spec)
 
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                content_spec=content_spec)
+                                repository_spec=repository_spec)
 
-    log.debug('Using fetcher: %s for content_spec: %s', fetcher, content_spec)
+    log.debug('Using fetcher: %s for repository_spec: %s', fetcher, repository_spec)
 
     return fetcher
 
 
-def find(fetcher, content_spec):
+def find(fetcher):
     """find/discover info about the content"""
 
-    log.debug('Attempting to find() content_spec=%s', content_spec)
-
     find_results = fetcher.find()
-
-    # log.debug('find() found info for %s: %s', content_spec.label, find_results)
 
     return find_results
 
@@ -57,12 +53,12 @@ def find(fetcher, content_spec):
 # def fetch(fetcher, collection):
 #    pass
 
-def fetch(fetcher, content_spec, find_results):
+def fetch(fetcher, repository_spec, find_results):
     """download the archive and side effect set self._archive_path to where it was downloaded to.
 
     MUST be called after self.find()."""
 
-    log.debug('Fetching content_spec=%s', content_spec)
+    log.debug('Fetching repository_spec=%s', repository_spec)
 
     try:
         # FIXME: note that ignore_certs for the galaxy
@@ -100,9 +96,7 @@ def fetch(fetcher, content_spec, find_results):
 
 
 def update_repository_spec(fetch_results,
-                           repository_spec=None,
-                           # content_meta=None,
-                           ):
+                           repository_spec=None):
     '''Verify we got the archive we asked for, checksums, check sigs, etc
 
     At the moment, also side effect and evols repository_spec to match fetch results
@@ -135,7 +129,6 @@ def install(galaxy_context,
             fetcher,
             fetch_results,
             repository_spec,
-            # content_meta=None,
             force_overwrite=False):
     """extract the archive to the filesystem and write out install metadata.
 
@@ -144,9 +137,6 @@ def install(galaxy_context,
     log.debug('install: repository_spec=%s, force_overwrite=%s',
               repository_spec, force_overwrite)
     installed = []
-
-    # FIXME: enum/constant/etc demagic
-    # content_archive_type = 'multi'
 
     # FIXME: really need to move the fetch step elsewhere and do it before,
     #        install should get pass a content_archive (or something more abstract)
@@ -162,13 +152,9 @@ def install(galaxy_context,
 
     # TODO: this is figuring out the archive type (multi-content collection or a trad role)
     #       could potentially pull this up a layer
-    # TODO: content_tar_file and archive_meta probably should be attributes of of
-    #       InstallableArchive (somewhere between GalaxyContent, GalaxyContentMeta,
-    #       ContentArchiveMeta...)
-    # content_tar_file, archive_meta = content_archive.load_archive(archive_path)
     content_archive_ = content_archive.load_archive(archive_path)
-    log.debug('content_archive_: %s', content_archive_)
 
+    log.debug('content_archive_: %s', content_archive_)
     log.debug('content_archive_.info: %s', content_archive_.info)
 
     # we strip off any higher-level directories for all of the files contained within
@@ -181,7 +167,7 @@ def install(galaxy_context,
 
         os.makedirs(galaxy_context.content_path)
 
-    res = content_archive_.install(content_spec=repository_spec,
+    res = content_archive_.install(repository_spec=repository_spec,
                                    extract_to_path=galaxy_context.content_path,
                                    force_overwrite=force_overwrite)
     installed.append((repository_spec, res))
@@ -207,7 +193,6 @@ def install(galaxy_context,
 
     installed_repositories = []
 
-    # log.debug('FOOO: %s', [x for x in already_installed_generator])
     for repository_item in already_installed_generator:
         log.debug('installed repository item: %s', pprint.pformat(repository_item))
 
@@ -227,15 +212,9 @@ def install(galaxy_context,
                                              version=installed_repository_spec.version,
                                              dependencies=repository_item.dependencies,
                                              requirements=repository_item.requirements,
-                                             # install_info=installation_results.install_info,
-                                             # meta_main=installation_results.meta_main,
-                                             # content_type=installed_content_spec.content_type,
-                                             # TESTME:
-                                             # path=content_meta.path,
-                                             # path=repo_install_path,
                                              )
         installed_repositories.append(installed_content)
-        # log.debug('Installed files: %s', pprint.pformat(item[1]))
 
     log.debug('installed_repositories: %s', pprint.pformat(installed_repositories))
+
     return installed_repositories
