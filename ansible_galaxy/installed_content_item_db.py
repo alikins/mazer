@@ -24,13 +24,13 @@ installed_collection_content_iterator_map = {'roles': installed_collection_role_
 
 def installed_content_item_iterator(galaxy_context,
                                     namespace_match_filter=None,
-                                    collection_match_filter=None,
+                                    repository_match_filter=None,
                                     content_match_filter=None,
                                     content_item_type=None):
 
     # match_all works for all types
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
-    collection_match_filter = collection_match_filter or matchers.MatchAll()
+    repository_match_filter = repository_match_filter or matchers.MatchAll()
     content_match_filter = content_match_filter or matchers.MatchAll()
 
     content_item_type = content_item_type or 'roles'
@@ -39,12 +39,12 @@ def installed_content_item_iterator(galaxy_context,
 
     # for namespace_full_path in namespace_paths_iterator:
     for installed_collection in installed_coll_db.select(namespace_match_filter=namespace_match_filter,
-                                                         collection_match_filter=collection_match_filter):
+                                                         repository_match_filter=repository_match_filter):
         log.debug('Found collection "%s" at %s', installed_collection.content_spec.label, installed_collection.path)
         installed_collection_full_path = installed_collection.path
 
-        if not collection_match_filter(installed_collection):
-            log.debug('The collection_match_filter %s failed to match for %s', collection_match_filter, installed_collection)
+        if not repository_match_filter(installed_collection):
+            log.debug('The repository_match_filter %s failed to match for %s', repository_match_filter, installed_collection)
             continue
 
         # since we will need a different iterator for each specific type of content, consult
@@ -79,7 +79,7 @@ def installed_content_item_iterator(galaxy_context,
             # this is sort of the 'join' of installed_collection and installed_content
             content_info = {'path': path_file,
                             'content_data': gr,
-                            'installed_collection': installed_collection,
+                            'installed_repository': installed_collection,
                             'version': version,
                             }
 
@@ -91,16 +91,16 @@ class InstalledContentItemDatabase(object):
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
-    # select content based on matching the installed namespace.collection and/or the content itself
-    def select(self, collection_match_filter=None, content_match_filter=None):
+    # select content based on matching the installed namespace.repository and/or the content itself
+    def select(self, repository_match_filter=None, content_match_filter=None):
         # ie, default to select * more or less
-        collection_match_filter = collection_match_filter or matchers.MatchAll()
+        repository_match_filter = repository_match_filter or matchers.MatchAll()
         content_match_filter = content_match_filter or matchers.MatchAll()
 
         roles_content_iterator = \
             installed_content_item_iterator(self.installed_context,
                                             content_item_type='roles',
-                                            collection_match_filter=collection_match_filter,
+                                            repository_match_filter=repository_match_filter,
                                             content_match_filter=content_match_filter)
 
         for matched_content in roles_content_iterator:

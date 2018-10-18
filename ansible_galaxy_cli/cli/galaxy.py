@@ -280,7 +280,7 @@ class GalaxyCLI(cli.CLI):
 
     def execute_remove(self):
         """
-        Remove a list of collections from the local system.
+        Remove a list of repository from the local system.
         """
 
         if len(self.args) == 0:
@@ -292,12 +292,12 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchLabels(self.args)
 
         return remove.remove(galaxy_context,
-                             collection_match_filter=match_filter,
+                             repository_match_filter=match_filter,
                              display_callback=self.display)
 
     def execute_list(self):
         """
-        List roles installed on the local file system.
+        List repositories, roles, and collections installed on the local file system.
         """
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
@@ -308,7 +308,7 @@ class GalaxyCLI(cli.CLI):
             match_filter = matchers.MatchNamespacesOrLabels(self.args)
 
         return list_action.list(galaxy_context,
-                                collection_match_filter=match_filter,
+                                repository_match_filter=match_filter,
                                 display_callback=self.display)
 
     def execute_version(self):
