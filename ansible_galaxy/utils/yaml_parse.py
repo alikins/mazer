@@ -76,7 +76,6 @@ def yaml_parse(content, resolver=None):
 
         if data.get('src', None):
             # valid_kw = ('src', 'version', 'name', 'scm')
-            # new_data = content_spec_parse.parse_string(data['src'], VALID_ROLE_SPEC_KEYS)
             new_data = repository_spec_parse.spec_data_from_string(data['src'])
 
             log.debug('new_data: %s', new_data)
