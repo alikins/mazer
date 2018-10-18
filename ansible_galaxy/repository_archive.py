@@ -27,7 +27,7 @@ def null_display_callback(*args, **kwargs):
 
 
 @attr.s()
-class BaseContentArchive(object):
+class BaseRepositoryArchive(object):
     info = attr.ib(type=ContentArchiveInfo)
     tar_file = attr.ib(type=tarfile.TarFile, default=None)
     install_datetime = attr.ib(type=datetime.datetime,
@@ -172,7 +172,7 @@ class BaseContentArchive(object):
 
 
 @attr.s()
-class TraditionalRoleContentArchive(BaseContentArchive):
+class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
     ROLES_SUBPATH = 'roles'
 
     def content_dest_root_subpath(self, content_namespace, content_name):
@@ -181,7 +181,7 @@ class TraditionalRoleContentArchive(BaseContentArchive):
 
 
 @attr.s()
-class CollectionContentArchive(BaseContentArchive):
+class CollectionRepositoryArchive(BaseRepositoryArchive):
     # TODO: should we create a meta/ for a collection just for .galaxy_install_info?
     META_INSTALL = os.path.join('meta', '.galaxy_install_info')
 
@@ -251,10 +251,10 @@ def load_archive(archive_path):
 
     # factory-ish
     if archive_type in ['multi-content']:
-        content_archive_ = CollectionContentArchive(info=archive_info,
+        content_archive_ = CollectionRepositoryArchive(info=archive_info,
                                                     tar_file=content_tar_file)
     elif archive_type in ['role']:
-        content_archive_ = TraditionalRoleContentArchive(info=archive_info,
+        content_archive_ = TraditionalRoleRepositoryArchive(info=archive_info,
                                                          tar_file=content_tar_file)
     else:
         content_archive_ = ContentArchive(info=archive_info,
