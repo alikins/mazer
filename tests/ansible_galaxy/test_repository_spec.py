@@ -3,7 +3,7 @@ import os
 import tempfile
 import pytest
 
-from ansible_galaxy import content_spec
+from ansible_galaxy import repository_spec
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content_spec import ContentSpec
 
@@ -32,15 +32,15 @@ content_spec_from_string_cases = \
                                  scm='git')},
         {'spec': 'git+https://mazertestuser@github.com/geerlingguy/ansible-role-apache.git,version=2.0.0',
          'expected': ContentSpec(name='ansible-role-apache', namespace=None, version='2.0.0',
-                                 scm='git', fetch_method=content_spec.FetchMethods.SCM_URL)},
+                                 scm='git', fetch_method=repository_spec.FetchMethods.SCM_URL)},
         # A path to a file without a dot in it's name. It's path will include where the tests are run from
         # so specify a ',name=' to provide a predictable name (otherwise it would be the full path)
         {'spec': '%s,name=the_license' % os.path.normpath(os.path.join(os.path.dirname(__file__), '../../LICENSE')),
          'expected': ContentSpec(name='the_license', namespace=None,
-                                 fetch_method=content_spec.FetchMethods.LOCAL_FILE)},
+                                 fetch_method=repository_spec.FetchMethods.LOCAL_FILE)},
         {'spec': 'https://docs.ansible.com,name=the_docs',
          'expected': ContentSpec(name='the_docs', namespace=None,
-                                 scm=None, fetch_method=content_spec.FetchMethods.REMOTE_URL)},
+                                 scm=None, fetch_method=repository_spec.FetchMethods.REMOTE_URL)},
         # 'foo',
         # 'foo,1.2.3',
         # 'foo,version=1.2.3',
@@ -59,7 +59,7 @@ def content_spec_case(request):
 
 
 def test_content_spec_from_string(content_spec_case):
-    result = content_spec.content_spec_from_string(content_spec_case['spec'])
+    result = repository_spec.content_spec_from_string(content_spec_case['spec'])
     log.debug('spec=%s result=%s exp=%s', content_spec_case['spec'], result, content_spec_case['expected'])
 
     # assert attr.asdict(result) == attr.asdict(content_spec_case['expected'])
@@ -68,7 +68,7 @@ def test_content_spec_from_string(content_spec_case):
 
 def test_content_spec_editable():
     tmpdir = tempfile.mkdtemp()
-    result = content_spec.content_spec_from_string(tmpdir, editable=True)
+    result = repository_spec.content_spec_from_string(tmpdir, editable=True)
     os.rmdir(tmpdir)
     assert result.name == tmpdir
     assert result.fetch_method == 'EDITABLE'
@@ -76,9 +76,9 @@ def test_content_spec_editable():
 
 @pytest.mark.xfail(raises=exceptions.GalaxyError)
 def test_content_spec_fail():
-    content_spec.content_spec_from_string('foo.')
+    repository_spec.content_spec_from_string('foo.')
 
 
 @pytest.mark.xfail(raises=exceptions.GalaxyError)
 def test_content_editable_fail():
-    content_spec.content_spec_from_string('foo', editable=True)
+    repository_spec.content_spec_from_string('foo', editable=True)

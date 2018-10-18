@@ -3,7 +3,7 @@ import mock
 
 from ansible_galaxy.actions import install
 from ansible_galaxy import exceptions
-from ansible_galaxy import content_spec
+from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def test_install_repositories(galaxy_context, mocker):
     needed_deps = requirements.from_requirement_spec_strings(['some_namespace.some_name'])
 
     content_specs_to_install = \
-        [content_spec.content_spec_from_string('some_namespace.this_requires_some_name')]
+        [repository_spec.content_spec_from_string('some_namespace.this_requires_some_name')]
 
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=needed_deps)
@@ -47,7 +47,7 @@ def test_install_repositories_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
     content_specs_to_install = \
-        [content_spec.content_spec_from_string('some_namespace.this_requires_nothing')]
+        [repository_spec.content_spec_from_string('some_namespace.this_requires_nothing')]
 
     # mock out install_repository
     mocker.patch('ansible_galaxy.actions.install.install_repository',
