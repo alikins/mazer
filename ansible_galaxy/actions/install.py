@@ -264,7 +264,7 @@ def install_repository(galaxy_context,
     # TODO: build a new content_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
-    fetched_content_spec = install.update_content_spec(fetch_results,
+    fetched_content_spec = install.update_repository_spec(fetch_results,
                                                        repository_specs_to_install)
 
     log.debug('fetched_content_spec: %s', fetched_content_spec)
@@ -281,7 +281,7 @@ def install_repository(galaxy_context,
                                     fetcher,
                                     fetch_results,
                                     # content.content_meta,
-                                    content_spec=fetched_content_spec,
+                                    repository_spec=fetched_content_spec,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.exception(e)
