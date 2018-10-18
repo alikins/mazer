@@ -205,7 +205,7 @@ def install_repository(galaxy_context,
 
     if repository_specs_to_install.fetch_method == repository_spec.FetchMethods.EDITABLE:
         # trans to INSTALL_EDITABLE state
-        install_editable_content(repository_specs_to_install)
+        install_editable_repository(repository_specs_to_install)
         # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
         log.debug('not installing/extractings because of install_repository')
         return
@@ -264,10 +264,10 @@ def install_repository(galaxy_context,
     # TODO: build a new content_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
-    fetched_content_spec = install.update_repository_spec(fetch_results,
-                                                       repository_specs_to_install)
+    fetched_repository_spec = install.update_repository_spec(fetch_results,
+                                                             repository_specs_to_install)
 
-    log.debug('fetched_content_spec: %s', fetched_content_spec)
+    log.debug('fetched_repository_spec: %s', fetched_repository_spec)
 
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
@@ -280,12 +280,11 @@ def install_repository(galaxy_context,
         installed = install.install(galaxy_context,
                                     fetcher,
                                     fetch_results,
-                                    # content.content_meta,
-                                    repository_spec=fetched_content_spec,
+                                    repository_spec=fetched_repository_spec,
                                     force_overwrite=force_overwrite)
     except exceptions.GalaxyError as e:
         log.exception(e)
-        log.warning("- %s was NOT installed successfully: %s ", fetched_content_spec.name, str(e))
+        log.warning("- %s was NOT installed successfully: %s ", fetched_repository_spec.name, str(e))
         raise
 
 
@@ -298,13 +297,13 @@ def install_repository(galaxy_context,
     log.debug('installed result: %s', installed)
 
     if not installed:
-        log.warning("- %s was NOT installed successfully.", fetched_content_spec.label)
+        log.warning("- %s was NOT installed successfully.", fetched_repository_spec.label)
         raise_without_ignore(ignore_errors)
 
     log.debug('installed: %s', pprint.pformat(installed))
     if no_deps:
         log.warning('- %s was installed but any deps will not be installed because of no_deps',
-                    fetched_content_spec.label)
+                    fetched_repository_spec.label)
 
     # TODO?: update the install receipt for 'installed' if succesull?
 
@@ -402,8 +401,8 @@ def stuff_for_updating(content, display_callback, force_overwrite=False):
                     return None
 
 
-def install_editable_content(repository):
-    '''Link the content path to the local checkout, similar to pip install -e'''
+def install_editable_repository(repository):
+    '''Link the repository path to the local checkout, similar to pip install -e'''
 
     # is it a directory or is it a tarball?
     if not os.path.isdir(os.path.abspath(repository.src)):
