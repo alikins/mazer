@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 
 def test_get_content_version_none():
-    ret = repository_version.get_content_version({}, None, [], None)
+    ret = repository_version.get_repository_version({}, None, [], None)
     log.debug('ret=%s', ret)
 
     assert ret == 'master'
@@ -18,7 +18,7 @@ def test_get_content_version_none():
 
 def test_get_content_version_devel_version_no_content_versions():
     try:
-        repository_version.get_content_version({}, 'devel', [], None)
+        repository_version.get_repository_version({}, 'devel', [], None)
     except exceptions.GalaxyError:
         return
 
@@ -27,7 +27,7 @@ def test_get_content_version_devel_version_no_content_versions():
 
 @pytest.mark.xfail
 def test_get_content_version_prod_version_in_content_versions():
-    ret = repository_version.get_content_version({}, 'prod', content_versions_147, None)
+    ret = repository_version.get_repository_version({}, 'prod', content_versions_147, None)
     log.debug('ret=%s', ret)
 
     assert ret == 'prod'
@@ -181,7 +181,7 @@ def test_validate_versions(versions, exp_valid, exp_invalid):
 
 def test_get_content_version(ver_data):
     log.debug('ver_data: %s', ver_data)
-    res = repository_version.get_content_version({}, ver_data['ask'], ver_data['vlist'], 'some_content_name')
+    res = repository_version.get_repository_version({}, ver_data['ask'], ver_data['vlist'], 'some_content_name')
     log.debug('res: %s', res)
     assert res == ver_data['exp']
 
@@ -205,7 +205,7 @@ def latest_ver_data(request):
 
 def test_get_content_version_latest(latest_ver_data):
     log.debug('latest_ver_data: %s', latest_ver_data)
-    res = repository_version.get_content_version({}, None, latest_ver_data['vlist'], 'some_content_name')
+    res = repository_version.get_repository_version({}, None, latest_ver_data['vlist'], 'some_content_name')
     log.debug('res: %s', res)
     assert res == latest_ver_data['exp']
 
@@ -213,7 +213,7 @@ def test_get_content_version_latest(latest_ver_data):
 def test_get_latest_version():
     vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4']
     res = repository_version.get_latest_version(vers,
-                                             content_data={})
+                                                content_data={})
 
     assert res == '3.1.4'
 
@@ -222,7 +222,7 @@ def test_get_latest_version_invalid_semver():
     vers = ['1.0.0', '2.0.0', '2.0.1', '2.2.0', '3.1.4', '4.2']
     try:
         repository_version.get_latest_version(vers,
-                                           content_data={})
+                                              content_data={})
     except exceptions.GalaxyClientError as e:
         assert 'Unable to compare' in '%s' % e
         assert '4.2 is not valid SemVer' in '%s' % e
@@ -232,11 +232,11 @@ def test_get_latest_version_invalid_semver():
 
 
 def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
-    ret1 = repository_version.get_content_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
+    ret1 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
     log.debug('ret1: %s', ret1)
     # assert ret1 == '3.0.0'
     content_versions_1_0_v_and_no_v.reverse()
-    ret2 = repository_version.get_content_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
+    ret2 = repository_version.get_repository_version({}, None, content_versions_1_0_v_and_no_v, 'some_content_name')
     log.debug('ret2: %s', ret2)
     assert ret1 == ret2
 
@@ -244,7 +244,7 @@ def test_get_latest_in_content_versions_1_0_0_v_and_no_v():
 def test_get_content_version_devel_version_not_in_content_versions():
     # FIXME: use pytest expect_exception stuff
     try:
-        ret = repository_version.get_content_version({}, 'devel', content_versions_147, 'some_content_name')
+        ret = repository_version.get_repository_version({}, 'devel', content_versions_147, 'some_content_name')
         log.debug('ret=%s', ret)
     except exceptions.GalaxyError as e:
         log.exception(e)

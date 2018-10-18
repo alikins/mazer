@@ -75,7 +75,7 @@ def validate_versions(content_versions):
 
 
 # FIXME: rename, really get_repo_version
-def get_content_version(content_data, version, content_versions, content_content_name):
+def get_repository_version(content_data, version, content_versions, content_content_name):
     '''find and compare content version found in content_data dict
 
     content_data is a dict based on /api/v1/content/13 for ex
