@@ -207,7 +207,7 @@ def install(galaxy_context,
 
     log.debug('collectio_match_filter: %s', collection_match_filter)
 
-    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    icdb = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('already_installed_generator: %s', already_installed_generator)

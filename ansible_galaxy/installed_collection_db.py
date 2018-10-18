@@ -15,6 +15,7 @@ def get_collection_paths(namespace_path):
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
     #       fs ordering, etc
+    #
     try:
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
@@ -42,6 +43,7 @@ def installed_collection_iterator(galaxy_context,
 
     # log.debug('collection_paths for content_path=%s: %s', content_path, collection_paths)
 
+    # TODO: iterate/filter per namespace, then per repository, then per collection/role/etc
     for namespace in installed_namespace_db.select(namespace_match_filter=namespace_match_filter):
         # log.debug('namespace: %s', namespace)
         log.debug('Looking for repos in namespace "%s"', namespace.namespace)
@@ -70,11 +72,12 @@ def installed_collection_iterator(galaxy_context,
                 yield collection_
 
 
-class InstalledCollectionDatabase(object):
+class InstalledRepositoryDatabase(object):
 
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
+    # TODO: add a repository_type_filter (ie, 'collection' or 'role' or 'other' etc)
     def select(self, namespace_match_filter=None, collection_match_filter=None):
         # ie, default to select * more or less
         collection_match_filter = collection_match_filter or matchers.MatchAll()

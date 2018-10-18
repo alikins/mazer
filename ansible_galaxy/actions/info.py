@@ -135,7 +135,7 @@ def info_content_specs(galaxy_context,
 
     offline = offline or False
 
-    icdb = installed_collection_db.InstalledCollectionDatabase(galaxy_context)
+    icdb = installed_collection_db.InstalledRepositoryDatabase(galaxy_context)
 
     labels_to_match = []
 
