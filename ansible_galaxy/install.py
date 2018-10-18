@@ -14,21 +14,10 @@ from ansible_galaxy import matchers
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.models.content import InstalledContent
 
-# FIXME: remove
-# from ansible_galaxy.flat_rest_api.content import InstalledContent
-
 log = logging.getLogger(__name__)
 
 # This should probably be a state machine for stepping through the install states
 # See actions.install.install_collection for a sketch of the states
-#
-# But... we are going to start with just extracting the related bits of
-# flat_rest_api.content.GalaxyContent here as methods
-
-# def find
-# def fetch
-# def install
-# def update_dbs
 
 
 def fetcher(galaxy_context, repository_spec):
