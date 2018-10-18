@@ -17,8 +17,8 @@ def test_install_contents_empty_contents(galaxy_context):
     content_specs_to_install = []
 
     ret = install.install_repositories(galaxy_context,
-                                      content_specs_to_install=content_specs_to_install,
-                                      display_callback=display_callback)
+                                       content_specs_to_install=content_specs_to_install,
+                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
@@ -31,12 +31,12 @@ def test_install_collections(galaxy_context, mocker):
     content_specs_to_install = \
         [content_spec.content_spec_from_string('some_namespace.this_requires_some_name')]
 
-    mocker.patch('ansible_galaxy.actions.install.install_collection',
+    mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=needed_deps)
 
     ret = install.install_repositories(galaxy_context,
-                                      content_specs_to_install=content_specs_to_install,
-                                      display_callback=display_callback)
+                                       content_specs_to_install=content_specs_to_install,
+                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
@@ -49,13 +49,13 @@ def test_install_collections_no_deps_required(galaxy_context, mocker):
     content_specs_to_install = \
         [content_spec.content_spec_from_string('some_namespace.this_requires_nothing')]
 
-    # mock out install_collection
-    mocker.patch('ansible_galaxy.actions.install.install_collection',
+    # mock out install_repository
+    mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=[])
 
     ret = install.install_repositories(galaxy_context,
-                                      content_specs_to_install=content_specs_to_install,
-                                      display_callback=display_callback)
+                                       content_specs_to_install=content_specs_to_install,
+                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
