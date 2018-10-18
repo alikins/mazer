@@ -10,7 +10,7 @@ from ansible_galaxy.models.content_spec import ContentSpec
 log = logging.getLogger(__name__)
 
 
-def get_collection_paths(namespace_path):
+def get_repository_paths(namespace_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
@@ -30,7 +30,7 @@ def get_collection_paths(namespace_path):
     return collection_paths
 
 
-def installed_collection_iterator(galaxy_context,
+def installed_repository_iterator(galaxy_context,
                                   namespace_match_filter=None,
                                   collection_match_filter=None):
 
@@ -48,15 +48,15 @@ def installed_collection_iterator(galaxy_context,
         # log.debug('namespace: %s', namespace)
         log.debug('Looking for repos in namespace "%s"', namespace.namespace)
 
-        collection_paths = get_collection_paths(namespace.path)
+        repository_paths = get_repository_paths(namespace.path)
 
-        for collection_path in collection_paths:
+        for repository_path in repository_paths:
             # use the default 'local' style content_spec_parse and name resolver
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
             collection_ = collection.load_from_dir(content_path,
                                                    namespace=namespace.namespace,
-                                                   name=collection_path,
+                                                   name=repository_path,
                                                    installed=True)
             # collection_full_path = os.path.join(content_path, namespace.namespace, collection_path)
             # log.debug('repo_fll_path: %s', collection_full_path)
@@ -68,7 +68,7 @@ def installed_collection_iterator(galaxy_context,
             log.debug('content_repo(collection): %s', collection_)
             # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
             if collection_match_filter(collection_):
-                log.debug('Found collection "%s" in namespace "%s"', collection_path, namespace.namespace)
+                log.debug('Found collection "%s" in namespace "%s"', repository_path, namespace.namespace)
                 yield collection_
 
 
@@ -83,7 +83,7 @@ class InstalledRepositoryDatabase(object):
         collection_match_filter = collection_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
 
-        installed_collections = installed_collection_iterator(self.installed_context,
+        installed_collections = installed_repository_iterator(self.installed_context,
                                                               namespace_match_filter=namespace_match_filter,
                                                               collection_match_filter=collection_match_filter)
 
