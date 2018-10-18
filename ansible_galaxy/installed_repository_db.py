@@ -54,6 +54,7 @@ def installed_repository_iterator(galaxy_context,
             # use the default 'local' style content_spec_parse and name resolver
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
+            # TODO: if we need to distinquish repo from collection, we could do it here
             collection_ = collection.load_from_dir(content_path,
                                                    namespace=namespace.namespace,
                                                    name=repository_path,
