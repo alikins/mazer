@@ -3,7 +3,7 @@ import logging
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
-from ansible_galaxy import content_spec_parse
+from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import galaxy_content_spec
 
 
@@ -35,7 +35,7 @@ def assert_keys(content_spec, name=None, version=None,
 
 def test_yaml_parse_empty_string_no_namespace_required():
     spec = ''
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='', version=None, scm=None, src='')
 
@@ -61,7 +61,7 @@ def test_yaml_parse_just_name():
 
 def test_yaml_parse_just_name_no_namespace_required():
     spec = 'some_content'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')
 
@@ -125,7 +125,7 @@ def test_yaml_parse_name_and_version_leading_v():
 
 def test_yaml_parse_name_and_version_leading_v_no_namespace_required():
     spec = 'some_content,v1.0.0'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     assert_keys(result, name='some_content',
                 version='v1.0.0', scm=None, src='some_content')
@@ -134,7 +134,7 @@ def test_yaml_parse_name_and_version_leading_v_no_namespace_required():
 # proving a name and a version as comma separated key values
 def test_yaml_parse_name_with_name_key_value():
     spec = 'some_content,name=other_name'
-    result = parse_spec(spec, resolver=content_spec_parse.resolve)
+    result = parse_spec(spec, resolver=repository_spec_parse.resolve)
 
     # TODO: what should 'src' be for this cases?
     assert_keys(result, name='other_name', version=None, scm=None, src='some_content')
