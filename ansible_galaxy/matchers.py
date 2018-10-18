@@ -41,17 +41,17 @@ class MatchLabels(Match):
 
 
 class MatchContentSpec(Match):
-    def __init__(self, content_specs):
-        self.content_specs = content_specs or []
+    def __init__(self, repository_specs):
+        self.repository_specs = repository_specs or []
 
     def match(self, other):
-        log.debug('is %s in %s', other.repository_spec, self.content_specs)
-        return other.repository_spec in self.content_specs
+        log.debug('is %s in %s', other.repository_spec, self.repository_specs)
+        return other.repository_spec in self.repository_specs
 
 
 class MatchContentSpecsNamespaceNameVersion(Match):
-    def __init__(self, content_specs):
-        self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in content_specs] or []
+    def __init__(self, repository_specs):
+        self.namespaces_names_versions = [(x.namespace, x.name, x.version) for x in repository_specs] or []
 
     def match(self, other):
         log.debug('is %s in %s', (other.repository_spec.namespace, other.repository_spec.name, other.repository_spec.version), self.namespaces_names_versions)
