@@ -22,8 +22,8 @@ def test__list(galaxy_context, mocker):
                  return_value=iter(['n_bar', 'n_baz']))
 
     # The content type specific content iterator is determined at runtime, so we need to patch the value
-    # of the 'roles' item in installed_collection_content_iterator_map to patch the right method used
-    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_collection_content_iterator_map',
+    # of the 'roles' item in installed_repository_content_iterator_map to patch the right method used
+    mocker.patch.dict('ansible_galaxy.installed_content_item_db.installed_repository_content_iterator_map',
                       {'roles': mocker.Mock(return_value=iter(['/dev/null/content/ns_foo/n_bar/roles/role-1',
                                                                '/dev/null/content/ns_blip/n_bar/roles/role-3',
                                                                '/dev/null/content/ns_blip/n_baz/roles/role-2']))})
