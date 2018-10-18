@@ -12,9 +12,9 @@ def test_local_file_fetch():
     tmp_file = tempfile.NamedTemporaryFile(prefix='tmp', delete=True)
     log.debug('tmp_file.name=%s tmp_file=%s', tmp_file.name, tmp_file)
 
-    content_spec_ = repository_spec.repository_spec_from_string(tmp_file.name)
+    repository_spec_ = repository_spec.repository_spec_from_string(tmp_file.name)
 
-    local_fetch = local_file.LocalFileFetch(content_spec_)
+    local_fetch = local_file.LocalFileFetch(repository_spec_)
 
     find_results = local_fetch.find()
     results = local_fetch.fetch(find_results=find_results)

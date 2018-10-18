@@ -18,20 +18,20 @@ def get(galaxy_context, repository_spec):
     # server(galaxy_context.server['ignore_certs'])
     # does not really imply that the repo archive download should ignore certs as well
     # (galaxy api server vs cdn) but for now, we use the value for both
-    log.debug('content_spec: %s', repository_spec)
-    log.debug('content_spec.fetch_method %s dir(fetchMethods): %s', repository_spec.fetch_method, dir(FetchMethods))
+    log.debug('repository_spec: %s', repository_spec)
+    log.debug('repository_spec.fetch_method %s dir(fetchMethods): %s', repository_spec.fetch_method, dir(FetchMethods))
 
     if repository_spec.fetch_method == FetchMethods.SCM_URL:
-        fetcher = scm_url.ScmUrlFetch(content_spec=repository_spec)
+        fetcher = scm_url.ScmUrlFetch(repository_spec=repository_spec)
     elif repository_spec.fetch_method == FetchMethods.LOCAL_FILE:
         # the file is a tar, so open it that way and extract it
         # to the specified (or default) content directory
         fetcher = local_file.LocalFileFetch(repository_spec)
     elif repository_spec.fetch_method == FetchMethods.REMOTE_URL:
-        fetcher = remote_url.RemoteUrlFetch(content_spec=repository_spec,
+        fetcher = remote_url.RemoteUrlFetch(repository_spec=repository_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])
     elif repository_spec.fetch_method == FetchMethods.GALAXY_URL:
-        fetcher = galaxy_url.GalaxyUrlFetch(content_spec=repository_spec.src,
+        fetcher = galaxy_url.GalaxyUrlFetch(repository_spec=repository_spec.src,
                                             content_version=repository_spec.version,
                                             galaxy_context=galaxy_context)
     else:
