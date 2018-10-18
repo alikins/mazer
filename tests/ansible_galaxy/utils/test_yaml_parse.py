@@ -10,27 +10,27 @@ from ansible_galaxy import galaxy_content_spec
 log = logging.getLogger(__name__)
 
 
-def parse_spec(content_spec, resolver=None):
-    result = yaml_parse.yaml_parse(content_spec, resolver=resolver)
+def parse_spec(repository_spec, resolver=None):
+    result = yaml_parse.yaml_parse(repository_spec, resolver=resolver)
     log.debug('result=%s', result)
     return result
 
 
-def assert_keys(content_spec, name=None, version=None,
+def assert_keys(repository_spec, name=None, version=None,
                 scm=None, src=None, namespace=None):
     # name = name or ''
     # src = src or ''
-    assert isinstance(content_spec, dict)
+    assert isinstance(repository_spec, dict)
 
-    log.debug('content_spec: %s', content_spec)
+    log.debug('repository_spec: %s', repository_spec)
     # TODO: should it default to empty string?
-    assert content_spec['name'] == name, \
-        'content_spec name=%s does not match expected name=%s' % (content_spec['name'], name)
-    assert content_spec.get('namespace') == namespace
-    assert content_spec['version'] == version
-    assert content_spec['scm'] == scm
-    assert content_spec['src'] == src, \
-        'content_spec src=%s does not match expected src=%s' % (content_spec['src'], src)
+    assert repository_spec['name'] == name, \
+        'repository_spec name=%s does not match expected name=%s' % (repository_spec['name'], name)
+    assert repository_spec.get('namespace') == namespace
+    assert repository_spec['version'] == version
+    assert repository_spec['scm'] == scm
+    assert repository_spec['src'] == src, \
+        'repository_spec src=%s does not match expected src=%s' % (repository_spec['src'], src)
 
 
 def test_yaml_parse_empty_string_no_namespace_required():
@@ -212,10 +212,10 @@ def test_yaml_parse_a_old_style_role_dict():
     src = 'galaxy.role'
     assert isinstance(result, dict)
     assert result['name'] == name, \
-        'content_spec name=%s does not match expected name=%s' % (result['name'], name)
+        'repository_spec name=%s does not match expected name=%s' % (result['name'], name)
     assert result['version'] == '1.2.3'
     assert result['src'] == src, \
-        'content_spec src=%s does not match expected src=%s' % (result['src'], src)
+        'repository_spec src=%s does not match expected src=%s' % (result['src'], src)
 
 
 # FIXME: I'm not real sure what the result of this is supposed to be

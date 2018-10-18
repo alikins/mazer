@@ -26,7 +26,7 @@ class FetchMethods(object):
 
 
 def chose_repository_fetch_method(repository_spec_string, editable=False):
-    log.debug('content_spec_string: %s', repository_spec_string)
+    log.debug('repository_spec_string: %s', repository_spec_string)
 
     if is_scm(repository_spec_string):
         # create tar file from scm url
