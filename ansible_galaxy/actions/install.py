@@ -35,9 +35,9 @@ def _verify_repository_specs_have_namespaces(repository_specs):
         log.info('repo install repository_spec: %s', repo_spec)
 
         if not repo_spec.namespace:
-            raise exceptions.GalaxyContentSpecError(
-                'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % repo_spec.spec_string,
-                content_spec=repo_spec)
+            raise exceptions.GalaxyRepositorySpecError(
+                'The repository spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % repo_spec.spec_string,
+                repository_spec=repo_spec)
 
         repository_spec_list.append(repo_spec)
 
