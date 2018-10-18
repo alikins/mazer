@@ -1,6 +1,6 @@
 import logging
 
-from ansible_galaxy import collection
+from ansible_galaxy import repository
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy_cli import exceptions as cli_exceptions
@@ -15,7 +15,7 @@ def remove_collection(installed_collection,
     log.debug('content to remove: %s %s', installed_collection, type(installed_collection))
 
     try:
-        res = collection.remove(installed_collection)
+        res = repository.remove(installed_collection)
         if res:
             display_callback('- successfully removed %s' % installed_collection.label)
         else:

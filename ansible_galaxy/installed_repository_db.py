@@ -1,7 +1,7 @@
 import logging
 import os
 
-from ansible_galaxy import collection
+from ansible_galaxy import repository
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
 from ansible_galaxy.models.collection import Collection
@@ -32,9 +32,11 @@ def get_repository_paths(namespace_path):
 
 def installed_repository_iterator(galaxy_context,
                                   namespace_match_filter=None,
+                                  repository_match_filter=None,
                                   collection_match_filter=None):
 
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
+    repository_match_filter = repository_match_filter or matchers.MatchAll()
     collection_match_filter = collection_match_filter or matchers.MatchAll()
 
     content_path = galaxy_context.content_path
@@ -55,7 +57,7 @@ def installed_repository_iterator(galaxy_context,
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
             # TODO: if we need to distinquish repo from collection, we could do it here
-            collection_ = collection.load_from_dir(content_path,
+            collection_ = repository.load_from_dir(content_path,
                                                    namespace=namespace.namespace,
                                                    name=repository_path,
                                                    installed=True)
@@ -79,9 +81,10 @@ class InstalledRepositoryDatabase(object):
         self.installed_context = installed_context
 
     # TODO: add a repository_type_filter (ie, 'collection' or 'role' or 'other' etc)
-    def select(self, namespace_match_filter=None, collection_match_filter=None):
+    def select(self, namespace_match_filter=None, repository_match_filter=None, collection_match_filter=None):
         # ie, default to select * more or less
         collection_match_filter = collection_match_filter or matchers.MatchAll()
+        repository_match_filter = repository_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
 
         installed_collections = installed_repository_iterator(self.installed_context,
