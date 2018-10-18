@@ -2,14 +2,14 @@ import logging
 
 import attr
 
-from ansible_galaxy.models.repository_spec import ContentSpec
+from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True)
 class Repository(object):
-    repository_spec = attr.ib(type=ContentSpec)
+    repository_spec = attr.ib(type=RepositorySpec)
     path = attr.ib(default=None)
     installed = attr.ib(default=False, type=bool, cmp=False)
 
