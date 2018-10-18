@@ -2,7 +2,7 @@ import logging
 import pytest
 
 from ansible_galaxy import matchers
-from ansible_galaxy.models.collection import Collection
+from ansible_galaxy.models.repository import Collection
 from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
