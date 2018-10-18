@@ -4,7 +4,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy.models.content import VALID_ROLE_SPEC_KEYS
 from ansible_galaxy.utils import yaml_parse
 from ansible_galaxy import repository_spec_parse
-from ansible_galaxy import galaxy_content_spec
+from ansible_galaxy import galaxy_repository_spec
 
 
 log = logging.getLogger(__name__)
@@ -222,7 +222,7 @@ def test_yaml_parse_a_old_style_role_dict():
 def test_yaml_parse_a_comma_sep_style_role_dict_with_version():
     src = 'galaxy.role,1.2.3'
     spec = {'src': src}
-    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
+    result = parse_spec(spec, resolver=galaxy_repository_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
     assert_keys(result, namespace='galaxy', name='role', version='1.2.3',
@@ -233,7 +233,7 @@ def test_yaml_parse_a_comma_sep_style_role_dict_with_version():
 def test_yaml_parse_a_comma_sep_style_role_dict_with_name_version():
     src = 'galaxy.role,1.2.3,some_role'
     spec = {'src': src}
-    result = parse_spec(spec, resolver=galaxy_content_spec.resolve)
+    result = parse_spec(spec, resolver=galaxy_repository_spec.resolve)
 
     # FIXME: wtf is 'src' expected to look like here?
     assert_keys(result, namespace='galaxy', name='some_role', version='1.2.3', scm=None, src=src)
