@@ -13,7 +13,7 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def test_install_contents_empty_contents(galaxy_context):
+def test_install_repos_empty_repo_specs(galaxy_context):
     content_specs_to_install = []
 
     ret = install.install_repositories(galaxy_context,
@@ -25,7 +25,7 @@ def test_install_contents_empty_contents(galaxy_context):
     assert ret == []
 
 
-def test_install_collections(galaxy_context, mocker):
+def test_install_repositories(galaxy_context, mocker):
     needed_deps = requirements.from_requirement_spec_strings(['some_namespace.some_name'])
 
     content_specs_to_install = \
@@ -43,7 +43,7 @@ def test_install_collections(galaxy_context, mocker):
     assert ret == needed_deps
 
 
-def test_install_collections_no_deps_required(galaxy_context, mocker):
+def test_install_repositories_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
     content_specs_to_install = \
@@ -62,7 +62,7 @@ def test_install_collections_no_deps_required(galaxy_context, mocker):
     assert ret == needed_deps
 
 
-def test_verify_content_specs_have_namespace_empty(galaxy_context):
+def test_verify_repository_specs_have_namespace_empty(galaxy_context):
     ret = install._verify_repository_specs_have_namespaces([])
 
     log.debug('ret: %s', ret)
@@ -71,7 +71,7 @@ def test_verify_content_specs_have_namespace_empty(galaxy_context):
 
 
 # even though 'blrp' isnt a valid spec, _build_content_set return something for now
-def test_verify_content_specs_have_namespace(galaxy_context):
+def test_verify_repository_specs_have_namespace(galaxy_context):
     content_spec = mock.Mock(namespace=None)
     try:
         install._verify_repository_specs_have_namespaces([content_spec])
