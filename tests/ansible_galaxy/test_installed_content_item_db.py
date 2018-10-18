@@ -4,7 +4,7 @@ import fnmatch
 
 from ansible_galaxy import installed_content_item_db
 from ansible_galaxy import matchers
-from ansible_galaxy.models.repository import Collection
+from ansible_galaxy.models.repository import Repository
 
 log = logging.getLogger(__name__)
 

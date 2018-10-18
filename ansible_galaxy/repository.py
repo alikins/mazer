@@ -11,7 +11,7 @@ from ansible_galaxy import role_metadata
 from ansible_galaxy import requirements
 
 from ansible_galaxy.models.content_spec import ContentSpec
-from ansible_galaxy.models.repository import Collection
+from ansible_galaxy.models.repository import Repository
 
 
 log = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def load_from_dir(content_dir, namespace, name, installed=True):
                                name=name,
                                version=install_info_version)
 
-    collection = Collection(content_spec=content_spec,
+    collection = Repository(content_spec=content_spec,
                             path=path_name,
                             installed=installed,
                             requirements=requirements_list,
