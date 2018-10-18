@@ -4,8 +4,6 @@ import os
 from ansible_galaxy import repository
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
-from ansible_galaxy.models.collection import Collection
-from ansible_galaxy.models.content_spec import ContentSpec
 
 log = logging.getLogger(__name__)
 
@@ -57,7 +55,7 @@ def installed_repository_iterator(galaxy_context,
             # spec_data = content_spec_parse.spec_data_from_string(collection_path)
 
             # TODO: if we need to distinquish repo from collection, we could do it here
-            collection_ = repository.load_from_dir(content_path,
+            repository_ = repository.load_from_dir(content_path,
                                                    namespace=namespace.namespace,
                                                    name=repository_path,
                                                    installed=True)
@@ -68,11 +66,11 @@ def installed_repository_iterator(galaxy_context,
             # collection_ = Collection(content_spec=content_spec,
             #                         path=collection_full_path)
 
-            log.debug('content_repo(collection): %s', collection_)
+            log.debug('content_repo(collection): %s', repository_)
             # log.debug('match: %s(%s) %s', collection_match_filter, collection, collection_match_filter(collection))
-            if collection_match_filter(collection_):
-                log.debug('Found collection "%s" in namespace "%s"', repository_path, namespace.namespace)
-                yield collection_
+            if repository_match_filter(repository_):
+                log.debug('Found repository "%s" in namespace "%s"', repository_path, namespace.namespace)
+                yield repository_
 
 
 class InstalledRepositoryDatabase(object):
