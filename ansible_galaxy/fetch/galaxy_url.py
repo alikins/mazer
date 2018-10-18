@@ -117,7 +117,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: pass these to fetch() if it really needs it
         repo_version_best = repository_version.get_repository_version(repo_data,
                                                                       version=self.content_version,
-                                                                      content_versions=content_repo_versions,
+                                                                      repository_versions=content_repo_versions,
                                                                       content_content_name=content_name)
 
         # get the RepositoryVersion obj (or its data anyway)
