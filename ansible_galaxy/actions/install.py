@@ -232,7 +232,7 @@ def install_repository(galaxy_context,
         # continue
         return None
 
-    # TODO: make sure content_spec version is correct and set
+    # TODO: make sure repository_spec version is correct and set
 
     # TODO: state transition, if find_results -> INSTALL
     #       if not, then FIND_FAILED
@@ -260,7 +260,7 @@ def install_repository(galaxy_context,
     #       or rules to only update within some semver range (ie, only 'patch' level),
     #       we could hook rule validation stuff here.
 
-    # TODO: build a new content_spec based on what we actually fetched to feed to
+    # TODO: build a new repository_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
     fetched_repository_spec = install.update_repository_spec(fetch_results,
