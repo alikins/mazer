@@ -16,7 +16,7 @@ def display_callback(msg, **kwargs):
 def test_install_contents_empty_contents(galaxy_context):
     content_specs_to_install = []
 
-    ret = install.install_collections(galaxy_context,
+    ret = install.install_repositories(galaxy_context,
                                       content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
@@ -34,7 +34,7 @@ def test_install_collections(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.actions.install.install_collection',
                  return_value=needed_deps)
 
-    ret = install.install_collections(galaxy_context,
+    ret = install.install_repositories(galaxy_context,
                                       content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
@@ -53,7 +53,7 @@ def test_install_collections_no_deps_required(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.actions.install.install_collection',
                  return_value=[])
 
-    ret = install.install_collections(galaxy_context,
+    ret = install.install_repositories(galaxy_context,
                                       content_specs_to_install=content_specs_to_install,
                                       display_callback=display_callback)
 
@@ -63,7 +63,7 @@ def test_install_collections_no_deps_required(galaxy_context, mocker):
 
 
 def test_verify_content_specs_have_namespace_empty(galaxy_context):
-    ret = install._verify_content_specs_have_namespace([])
+    ret = install._verify_repository_specs_have_namespaces([])
 
     log.debug('ret: %s', ret)
     assert isinstance(ret, list)
@@ -74,7 +74,7 @@ def test_verify_content_specs_have_namespace_empty(galaxy_context):
 def test_verify_content_specs_have_namespace(galaxy_context):
     content_spec = mock.Mock(namespace=None)
     try:
-        install._verify_content_specs_have_namespace([content_spec])
+        install._verify_repository_specs_have_namespaces([content_spec])
     except exceptions.GalaxyError as e:
         log.exception(e)
         return

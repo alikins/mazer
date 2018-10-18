@@ -264,7 +264,7 @@ class GalaxyCLI(cli.CLI):
 
         # TODO: build requirement_specs from requested_collection_specs strings
         try:
-            rc = install.install_collection_specs_loop(galaxy_context,
+            rc = install.install_repository_specs_loop(galaxy_context,
                                                        editable=self.options.editable_install,
                                                        collection_spec_strings=requested_spec_strings,
                                                        namespace_override=self.options.namespace,
