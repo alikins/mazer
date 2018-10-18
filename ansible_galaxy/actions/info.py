@@ -23,11 +23,11 @@ scm: {repo_clone_url}
 
 {repo_contents}"""
 
-INSTALLED_REPOSITORY_TEMPLATE = """namespace: {repository.content_spec.namespace}
-name: {repository.content_spec.name}
-version: {repository.content_spec.version}
+INSTALLED_REPOSITORY_TEMPLATE = """namespace: {repository.repository_spec.namespace}
+name: {repository.repository_spec.name}
+version: {repository.repository_spec.version}
 path: {repository.path}
-scm: {repository.content_spec.scm}
+scm: {repository.repository_spec.scm}
 """
 
 
@@ -120,11 +120,11 @@ def _repr_role_info(role_info):
     return u'\n'.join(text)
 
 
-def info_content_specs(galaxy_context,
-                       api,
-                       content_spec_strings,
-                       display_callback=None,
-                       offline=None):
+def info_repository_specs(galaxy_context,
+                          api,
+                          repository_spec_strings,
+                          display_callback=None,
+                          offline=None):
 
     online = not offline
 
@@ -137,10 +137,10 @@ def info_content_specs(galaxy_context,
     labels_to_match = []
 
     all_labels_to_match = []
-    for content_spec_string in content_spec_strings:
-        galaxy_namespace, repository_name, content_name = parse_content_name(content_spec_string)
+    for repository_spec_string in repository_spec_strings:
+        galaxy_namespace, repository_name, content_name = parse_content_name(repository_spec_string)
 
-        log.debug('showing info for content spec: %s', content_spec_string)
+        log.debug('showing info for repository spec: %s', repository_spec_string)
 
         repository_name = repository_name or content_name
 

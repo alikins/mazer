@@ -245,12 +245,12 @@ class GalaxyCLI(cli.CLI):
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
-        content_specs = self.args
+        repository_spec_strings = self.args
 
         # FIXME: rc?
-        return info.info_content_specs(galaxy_context, self.api, content_specs,
-                                       display_callback=self.display,
-                                       offline=self.options.offline)
+        return info.info_repository_specs(galaxy_context, self.api, repository_spec_strings,
+                                          display_callback=self.display,
+                                          offline=self.options.offline)
 
     def execute_install(self):
         """
