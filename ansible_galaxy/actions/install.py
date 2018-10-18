@@ -28,7 +28,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-def _verify_content_specs_have_namespace(collection_specs):
+def _verify_repository_specs_have_namespaces(collection_specs):
     content_spec_list = []
 
     for collection_spec in collection_specs:
@@ -48,29 +48,29 @@ def _verify_content_specs_have_namespace(collection_specs):
 
 
 # pass a list of content_spec objects
-def install_collections_matching_collection_specs(galaxy_context,
-                                                  collection_specs,
-                                                  editable=False,
-                                                  namespace_override=None,
-                                                  display_callback=None,
-                                                  # TODO: error handling callback ?
-                                                  ignore_errors=False,
-                                                  no_deps=False,
-                                                  force_overwrite=False):
+def install_repositories_matching_repository_specs(galaxy_context,
+                                                   collection_specs,
+                                                   editable=False,
+                                                   namespace_override=None,
+                                                   display_callback=None,
+                                                   # TODO: error handling callback ?
+                                                   ignore_errors=False,
+                                                   no_deps=False,
+                                                   force_overwrite=False):
     '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
 
     log.debug('editable: %s', editable)
     log.debug('collection_specs: %s', collection_specs)
 
-    requested_content_specs = _verify_content_specs_have_namespace(collection_specs=collection_specs)
+    requested_content_specs = _verify_repository_specs_have_namespaces(collection_specs=collection_specs)
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
     collection_match_filter = matchers.MatchContentSpec([x for x in requested_content_specs])
 
-    icdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = icdb.select(collection_match_filter=collection_match_filter)
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    already_installed_generator = irdb.select(collection_match_filter=collection_match_filter)
 
     log.debug('requested_content_specs before: %s', requested_content_specs)
 
@@ -91,16 +91,16 @@ def install_collections_matching_collection_specs(galaxy_context,
 
     log.debug('content_specs_to_install after: %s', content_specs_to_install)
 
-    return install_collections(galaxy_context, content_specs_to_install,
-                               display_callback=display_callback,
-                               ignore_errors=ignore_errors,
-                               no_deps=no_deps,
-                               force_overwrite=force_overwrite)
+    return install_repositories(galaxy_context, content_specs_to_install,
+                                display_callback=display_callback,
+                                ignore_errors=ignore_errors,
+                                no_deps=no_deps,
+                                force_overwrite=force_overwrite)
 
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_collection_specs_loop(galaxy_context,
+def install_repository_specs_loop(galaxy_context,
                                   collection_spec_strings=None,
                                   requirement_specs=None,
                                   editable=False,
@@ -129,14 +129,14 @@ def install_collection_specs_loop(galaxy_context,
             break
 
         new_requested_collection_specs = \
-            install_collections_matching_collection_specs(galaxy_context,
-                                                          requirement_specs,
-                                                          editable=editable,
-                                                          namespace_override=namespace_override,
-                                                          display_callback=display_callback,
-                                                          ignore_errors=ignore_errors,
-                                                          no_deps=no_deps,
-                                                          force_overwrite=force_overwrite)
+            install_repositories_matching_repository_specs(galaxy_context,
+                                                           requirement_specs,
+                                                           editable=editable,
+                                                           namespace_override=namespace_override,
+                                                           display_callback=display_callback,
+                                                           ignore_errors=ignore_errors,
+                                                           no_deps=no_deps,
+                                                           force_overwrite=force_overwrite)
 
         log.debug('new_requested_collection_specs: %s', pprint.pformat(new_requested_collection_specs))
 
@@ -148,13 +148,13 @@ def install_collection_specs_loop(galaxy_context,
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_collections(galaxy_context,
-                        content_specs_to_install,
-                        display_callback=None,
-                        # TODO: error handling callback ?
-                        ignore_errors=False,
-                        no_deps=False,
-                        force_overwrite=False):
+def install_repositories(galaxy_context,
+                         content_specs_to_install,
+                         display_callback=None,
+                         # TODO: error handling callback ?
+                         ignore_errors=False,
+                         no_deps=False,
+                         force_overwrite=False):
 
     display_callback = display_callback or display.display_callback
     log.debug('content_specs_to_install: %s', content_specs_to_install)
