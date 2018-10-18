@@ -172,7 +172,7 @@ def install_repositories(galaxy_context,
     #        iterating until there is nothing left
     for content_spec_to_install in content_specs_to_install:
         log.debug('content_spec_to_install: %s', content_spec_to_install)
-        new_dep_requirement_content_specs = install_collection(galaxy_context,
+        new_dep_requirement_content_specs = install_repository(galaxy_context,
                                                                content_spec_to_install,
                                                                display_callback=display_callback,
                                                                ignore_errors=ignore_errors,
@@ -195,7 +195,7 @@ def install_repositories(galaxy_context,
     return dep_requirement_content_specs
 
 
-def install_collection(galaxy_context,
+def install_repository(galaxy_context,
                        content_spec_to_install,
                        display_callback=None,
                        # TODO: error handling callback ?
