@@ -266,7 +266,7 @@ class GalaxyCLI(cli.CLI):
         try:
             rc = install.install_repository_specs_loop(galaxy_context,
                                                        editable=self.options.editable_install,
-                                                       collection_spec_strings=requested_spec_strings,
+                                                       repository_spec_strings=requested_spec_strings,
                                                        namespace_override=self.options.namespace,
                                                        display_callback=self.display,
                                                        ignore_errors=self.options.ignore_errors,
