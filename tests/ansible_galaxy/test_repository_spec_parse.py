@@ -112,7 +112,7 @@ def split_repository_spec_fixture(request):
 
 def test_split_repository_spec(split_repository_spec_fixture):
     valid_keywords = ('src', 'version', 'name', 'scm')
-    result = repository_spec_parse.split_content_spec(split_repository_spec_fixture[0], valid_keywords)
+    result = repository_spec_parse.split_repository_spec(split_repository_spec_fixture[0], valid_keywords)
     log.debug('spec=%s result=%s', split_repository_spec_fixture[0], result)
     assert result == split_repository_spec_fixture[1]
 
