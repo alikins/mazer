@@ -28,28 +28,25 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-def _verify_repository_specs_have_namespaces(collection_specs):
-    content_spec_list = []
+def _verify_repository_specs_have_namespaces(repository_specs):
+    repository_spec_list = []
 
-    for collection_spec in collection_specs:
-        # FIXME: be consistent about collection/content
-        content_spec_ = collection_spec
+    for repository_spec in repository_specs:
+        log.info('repo install repository_spec: %s', repository_spec)
 
-        log.info('content install content_spec: %s', content_spec_)
-
-        if not content_spec_.namespace:
+        if not repository_spec.namespace:
             raise exceptions.GalaxyContentSpecError(
-                'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % content_spec_.spec_string,
-                content_spec=content_spec_)
+                'The content spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % repository_spec.spec_string,
+                content_spec=repository_spec)
 
-        content_spec_list.append(content_spec_)
+        repository_spec_list.append(repository_spec)
 
-    return content_spec_list
+    return repository_spec_list
 
 
 # pass a list of content_spec objects
 def install_repositories_matching_repository_specs(galaxy_context,
-                                                   collection_specs,
+                                                   repository_specs,
                                                    editable=False,
                                                    namespace_override=None,
                                                    display_callback=None,
@@ -60,38 +57,37 @@ def install_repositories_matching_repository_specs(galaxy_context,
     '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
 
     log.debug('editable: %s', editable)
-    log.debug('collection_specs: %s', collection_specs)
+    log.debug('repository_specs: %s', repository_specs)
 
-    requested_content_specs = _verify_repository_specs_have_namespaces(collection_specs=collection_specs)
+    requested_repository_specs = _verify_repository_specs_have_namespaces(repository_specs=repository_specs)
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
     # ie, see if it is already installed
-    collection_match_filter = matchers.MatchContentSpec([x for x in requested_content_specs])
+    repository_match_filter = matchers.MatchContentSpec([x for x in requested_repository_specs])
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    already_installed_generator = irdb.select(collection_match_filter=collection_match_filter)
+    already_installed_generator = irdb.select(repository_match_filter=repository_match_filter)
 
-    log.debug('requested_content_specs before: %s', requested_content_specs)
+    log.debug('requested_repository_specs before: %s', requested_repository_specs)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
     #        we can simplify this filter with set ops
 
-    already_installed_content_spec_set = set([installed.content_spec for installed in already_installed_generator])
-    log.debug('already_installed_content_spec_set: %s', already_installed_content_spec_set)
+    already_installed_repository_spec_set = set([installed.content_spec for installed in already_installed_generator])
+    log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
 
-    if already_installed_content_spec_set and not force_overwrite:
-        msg = 'The following packages are already installed. Use --force to overwrite:\n%s' % \
-            '\n'.join([x.label for x in already_installed_content_spec_set])
+    if already_installed_repository_spec_set and not force_overwrite:
+        msg = 'The following repositories are already installed. Use --force to overwrite:\n%s' % \
+            '\n'.join([x.label for x in already_installed_repository_spec_set])
 
         raise exceptions.GalaxyError(msg)
 
-    content_specs_to_install = [y for y in requested_content_specs if y not in already_installed_content_spec_set or force_overwrite]
-    log.debug('content_specs_to_install: %s', pprint.pformat(content_specs_to_install))
+    repository_specs_to_install = [y for y in requested_repository_specs if y not in already_installed_repository_spec_set or force_overwrite]
 
-    log.debug('content_specs_to_install after: %s', content_specs_to_install)
+    log.debug('repository_specs_to_install: %s', pprint.pformat(repository_specs_to_install))
 
-    return install_repositories(galaxy_context, content_specs_to_install,
+    return install_repositories(galaxy_context, repository_specs_to_install,
                                 display_callback=display_callback,
                                 ignore_errors=ignore_errors,
                                 no_deps=no_deps,
@@ -101,7 +97,7 @@ def install_repositories_matching_repository_specs(galaxy_context,
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
 def install_repository_specs_loop(galaxy_context,
-                                  collection_spec_strings=None,
+                                  repository_spec_strings=None,
                                   requirement_specs=None,
                                   editable=False,
                                   namespace_override=None,
@@ -114,8 +110,8 @@ def install_repository_specs_loop(galaxy_context,
     requirement_specs = requirement_specs or []
 
     # Turn the collection / requirement names from the cli into a list of RequirementSpec objects
-    if collection_spec_strings:
-        more_req_specs = requirements.from_requirement_spec_strings(collection_spec_strings,
+    if repository_spec_strings:
+        more_req_specs = requirements.from_requirement_spec_strings(repository_spec_strings,
                                                                     editable=editable)
         log.debug('more_req_specs: %s', more_req_specs)
 
@@ -128,7 +124,7 @@ def install_repository_specs_loop(galaxy_context,
         if not requirement_specs:
             break
 
-        new_requested_collection_specs = \
+        new_requested_repository_specs = \
             install_repositories_matching_repository_specs(galaxy_context,
                                                            requirement_specs,
                                                            editable=editable,
@@ -138,10 +134,10 @@ def install_repository_specs_loop(galaxy_context,
                                                            no_deps=no_deps,
                                                            force_overwrite=force_overwrite)
 
-        log.debug('new_requested_collection_specs: %s', pprint.pformat(new_requested_collection_specs))
+        log.debug('new_requested_repository_specs: %s', pprint.pformat(new_requested_repository_specs))
 
         # set the content_specs to search for to whatever the install reported as being needed yet
-        requirement_specs = new_requested_collection_specs
+        requirement_specs = new_requested_repository_specs
 
     # FIXME: what results to return?
     return 0
