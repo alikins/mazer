@@ -54,7 +54,7 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                                    ignore_errors=False,
                                                    no_deps=False,
                                                    force_overwrite=False):
-    '''Install a set of packages specified by collection_spec_strings if they are not already installed'''
+    '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
     log.debug('editable: %s', editable)
     log.debug('repository_specs: %s', repository_specs)
@@ -109,7 +109,7 @@ def install_repository_specs_loop(galaxy_context,
 
     requirement_specs = requirement_specs or []
 
-    # Turn the collection / requirement names from the cli into a list of RequirementSpec objects
+    # Turn the repository / requirement names from the cli into a list of RequirementSpec objects
     if repository_spec_strings:
         more_req_specs = requirements.from_requirement_spec_strings(repository_spec_strings,
                                                                     editable=editable)
@@ -179,7 +179,7 @@ def install_repositories(galaxy_context,
         log.debug('dep_requirement_content_specs1: %s', pprint.pformat(dep_requirement_content_specs))
 
         if not new_dep_requirement_content_specs:
-            log.debug('install_collection return None for content_spec_to_install: %s', content_spec_to_install)
+            log.debug('install_repository return None for content_spec_to_install: %s', content_spec_to_install)
             continue
 
         dep_requirement_content_specs.extend(new_dep_requirement_content_specs)
@@ -211,7 +211,7 @@ def install_repository(galaxy_context,
         # trans to INSTALL_EDITABLE state
         install_editable_content(content_spec_to_install)
         # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED
-        log.debug('not installing/extractings because of install_collection')
+        log.debug('not installing/extractings because of install_repository')
         return
     # else trans to ... FIND_FETCHER?
 
@@ -220,7 +220,7 @@ def install_repository(galaxy_context,
     fetcher = install.fetcher(galaxy_context, content_spec=content_spec_to_install)
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
-    # and make the steps of mapping collection spec -> fetcher method part of the
+    # and make the steps of mapping repository spec -> fetcher method part of the
     # state machine. That might be a good place to support multiple galaxy servers
     # or preferring local content to remote content, etc.
 
