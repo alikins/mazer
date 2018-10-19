@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 
 
 def is_scm(repository_spec_string):
-    if '://' in repository_spec_string or '@' in repository_spec_string:
+    # if '://' in repository_spec_string or '@' in repository_spec_string:
+    if '@' in repository_spec_string:
         return True
 
     return False

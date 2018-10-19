@@ -13,6 +13,7 @@ def fetch_url(archive_url, validate_certs=True):
     Downloads the archived content from github to a temp location
     """
 
+    log.debug('Downloading archive_url: %s', archive_url)
     # TODO: should probably be based on/shared with rest API client code, so that
     #       content downloads could support any thing the rest code does
     #       (ie, any TLS cert setup, proxy config, auth options, etc)
