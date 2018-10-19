@@ -48,9 +48,10 @@ ACTIONS
 -------
 {% for action in actions %}
 **{{ action }}**
-  {{ (actions[action]['desc']|default(' '))}}
 
+{{ (actions[action]['desc']|default(' '))|indent(2, True)}}
 {% if actions[action]['options'] %}
+
 {% for option in actions[action]['options']|sort(attribute='options') %}
 {% for switch in option['options'] if switch in actions[action]['option_names'] %}  **{{switch}}**{% if option['arg'] %} '{{option['arg']}}'{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
 

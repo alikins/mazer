@@ -27,6 +27,8 @@ import logging
 import os
 import sys
 
+from ansible_galaxy_cli import cli
+from ansible_galaxy_cli import __version__ as galaxy_cli_version
 from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
@@ -252,12 +254,10 @@ class GalaxyCLI(cli.CLI):
                                           offline=self.options.offline)
 
     def execute_install(self):
-        """
-        Install the args list of repositories (role, collections, etc) to be installed, unless -f was specified.
+        """Install the args list of repositories (role, collections, etc) to be installed, unless -f was specified.
 
         The list of repositories can be a name (which will be downloaded via the galaxy API and github),
-        or it can be a local .tar.gz file.
-        """
+        or it can be a local .tar.gz file."""
 
         self.log.debug('self.options: %s', self.options)
 
@@ -294,12 +294,10 @@ class GalaxyCLI(cli.CLI):
                              display_callback=self.display)
 
     def execute_list(self):
-        """
-        Lists all of the repositories installed on the local system.
+        """Lists all of the repositories installed on the local system.
 
         If additional repository names or patterns are provided, the results
-        are filtered to list only matching repositories.
-        """
+        are filtered to list only matching repositories."""
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
 
