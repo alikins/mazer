@@ -5,7 +5,7 @@ from ansible_galaxy import display
 from ansible_galaxy import matchers
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy import installed_repository_db
-from ansible_galaxy.utils.content_name import parse_content_name
+from ansible_galaxy.utils.repository_name import parse_content_name
 from ansible_galaxy.utils.text import to_text
 
 log = logging.getLogger(__name__)
