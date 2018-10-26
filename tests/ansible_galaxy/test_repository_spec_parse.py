@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from ansible_galaxy import content_spec_parse
+from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
 
 log = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def split_kwarg_valid(request):
 
 def test_split_kwarg_valid(split_kwarg_valid):
     valid_keywords = ('name', 'version')
-    result = content_spec_parse.split_kwarg(split_kwarg_valid, valid_keywords)
+    result = repository_spec_parse.split_kwarg(split_kwarg_valid, valid_keywords)
     log.debug('spec=%s result=%s', split_kwarg_valid, [x for x in result])
 
 
@@ -51,7 +51,7 @@ def split_kwarg_invalid(request):
 def test_split_kwarg_invalid(split_kwarg_invalid):
     valid_keywords = ('name', 'version')
     try:
-        content_spec_parse.split_kwarg(split_kwarg_invalid, valid_keywords)
+        repository_spec_parse.split_kwarg(split_kwarg_invalid, valid_keywords)
     except exceptions.GalaxyClientError as e:
         log.exception(e)
         return
@@ -78,7 +78,7 @@ def split_comma(request):
 
 def test_split_comma(split_comma):
     valid_keywords = ('name', 'version')
-    result = content_spec_parse.split_comma(split_comma, valid_keywords)
+    result = repository_spec_parse.split_comma(split_comma, valid_keywords)
     log.debug('spec=%s result=%s', split_comma, [x for x in result])
 
 
@@ -112,7 +112,7 @@ def split_content_spec(request):
 
 def test_split_content_spec(split_content_spec):
     valid_keywords = ('src', 'version', 'name', 'scm')
-    result = content_spec_parse.split_content_spec(split_content_spec[0], valid_keywords)
+    result = repository_spec_parse.split_content_spec(split_content_spec[0], valid_keywords)
     log.debug('spec=%s result=%s', split_content_spec[0], result)
     assert result == split_content_spec[1]
 
@@ -135,7 +135,7 @@ def assert_keys(content_spec, name=None, version=None,
 
 
 def parse_content_spec(content_spec_string, resolver=None):
-    result = content_spec_parse.spec_data_from_string(content_spec_string,
+    result = repository_spec_parse.spec_data_from_string(content_spec_string,
                                                       resolver=resolver)
     log.debug('result: %s', result)
     # gresult = content_spec_parse.spec_data_from_string(content_spec_string,
@@ -157,7 +157,7 @@ def assert_just_keys(parse_result):
 def test_parse_content_spec_src_no_namespace_required():
     spec_text = 'some_content'
     result = parse_content_spec(spec_text,
-                                resolver=content_spec_parse.resolve)
+                                resolver=repository_spec_parse.resolve)
 
     assert_just_keys(result)
     assert_keys(result, name='some_content', version=None, scm=None, src='some_content')

@@ -2,7 +2,7 @@ import logging
 import os
 
 from ansible_galaxy import galaxy_content_spec
-from ansible_galaxy import content_spec_parse
+from ansible_galaxy import repository_spec_parse
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.content_spec import ContentSpec
 
@@ -55,7 +55,7 @@ def choose_content_fetch_method(content_spec_string, editable=False):
 def resolve(data):
     src = data['src']
     if data['name'] is None:
-        scm_name = content_spec_parse.repo_url_to_repo_name(src)
+        scm_name = repository_spec_parse.repo_url_to_repo_name(src)
         data['name'] = scm_name
         if '+' in src:
             (scm_url, scm_src) = src.split('+', 1)
@@ -84,7 +84,7 @@ def spec_data_from_string(content_spec_string, namespace_override=None, editable
 
     log.debug('fetch_method: %s', fetch_method)
 
-    spec_data = content_spec_parse.parse_string(content_spec_string)
+    spec_data = repository_spec_parse.parse_string(content_spec_string)
     spec_data['fetch_method'] = fetch_method
 
     log.debug('spec_data: %s', spec_data)
