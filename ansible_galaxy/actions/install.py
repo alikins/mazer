@@ -4,7 +4,7 @@ import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
-from ansible_galaxy import content_spec
+from ansible_galaxy import repository_spec
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
@@ -207,7 +207,7 @@ def install_repository(galaxy_context,
     #       less error prone mid 'transaction'
     log.debug('Processing %s', content_spec_to_install.name)
 
-    if content_spec_to_install.fetch_method == content_spec.FetchMethods.EDITABLE:
+    if content_spec_to_install.fetch_method == repository_spec.FetchMethods.EDITABLE:
         # trans to INSTALL_EDITABLE state
         install_editable_content(content_spec_to_install)
         # check results, then transition to either DONE or INSTALL_EDIBLE_FAILED

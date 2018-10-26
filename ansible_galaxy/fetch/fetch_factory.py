@@ -1,7 +1,7 @@
 import logging
 
 from ansible_galaxy import exceptions
-from ansible_galaxy.content_spec import FetchMethods
+from ansible_galaxy.repository_spec import FetchMethods
 from ansible_galaxy.fetch import galaxy_url
 from ansible_galaxy.fetch import local_file
 from ansible_galaxy.fetch import remote_url
