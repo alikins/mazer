@@ -8,7 +8,6 @@ import attr
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
-from ansible_galaxy import role_metadata
 from ansible_galaxy.models import content
 from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
 from ansible_galaxy.models.install_info import InstallInfo
@@ -26,23 +25,28 @@ def null_display_callback(*args, **kwargs):
     log.debug('display_callback: %s', args)
 
 
-def extract(repository_namespace, repository_name,
-            repository_info, extract_to_path, tar_file,
-            repository_dest_root_subpath,
-            display_callback=None, force_overwrite=False):
+def extract(repository_spec,
+            repository_archive_info,
+            content_path,
+            extract_archive_to_dir,
+            tar_file,
+            force_overwrite=False,
+            display_callback=None):
 
     all_installed_paths = []
 
     # TODO: move to content info validate step in install states?
-    if not repository_namespace:
+    if not repository_spec.namespace:
         # TODO: better error
         raise exceptions.GalaxyError('While installing a role , no namespace was found. Try providing one with --namespace')
 
-    label = "%s.%s" % (repository_namespace, repository_name)
+    # label = "%s.%s" % (repository_namespace, repository_name)
 
     # 'extract_to_path' is for ex, ~/.ansible/content
-    log.info('About to extract %s "%s" to %s', repository_info.archive_type, label, extract_to_path)
-    display_callback('- extracting %s repository from "%s"' % (repository_info.archive_type, label))
+    log.info('About to extract %s "%s" to %s', repository_archive_info.archive_type,
+             repository_spec.label, content_path)
+    display_callback('- extracting %s repository from "%s"' % (repository_archive_info.archive_type,
+                                                               repository_spec.label))
 
     tar_members = tar_file.members
 
@@ -52,10 +56,6 @@ def extract(repository_namespace, repository_name,
     parent_dir = tar_members[0].name
 
     # self.log.debug('content_dest_root_subpath: %s', content_dest_root_subpath)
-
-    repository_dest_root_path = os.path.join(repository_namespace,
-                                             repository_name,
-                                             repository_dest_root_subpath)
 
     # self.log.debug('content_dest_root_path1: |%s|', content_dest_root_path)
 
@@ -69,15 +69,17 @@ def extract(repository_namespace, repository_name,
         # rel_path ~  roles/some-role/meta/main.yml for ex
         rel_path = member.name[len(parent_dir) + 1:]
 
-        repository_dest_root_rel_path = os.path.join(repository_dest_root_path, rel_path)
+        extract_to_filename_path = os.path.join(extract_archive_to_dir, rel_path)
 
         # self.log.debug('content_dest_root_path: %s', content_dest_root_path)
         # self.log.debug('content_dest_root_rel_path: %s', content_dest_root_rel_path)
 
         files_to_extract.append({
             'archive_member': member,
-            'dest_dir': extract_to_path,
-            'dest_filename': repository_dest_root_rel_path,
+            # Note: for trad roles, we are extract the top level of the archive into
+            #       a sub path of the destination
+            'dest_dir': extract_archive_to_dir,
+            'dest_filename': extract_to_filename_path,
             'force_overwrite': force_overwrite})
 
     file_extractor = archive.extract_files(tar_file, files_to_extract)
@@ -88,7 +90,10 @@ def extract(repository_namespace, repository_name,
     all_installed_paths.extend(installed_paths)
 
     log.info('Extracted %s files from %s %s to %s',
-             len(all_installed_paths), repository_info.archive_type, label, repository_dest_root_path)
+             len(all_installed_paths),
+             repository_archive_info.archive_type,
+             repository_spec.label,
+             extract_archive_to_dir)
 
     # TODO: InstallResults object? installedPaths, InstallInfo, etc?
     return all_installed_paths, install_datetime
@@ -105,7 +110,7 @@ class BaseRepositoryArchive(object):
     def __attrs_post_init__(self):
         self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
 
-    def repository_dest_root_subpath(self, content_namespace, content_name):
+    def repository_dest_root_subpath(self, repository_name):
         '''The relative path inside the installed content where extract should consider the root
 
         A collection archive for 'my_namespace.my_content' will typically be extracted to
@@ -119,56 +124,26 @@ class BaseRepositoryArchive(object):
         '''
         return ''
 
-    def install(self, repository_spec, extract_to_path, force_overwrite=False):
+    def save(self, repository_spec, destination_info):
 
-        # TODO: repository_dest_root_subpath, repository_dest_root_path, namespaced_repository_path, info_path, meta_main_path and installed_to_path
-        #       could be attributes of a InstallDestinationInfo object. extract_to_path too.
-        repository_dest_root_subpath = self.repository_dest_root_subpath(repository_spec.namespace, repository_spec.name)
-
-        all_installed_files, install_datetime = extract(repository_spec.namespace,
-                                                        repository_spec.name,
+        all_installed_files, install_datetime = extract(repository_spec,
                                                         self.info,
-                                                        extract_to_path,
-                                                        self.tar_file,
-                                                        repository_dest_root_subpath,
-                                                        display_callback=self.display_callback,
-                                                        force_overwrite=force_overwrite)
-
-        namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
-                                                repository_spec.name)
-
-        info_path = os.path.join(extract_to_path,
-                                 namespaced_repository_path,
-                                 self.META_INSTALL)
-
-        meta_main_path = os.path.join(extract_to_path,
-                                      namespaced_repository_path,
-                                      'roles',
-                                      repository_spec.name,
-                                      'meta',
-                                      'main.yml')
-
-        log.debug('meta_main_path: %s', meta_main_path)
-        meta_main = role_metadata.load_from_filename(meta_main_path,
-                                                     role_name=namespaced_repository_path)
-
-        log.debug('meta_main: %s', meta_main)
-
-        installed_to_path = os.path.join(extract_to_path,
-                                         namespaced_repository_path)
+                                                        content_path=destination_info.destination_root_dir,
+                                                        extract_archive_to_dir=destination_info.extract_archive_to_dir,
+                                                        tar_file=self.tar_file,
+                                                        display_callback=self.display_callback)
 
         install_info_ = InstallInfo.from_version_date(repository_spec.version,
                                                       install_datetime=install_datetime)
 
         # TODO: this save will need to be moved to a step later. after validating install?
-        install_info.save(install_info_, info_path)
+        install_info.save(install_info_, destination_info.install_info_path)
 
-        installation_results = InstallationResults(install_info_path=info_path,
+        installation_results = InstallationResults(install_info_path=destination_info.install_info_path,
                                                    install_info=install_info_,
-                                                   installed_to_path=installed_to_path,
+                                                   installed_to_path=destination_info.path,
                                                    installed_datetime=install_datetime,
-                                                   installed_files=all_installed_files,
-                                                   meta_main=meta_main)
+                                                   installed_files=all_installed_files)
         return installation_results
 
 
@@ -176,9 +151,9 @@ class BaseRepositoryArchive(object):
 class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
     ROLES_SUBPATH = 'roles'
 
-    def repository_dest_root_subpath(self, content_namespace, content_name):
+    def repository_dest_root_subpath(self, repository_name):
         '''Traditional role archive repository gets installed into subpath of 'roles/CONTENT_NAME/'''
-        return os.path.join(self.ROLES_SUBPATH, content_name)
+        return os.path.join(self.ROLES_SUBPATH, repository_name)
 
 
 @attr.s()

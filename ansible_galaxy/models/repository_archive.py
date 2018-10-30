@@ -15,6 +15,7 @@ class RepositoryArchiveInfo(object):
     # signature?
 
 
+# FIXME: unused?
 @attr.s(frozen=True)
 class RepositoryArchive(object):
     # Can be created from a collection archive, a collection artifact archive,
