@@ -183,8 +183,7 @@ class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
 
 @attr.s()
 class CollectionRepositoryArchive(BaseRepositoryArchive):
-    # TODO: should we create a meta/ for a collection just for .galaxy_install_info?
-    META_INSTALL = os.path.join('meta', '.galaxy_install_info')
+    pass
 
 
 def detect_repository_archive_type(archive_path, archive_members):
