@@ -3,13 +3,11 @@ import logging
 import os
 import tarfile
 
-import attr
-
 from ansible_galaxy import archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import install_info
 from ansible_galaxy.models import content
-from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
+from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo, CollectionRepositoryArchive, TraditionalRoleRepositoryArchive
 from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
 
@@ -97,46 +95,6 @@ def extract(repository_spec,
 
     # TODO: InstallResults object? installedPaths, InstallInfo, etc?
     return all_installed_paths, install_datetime
-
-
-@attr.s()
-class BaseRepositoryArchive(object):
-    info = attr.ib(type=RepositoryArchiveInfo)
-    tar_file = attr.ib(type=tarfile.TarFile, default=None)
-
-    display_callback = attr.ib(default=null_display_callback)
-    META_INSTALL = os.path.join('meta', '.galaxy_install_info')
-
-    def __attrs_post_init__(self):
-        self.log = logging.getLogger('%s.%s' % (__name__, self.__class__.__name__))
-
-    def repository_dest_root_subpath(self, repository_name):
-        '''The relative path inside the installed content where extract should consider the root
-
-        A collection archive for 'my_namespace.my_content' will typically be extracted to
-        '~/.ansible/content/my_namespace/my_content' in which case the content_dest_root_subpath
-        should return just '/'.
-
-        But Role archives will be extracted into a 'roles' sub dir of the typical path.
-        ie, a 'my_namespace.my_role' role archive will need to be extracted to
-        '~/.ansible/content/my_namespace/roles/my_role/' in which case the content_dest_root_subpatch
-        should return 'roles/my_roles' (ie, 'roles/%s' % content_name)
-        '''
-        return ''
-
-
-@attr.s()
-class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
-    ROLES_SUBPATH = 'roles'
-
-    def repository_dest_root_subpath(self, repository_name):
-        '''Traditional role archive repository gets installed into subpath of 'roles/CONTENT_NAME/'''
-        return os.path.join(self.ROLES_SUBPATH, repository_name)
-
-
-@attr.s()
-class CollectionRepositoryArchive(BaseRepositoryArchive):
-    pass
 
 
 def detect_repository_archive_type(archive_path, archive_members):
