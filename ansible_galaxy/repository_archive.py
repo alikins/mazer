@@ -124,28 +124,6 @@ class BaseRepositoryArchive(object):
         '''
         return ''
 
-    def save(self, repository_spec, destination_info):
-
-        all_installed_files, install_datetime = extract(repository_spec,
-                                                        self.info,
-                                                        content_path=destination_info.destination_root_dir,
-                                                        extract_archive_to_dir=destination_info.extract_archive_to_dir,
-                                                        tar_file=self.tar_file,
-                                                        display_callback=self.display_callback)
-
-        install_info_ = InstallInfo.from_version_date(repository_spec.version,
-                                                      install_datetime=install_datetime)
-
-        # TODO: this save will need to be moved to a step later. after validating install?
-        install_info.save(install_info_, destination_info.install_info_path)
-
-        installation_results = InstallationResults(install_info_path=destination_info.install_info_path,
-                                                   install_info=install_info_,
-                                                   installed_to_path=destination_info.path,
-                                                   installed_datetime=install_datetime,
-                                                   installed_files=all_installed_files)
-        return installation_results
-
 
 @attr.s()
 class TraditionalRoleRepositoryArchive(BaseRepositoryArchive):
@@ -244,3 +222,27 @@ def load_archive(archive_path):
     log.debug('repository archive_ for %s: %s', archive_path, repository_archive_)
 
     return repository_archive_
+
+
+def install(repository_archive, repository_spec, destination_info, display_callback):
+    log.debug('saving repo archive %s to destination %s', repository_archive, destination_info)
+
+    all_installed_files, install_datetime = extract(repository_spec,
+                                                    repository_archive.info,
+                                                    content_path=destination_info.destination_root_dir,
+                                                    extract_archive_to_dir=destination_info.extract_archive_to_dir,
+                                                    tar_file=repository_archive.tar_file,
+                                                    display_callback=display_callback)
+
+    install_info_ = InstallInfo.from_version_date(repository_spec.version,
+                                                  install_datetime=install_datetime)
+
+    # TODO: this save will need to be moved to a step later. after validating install?
+    install_info.save(install_info_, destination_info.install_info_path)
+
+    installation_results = InstallationResults(install_info_path=destination_info.install_info_path,
+                                               install_info=install_info_,
+                                               installed_to_path=destination_info.path,
+                                               installed_datetime=install_datetime,
+                                               installed_files=all_installed_files)
+    return installation_results

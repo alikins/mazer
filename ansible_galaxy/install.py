@@ -177,8 +177,11 @@ def install(galaxy_context,
                                               force_overwrite=force_overwrite)
 
     # A list of InstallationResults
-    res = repo_archive_.save(repository_spec=repository_spec,
-                             destination_info=destination_info)
+    res = repository_archive.install(repo_archive_,
+                                     repository_spec=repository_spec,
+                                     destination_info=destination_info,
+                                     display_callback=display_callback)
+
     just_installed_spec_and_results.append((repository_spec, res))
 
     if display_callback:
