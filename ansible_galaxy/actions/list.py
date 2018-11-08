@@ -56,23 +56,22 @@ def _list(galaxy_context,
         repo_list.append(repo_dict)
 
     for repo_item in repo_list:
-        repo_msg = "repo={installed_repository.repository_spec.label}, type=repository, version={installed_repository.repository_spec.version}"
+        repo_msg = "{installed_repository.repository_spec.label} {installed_repository.repository_spec.version}"
         display_callback(repo_msg.format(**repo_item))
 
         if not list_content:
             continue
 
         for content_item_type_key, content_items_data in repo_item['content_items'].items():
-            content_msg = "repo={installed_repository.repository_spec.label}, type={type}, name={name}, " + \
-                "version={installed_repository.repository_spec.version}"
+            content_msg = "{installed_repository.repository_spec.label} {installed_repository.repository_spec.version} {name} {type}"
             # content_msg = "    type={type}, name={name}, " + \
             #    "version={installed_repository.repository_spec.version}"
 
             # type_msg = "  {content_item_type}:"
             # display_callback(type_msg.format(content_item_type=content_item_type_key))
 
-            log.debug('content_item: %s', content_items_data)
-            log.debug('content_item_type_key: %s', content_item_type_key)
+            # log.debug('content_item: %s', content_items_data)
+            # log.debug('content_item_type_key: %s', content_item_type_key)
 
             for content_item_data in content_items_data:
                 display_callback(content_msg.format(**content_item_data))
