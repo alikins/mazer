@@ -6,17 +6,43 @@ from ansible_galaxy.models.collection_info import CollectionInfo
 log = logging.getLogger(__name__)
 
 
-def test_license_error():
+def test_no_license():
     test_data = {
         'name': 'foo.foo',
-        'authors': ['chouseknecht'],
-        'license': 'GPLv2',
+        'authors': ['alikins'],
         'version': '0.0.1',
         'description': 'unit testing thing',
     }
     with pytest.raises(ValueError) as exc:
         CollectionInfo(**test_data)
     assert 'license' in str(exc)
+
+
+def test_null_license():
+    test_data = {
+        'name': 'foo.foo',
+        'authors': ['alikins'],
+        'version': '0.0.1',
+        'license': None,
+        'description': 'unit testing thing',
+    }
+    with pytest.raises(ValueError) as exc:
+        CollectionInfo(**test_data)
+    assert 'license' in str(exc)
+
+
+def test_license_error():
+    test_data = {
+        'name': 'foo.foo',
+        'authors': ['chouseknecht'],
+        # 'GPLv2' is not a valid SPDX id so this
+        # raises an error. A valid id would be 'GPL-2.0-or-later'
+        'license': 'GPLv2',
+        'version': '0.0.1',
+        'description': 'unit testing thing',
+    }
+    coll_info = CollectionInfo(**test_data)
+    assert coll_info.license == 'GPLv2'
 
 
 def test_required_error():

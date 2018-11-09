@@ -1,9 +1,7 @@
 from __future__ import print_function
 
 import attr
-import json
 import logging
-import os
 import re
 import semver
 
@@ -51,20 +49,6 @@ class CollectionInfo(object):
         except ValueError:
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
-
-    @license.validator
-    def _check_license(self, attribute, value):
-        cwd = os.path.dirname(os.path.abspath(__file__))
-        license_path = os.path.join(cwd, '..', 'data', 'spdx_licenses.json')
-        license_data = json.load(open(license_path, 'r'))
-        for lic in license_data['licenses']:
-            if lic['licenseId'] == value:
-                if lic['isDeprecatedLicenseId']:
-                    print("Warning: collection metadata 'license' value '%s' is "
-                          "deprecated." % value)
-                return True
-        self.value_error("Expecting 'license' to be a valid SPDX license ID, instead found '%s'. "
-                         "For more info, visit https://spdx.org" % value)
 
     @authors.validator
     @keywords.validator
