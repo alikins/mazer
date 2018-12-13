@@ -27,6 +27,9 @@ GENERATE_CLI = docs/bin/generate_man.py
 %.1: %.1.rst ansible_galaxy/__init__.py
 	$(RST2MAN)
 
+clean-man:
+	rm -fr docs/man/
+
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
