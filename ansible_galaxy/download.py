@@ -1,3 +1,4 @@
+import errno
 import logging
 import tempfile
 
@@ -37,3 +38,23 @@ def fetch_url(archive_url, validate_certs=True):
         raise exceptions.GalaxyDownloadError(e, url=archive_url)
 
     return False
+
+
+def url_exists(archive_url, validate_certs=True):
+    log.debug('Downloading archive_url: %s', archive_url)
+
+    try:
+        open_url(archive_url, validate_certs=validate_certs)
+        return True
+    except (IOError, OSError) as e:
+        # For file:// urls, we get an exception with errno 21 for 'is a directory'
+        # but for this case, a directory that exists is fine, so return true
+        if e.errno == errno.EISDIR:
+            return True
+
+        log.exception(e)
+        raise exceptions.GalaxyDownloadError(e, url=archive_url)
+    except Exception as e:
+        # FIXME: there is a ton of reasons a download and save could fail so could likely provided better errors here
+        log.exception(e)
+        raise exceptions.GalaxyDownloadError(e, url=archive_url)
