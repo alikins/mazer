@@ -51,6 +51,7 @@ def split_repository_spec(spec_string, valid_keywords):
         try:
             key, value = next(comma_splitter)
         except StopIteration:
+            log.debug('stop info: %s', info)
             return info
 
         if key:
@@ -58,6 +59,7 @@ def split_repository_spec(spec_string, valid_keywords):
         else:
             info[kw] = value
 
+    log.debug('info: %s', info)
     return info
 
 
@@ -157,7 +159,7 @@ def spec_data_from_string(repository_spec_string, resolver=None):
     spec_data = parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
-    # log.debug('spec_data: %s', spec_data)
+    log.debug('spec_data: %s', spec_data)
 
     # use passed in resolver if provided, otherwise assume 'resolve' is correct
     # but override if it looks like a galaxy requests
