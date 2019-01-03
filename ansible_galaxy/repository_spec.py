@@ -87,14 +87,20 @@ def editable_resolve(data):
     return data
 
 
-def shelf_resolve(data, repo_shelf):
-    log.debug('data: %s repo_shel: %s', data, repo_shelf)
+def shelf_resolve(data):
+    log.debug('data: %s', data)
 
+    # data['src'] =
+    # remove shelve spec from src
+    parts = data['src'].split('@shelf:')
+    log.debug('parts: %s', parts)
+    data['src'] = parts[0]
+    data['spec_string'] = parts[0]
     base_resolved_data = resolve(data.copy())
     log.debug('base_resolved_data: %s', base_resolved_data)
 
     # src='file:///home/adrian/src/galaxy-test/local_content_root/alikins/collection_reqs_test'
-    src = '%s/%s/%s' % (repo_shelf,
+    src = '%s/%s/%s' % ('the_shelf_uri',
                         base_resolved_data['namespace'],
                         base_resolved_data['name'])
     log.debug('src: %s base_resolved_data[src]: %s', src, base_resolved_data['src'])
@@ -119,7 +125,7 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, fetch
         resolved_data = editable_resolve(spec_data)
     elif fetch_method == FetchMethods.SHELF:
         # resolver = shelf_resolve
-        resolved_data = shelf_resolve(spec_data, shelf_uri)
+        resolved_data = shelf_resolve(spec_data)
     else:
         resolved_data = resolve(spec_data)
 
