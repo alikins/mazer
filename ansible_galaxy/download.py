@@ -2,6 +2,7 @@ import errno
 import logging
 import tempfile
 
+from six.moves.urllib.error import URLError
 from ansible_galaxy import exceptions
 from ansible_galaxy.flat_rest_api.urls import open_url
 
@@ -46,14 +47,24 @@ def url_exists(archive_url, validate_certs=True):
     try:
         open_url(archive_url, validate_certs=validate_certs)
         return True
-    except (IOError, OSError) as e:
+    except URLError as e:
+        log.debug('e.errno: %s', e.errno)
+        # For file:// urls, we get an exception with errno 21 for 'is a directory'
+        # but for this case, a directory that exists is fine, so return true
+        if e.errno == errno.EISDIR:
+            return True
+        raise
+    except (IOError, OSError, URLError) as e:
+        log.debug('e.errno: %s', e.errno)
         # For file:// urls, we get an exception with errno 21 for 'is a directory'
         # but for this case, a directory that exists is fine, so return true
         if e.errno == errno.EISDIR:
             return True
 
-        log.exception(e)
-        raise exceptions.GalaxyDownloadError(e, url=archive_url)
+        raise
+        #import pdb; pdb.set_trace()
+        # log.exception(e)
+        # raise exceptions.GalaxyDownloadError(e, url=archive_url)
     except Exception as e:
         # FIXME: there is a ton of reasons a download and save could fail so could likely provided better errors here
         log.exception(e)

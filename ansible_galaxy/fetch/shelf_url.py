@@ -14,7 +14,7 @@ class ShelfFetch(base.BaseFetch):
         super(ShelfFetch, self).__init__()
 
         self.repository_spec = repository_spec
-        self.remote_url = '%s/%s' % (shelf_uri, repository_spec.label)
+        self.remote_url = '%s/%s/%s' % (shelf_uri, repository_spec.namespace, repository_spec.name)
         self.shelf_uri = shelf_uri
         log.debug('shelf_uri: %s', shelf_uri)
         log.debug('remote_url: %s', self.remote_url)
