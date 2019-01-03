@@ -27,8 +27,11 @@ class ShelfFetch(base.BaseFetch):
     def find(self):
         # kluge, if we dont get an exception, lets assume it worked and didnt 404
         # we dont really care what is in it at the moment, just that the path exists
-        content_archive_path = download.fetch_url(self.remote_url, validate_certs=self.validate_certs)
-        if not content_archive_path:
+        content_url_exists = download.url_exists(self.remote_url, validate_certs=self.validate_certs)
+
+        log.debug('content_url_exists: %s', content_url_exists)
+
+        if not content_url_exists:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.repository_spec.label,
                                                                                      self.shelf_uri))
 
@@ -45,7 +48,6 @@ class ShelfFetch(base.BaseFetch):
         Can raise GalaxyDownloadError on any exception while downloadin remote_url and saving it.'''
 
         find_results = find_results or {}
-
 
         # NOTE: could move download.fetch_url here instead of splitting it
         content_archive_path = download.fetch_url(self.remote_url, validate_certs=self.validate_certs)

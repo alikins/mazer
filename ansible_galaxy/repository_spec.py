@@ -24,10 +24,14 @@ class FetchMethods(object):
     REMOTE_URL = 'REMOTE_URL'
     GALAXY_URL = 'GALAXY_URL'
     EDITABLE = 'EDITABLE'
+    SHELF = 'SHELF'
 
 
-def chose_repository_fetch_method(repository_spec_string, editable=False):
-    log.debug('repository_spec_string: %s', repository_spec_string)
+def chose_repository_fetch_method(repository_spec_string, editable=False, repo_shelf=None):
+    log.debug('repository_spec_string: %s editable: %s, repo_shelf: %s',
+              repository_spec_string, editable, repo_shelf)
+    if '@shelf:' in repository_spec_string:
+        return FetchMethods.SHELF
 
     if is_scm(repository_spec_string):
         # create tar file from scm url
@@ -91,8 +95,24 @@ def editable_resolve(data):
     return data
 
 
-def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False):
-    fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable)
+def shelf_resolve(data, repo_shelf):
+    log.debug('data: %s repo_shel: %s', data, repo_shelf)
+
+    base_resolved_data = resolve(data.copy())
+    log.debug('base_resolved_data: %s', base_resolved_data)
+
+    # src='file:///home/adrian/src/galaxy-test/local_content_root/alikins/collection_reqs_test'
+    src = '%s/%s/%s' % (repo_shelf,
+                        base_resolved_data['namespace'],
+                        base_resolved_data['name'])
+    log.debug('src: %s base_resolved_data[src]: %s', src, base_resolved_data['src'])
+
+    base_resolved_data['src'] = src
+    return base_resolved_data
+
+
+def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False, repo_shelf=None):
+    fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable, repo_shelf=repo_shelf)
 
     log.debug('fetch_method: %s', fetch_method)
 
@@ -101,15 +121,21 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, fetch
 
     log.debug('spec_data: %s', spec_data)
 
-    resolver = resolve
+    # resolver = resolve
     # FIXME need local_file artifact resolver?
     if fetch_method == FetchMethods.GALAXY_URL:
-        resolver = galaxy_repository_spec.resolve
+        # resolver = galaxy_repository_spec.resolve
+        resolved_name = galaxy_repository_spec.resolve(spec_data)
+    elif fetch_method == FetchMethods.EDITABLE:
+        # resolver = editable_resolve
+        resolved_name = editable(spec_data)
+    elif fetch_method == FetchMethods.SHELF:
+        # resolver = shelf_resolve
+        resolved_name = shelf_resolve(spec_data, shelf_uri)
+    else:
+        resolved_name = resolve(spec_data)
 
-    if fetch_method == FetchMethods.EDITABLE:
-        resolver = editable_resolve
-
-    resolved_name = resolver(spec_data)
+    # resolved_name = resolver(spec_data)
     log.debug('resolved_name: %s', resolved_name)
     spec_data.update(resolved_name)
 

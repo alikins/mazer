@@ -106,6 +106,8 @@ class GalaxyCLI(cli.CLI):
                                    help='Link a local directory into the content path for development and testing')
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
                                    help='Ignore errors and continue with the next specified repo.')
+            self.parser.add_option('--shelf', dest='shelves', action='append', default=[],
+                                   help='Specify a galaxy shelf to get repositories from')
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False, help='Don\'t download roles listed as dependencies')
             self.parser.add_option('-r', '--role-file', dest='role_file', help='A file containing a list of roles to be imported')
             self.parser.add_option('--namespace', dest='namespace', default=None,
