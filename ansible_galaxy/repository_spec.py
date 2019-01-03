@@ -58,6 +58,7 @@ def chose_repository_fetch_method(repository_spec_string, editable=False, repo_s
 
 
 def resolve(data):
+    log.debug('resolve in data: %s', data)
     src = data['src']
     if data['name'] is None:
         scm_name = repository_spec_parse.repo_url_to_repo_name(src)
@@ -81,6 +82,7 @@ def resolve(data):
     # combine the name parts, which may be one or two parts
     data['name'] = '.'.join(new_name_parts)
 
+    log.debug('plain resolve data: %s', data)
     return data
 
 
@@ -100,11 +102,13 @@ def shelf_resolve(data):
 
     # data['src'] =
     # remove shelve spec from src
-    parts = data['src'].split('@shelf:')
-    log.debug('parts: %s', parts)
-    data['src'] = parts[0]
-    data['spec_string'] = parts[0]
-    base_resolved_data = resolve(data.copy())
+    # parts = data['src'].split('@shelf:')
+    # log.debug('parts: %s', parts)
+    # data['src'] = parts[0]
+    # data['spec_string'] = parts[0]
+    # base_resolved_data = resolve(data.copy())
+    # base_resolved_data = resolve(data)
+    base_resolved_data = galaxy_repository_spec.resolve(data)
     log.debug('base_resolved_data: %s', base_resolved_data)
 
     # src='file:///home/adrian/src/galaxy-test/local_content_root/alikins/collection_reqs_test'
@@ -122,6 +126,13 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, fetch
 
     log.debug('fetch_method: %s', fetch_method)
 
+    if fetch_method == FetchMethods.SHELF:
+        shelf_spec_string_parts = repository_spec_string.split('@shelf:')
+
+        # Remove the '@shelf:' and shelf labels from the spec string
+        repository_spec_string = shelf_spec_string_parts[0]
+        log.debug('shelf_spec_string_parts: %s', shelf_spec_string_parts)
+
     spec_data = repository_spec_parse.parse_string(repository_spec_string)
     spec_data['fetch_method'] = fetch_method
 
@@ -131,19 +142,19 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, fetch
     # FIXME need local_file artifact resolver?
     if fetch_method == FetchMethods.GALAXY_URL:
         # resolver = galaxy_repository_spec.resolve
-        resolved_name = galaxy_repository_spec.resolve(spec_data)
+        resolved_data = galaxy_repository_spec.resolve(spec_data)
     elif fetch_method == FetchMethods.EDITABLE:
         # resolver = editable_resolve
-        resolved_name = editable(spec_data)
+        resolved_data = editable_resolve(spec_data)
     elif fetch_method == FetchMethods.SHELF:
         # resolver = shelf_resolve
-        resolved_name = shelf_resolve(spec_data)
+        resolved_data = shelf_resolve(spec_data)
     else:
-        resolved_name = resolve(spec_data)
+        resolved_data = resolve(spec_data)
 
     # resolved_name = resolver(spec_data)
-    log.debug('resolved_name: %s', resolved_name)
-    spec_data.update(resolved_name)
+    log.debug('resolved_data: %s', resolved_data)
+    spec_data.update(resolved_data)
 
     if namespace_override:
         if spec_data.get('namespace'):
