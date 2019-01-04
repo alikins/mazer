@@ -43,9 +43,6 @@ from ansible_galaxy.utils.text import to_native, to_text
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
-http_log = logging.getLogger('%s.(http).(general)' % __name__)
-request_log = logging.getLogger('%s.(http).(request)' % __name__)
-response_log = logging.getLogger('%s.(http).(response)' % __name__)
 
 
 def g_connect(method):
