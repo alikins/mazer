@@ -181,7 +181,8 @@ class GalaxyCLI(cli.CLI):
             # use ignore certs from options if available, but fallback to configured ignore_certs
             server['ignore_certs'] = options.ignore_certs
 
-        galaxy_context = GalaxyContext(server=server, content_path=content_path)
+        shelves = config.shelves.copy()
+        galaxy_context = GalaxyContext(server=server, content_path=content_path, shelves=shelves)
 
         return galaxy_context
 
