@@ -207,6 +207,9 @@ class GalaxyCLI(cli.CLI):
 
         log.debug('galaxy context: %s', galaxy_context)
 
+        # FIXME: This is only used by 'info' command currently, and should
+        #        be move 'later' in execution once we know we need to talk to
+        #        the galaxy rest api
         self.api = rest_api.GalaxyAPI(galaxy_context)
 
         log.debug('execute action: %s', self.action)
