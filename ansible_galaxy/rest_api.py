@@ -35,6 +35,7 @@ from ansible_galaxy.utils.text import to_native, to_text
 from ansible_galaxy.flat_rest_api.urls import open_url
 
 log = logging.getLogger(__name__)
+rest_response_log = logging.getLogger('%s.(url).(response)' % __name__)
 
 
 def g_connect(method):
@@ -82,7 +83,24 @@ class GalaxyAPI(object):
     # TODO: raise an API/net specific exception?
     @g_connect
     def __call_galaxy(self, url, args=None, headers=None, http_method=None):
-        return self.url_client.request(url=url, args=args, headers=headers, http_method=http_method)
+        response = self.url_client.request(url=url, args=args, headers=headers, http_method=http_method)
+
+        response_slug = '"%s %s" %s %s' % (http_method,
+                                           url,
+                                           response.headers.get('X-REQUEST-ID'),
+                                           response.getcode())
+
+        # FIXME: making the request and loading the response should be sep try/except blocks
+        response_body = to_text(response.read(), errors='surrogate_or_strict')
+
+        # debug log the raw response body
+        rest_response_log.debug('%s response body:\n%s', response_slug, response_body)
+        data = json.loads(response_body)
+
+        # debug log a json version of the data that was created from the response
+        rest_response_log.debug('%s data:\n%s', response_slug, json.dumps(data, indent=2))
+
+        return data
 
     @property
     def api_server(self):
