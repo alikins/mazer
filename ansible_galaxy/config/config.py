@@ -13,10 +13,12 @@ class Config(object):
         self.content_path = None
         self.global_content_path = None
         self.options = {}
+        self.shelves = {}
 
     def as_dict(self):
         return collections.OrderedDict([
             ('server', self.server),
+            ('shelves', self.shelves),
             ('content_path', self.content_path),
             ('global_content_path', self.global_content_path),
             ('options', self.options),
@@ -26,6 +28,7 @@ class Config(object):
     def from_dict(cls, data):
         inst = cls()
         inst.server = data.get('server', inst.server)
+        inst.shelves = data.get('shelves', inst.shelves)
         inst.content_path = data.get('content_path', inst.content_path)
         inst.global_content_path = data.get('global_content_path', inst.global_content_path)
         inst.options = data.get('options', inst.options)
