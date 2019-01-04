@@ -3,6 +3,8 @@ import logging
 import tempfile
 
 from six.moves.urllib.error import URLError
+from six import PY2
+
 from ansible_galaxy import exceptions
 from ansible_galaxy.flat_rest_api.urls import open_url
 
@@ -48,13 +50,27 @@ def url_exists(archive_url, validate_certs=True):
         open_url(archive_url, validate_certs=validate_certs)
         return True
     except URLError as e:
+        import pprint
+        log.debug('e: %s', pprint.pformat(e.__dict__))
         log.debug('e.errno: %s', e.errno)
+        log.debug('PY2: %s', PY2)
+        if PY2:
+            # On PY2 we get a URLError that is subclass of OSError with it's errno set
+            # but on PY3 we get a URLError with a 'reason' attribute that is an OSError with errno
+            # and the URLError itself doesn't have it's errno attribute set.
+            # For file:// urls, we get an exception with errno 21 for 'is a directory'
+            # but for this case, a directory that exists is fine, so return true
+            if e.errno == errno.EISDIR:
+                return True
+            raise
+
         # For file:// urls, we get an exception with errno 21 for 'is a directory'
         # but for this case, a directory that exists is fine, so return true
-        if e.errno == errno.EISDIR:
+        if e.reason and e.reason.errno == errno.EISDIR:
+            log.debug('got URLError with a OSError with errno as its reason attr, returning True')
             return True
         raise
-    except (IOError, OSError, URLError) as e:
+    except (IOError, OSError) as e:
         log.debug('e.errno: %s', e.errno)
         # For file:// urls, we get an exception with errno 21 for 'is a directory'
         # but for this case, a directory that exists is fine, so return true
@@ -62,7 +78,7 @@ def url_exists(archive_url, validate_certs=True):
             return True
 
         raise
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         # log.exception(e)
         # raise exceptions.GalaxyDownloadError(e, url=archive_url)
     except Exception as e:
