@@ -141,7 +141,7 @@ def parse_repository_spec(repository_spec_string, resolver=None):
 
 
 def assert_just_keys(parse_result):
-    valid_keys = ('name', 'namespace', 'src', 'scm', 'version', 'spec_string', 'fetch_method')
+    valid_keys = ('name', 'namespace', 'src', 'scm', 'version', 'spec_string', 'fetch_method', 'shelf')
 
     for key in valid_keys:
         assert key in parse_result, 'expected the results dict to have a "%s" key but it did not' % key
