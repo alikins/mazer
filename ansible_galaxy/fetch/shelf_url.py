@@ -10,10 +10,14 @@ log = logging.getLogger(__name__)
 class ShelfFetch(base.BaseFetch):
     fetch_method = 'shelf'
 
-    def __init__(self, repository_spec, shelf_uri, validate_certs=True):
+    def __init__(self, repository_spec, galaxy_context, validate_certs=True):
         super(ShelfFetch, self).__init__()
 
         self.repository_spec = repository_spec
+        self.galaxy_context = galaxy_context
+
+        shelf_uri = self.galaxy_context.shelves.get(repository_spec.shelf, None)
+
         self.remote_url = '%s/%s/%s' % (shelf_uri, repository_spec.namespace, repository_spec.name)
         self.shelf_uri = shelf_uri
         log.debug('shelf_uri: %s', shelf_uri)

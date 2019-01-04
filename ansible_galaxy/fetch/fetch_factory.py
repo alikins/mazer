@@ -36,7 +36,7 @@ def get(galaxy_context, repository_spec):
     elif repository_spec.fetch_method == FetchMethods.SHELF:
         # TODO: need to use galaxy_context to resolve shelf name -> shelf uri
         fetcher = shelf_url.ShelfFetch(repository_spec,
-                                       shelf_uri='file:///home/adrian/src/galaxy-test/local_content_root/')
+                                       galaxy_context=galaxy_context)
     elif repository_spec.fetch_method == FetchMethods.REMOTE_URL:
         fetcher = remote_url.RemoteUrlFetch(repository_spec=repository_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])

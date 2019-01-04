@@ -22,7 +22,7 @@ def is_scm(repository_spec_string):
 def chose_repository_fetch_method(repository_spec_string, editable=False, repo_shelf=None):
     log.debug('repository_spec_string: %s editable: %s, repo_shelf: %s',
               repository_spec_string, editable, repo_shelf)
-    if '@shelf:' in repository_spec_string:
+    if ',shelf=' in repository_spec_string:
         return FetchMethods.SHELF
 
     if is_scm(repository_spec_string):
@@ -89,8 +89,8 @@ def editable_resolve(data):
     return data
 
 
-def shelf_resolve(data):
-    log.debug('data: %s', data)
+def shelf_resolve(data, shelf_name=None):
+    log.debug('data: %s shelf_name: %s', data, shelf_name)
 
     # data['src'] =
     # remove shelve spec from src
@@ -109,20 +109,24 @@ def shelf_resolve(data):
                         base_resolved_data['name'])
     log.debug('src: %s base_resolved_data[src]: %s', src, base_resolved_data['src'])
 
-    base_resolved_data['src'] = src
+    # base_resolved_data['src'] = src
     return base_resolved_data
 
 
 def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False, repo_shelf=None):
+    log.debug('repository_spec_string: %s', repository_spec_string)
     fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable, repo_shelf=repo_shelf)
 
     log.debug('fetch_method: %s', fetch_method)
 
-    if fetch_method == FetchMethods.SHELF:
+    shelf_name = None
+
+    if False and fetch_method == FetchMethods.SHELF:
         shelf_spec_string_parts = repository_spec_string.split('@shelf:')
 
         # Remove the '@shelf:' and shelf labels from the spec string
         repository_spec_string = shelf_spec_string_parts[0]
+        shelf_name = shelf_spec_string_parts[1:].join()
         log.debug('shelf_spec_string_parts: %s', shelf_spec_string_parts)
 
     spec_data = repository_spec_parse.parse_string(repository_spec_string)
@@ -138,7 +142,7 @@ def spec_data_from_string(repository_spec_string, namespace_override=None, fetch
         resolved_data = editable_resolve(spec_data)
     elif fetch_method == FetchMethods.SHELF:
         # resolver = shelf_resolve
-        resolved_data = shelf_resolve(spec_data)
+        resolved_data = shelf_resolve(spec_data, shelf_name)
     else:
         resolved_data = resolve(spec_data)
 
