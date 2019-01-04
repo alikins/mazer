@@ -25,6 +25,8 @@ DEFAULTS = [
     # are the name of the 'shelf' (like a yum repo name) and then
     # a dict of shelf info including the  uri it lives at.
     # TODO: If useful, this will likely move to it's own config file[s]
+    # TODO: RHS of 'shelves' may make more sense as a ordered list of
+    #       dicts that include 'name', 'label', 'uri', etc
     ('shelves', [('system', {'uri': 'file:///usr/share/ansible/shelf'})]),
 
     # In order of priority
