@@ -20,6 +20,13 @@ DEFAULTS = [
       'ignore_certs': False}
      ),
 
+    # shelves are static sources of galaxy content.
+    # The value of 'shelves' is a list of tuples. The tuples
+    # are the name of the 'shelf' (like a yum repo name) and then
+    # a dict of shelf info including the  uri it lives at.
+    # TODO: If useful, this will likely move to it's own config file[s]
+    ('shelves', [('system', {'uri': 'file:///usr/share/ansible/shelf'})]),
+
     # In order of priority
     ('content_path', '~/.ansible/content'),
     ('global_content_path', '/usr/share/ansible/content'),
