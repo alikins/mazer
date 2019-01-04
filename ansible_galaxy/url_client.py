@@ -86,16 +86,7 @@ class URLClient(object):
             resp_info = resp.info()
             response_log.debug('%s info:\n%s', request_slug, resp_info)
 
-            # FIXME: making the request and loading the response should be sep try/except blocks
-            response_body = to_text(resp.read(), errors='surrogate_or_strict')
-
-            # debug log the raw response body
-            response_log.debug('%s response body:\n%s', request_slug, response_body)
-
-            data = json.loads(response_body)
-
-            # debug log a json version of the data that was created from the response
-            response_log.debug('%s data:\n%s', request_slug, json.dumps(data, indent=2))
+            data = resp
         except HTTPError as http_exc:
             self.log.debug('Exception on %s', request_slug)
             self.log.exception("%s: %s", request_slug, http_exc)

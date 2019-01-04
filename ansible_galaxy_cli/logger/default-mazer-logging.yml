@@ -46,6 +46,11 @@ loggers:
     propagate: false
   ansible_galaxy.archive.extract:
     level: INFO
+  ansible_galaxy.rest_api.(url):
+    level: INFO
+    propagate: false
+    handlers:
+      - file
   ansible_galaxy.url_client.(url):
     level: INFO
     propagate: false
