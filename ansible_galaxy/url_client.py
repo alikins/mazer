@@ -4,7 +4,6 @@ import sys
 import uuid
 
 from six.moves.urllib.error import HTTPError
-from six.moves.urllib.parse import quote as urlquote
 import socket
 import ssl
 
@@ -42,9 +41,7 @@ class URLClient(object):
         log.debug('Using galaxy server URL %s with ignore_certs=%s', galaxy.server['url'], galaxy.server['ignore_certs'])
 
         self._validate_certs = not galaxy.server['ignore_certs']
-        self.baseurl = None
-        self.version = None
-        self.initialized = False
+
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
         # set the API server
@@ -125,12 +122,3 @@ class URLClient(object):
             raise exceptions.GalaxyClientAPIConnectionError('Connection error to Galaxy API for request %s: %s' % (request_slug, e))
 
         return data
-
-    def lookup_repo_by_name(self, namespace, name):
-        namespace = urlquote(namespace)
-        name = urlquote(name)
-        url = '%s/repositories/?name=%s&provider_namespace__namespace__name=%s' % (self.baseurl, name, namespace)
-        data = self._request(url, http_method='GET')
-        if data["results"]:
-            return data["results"][0]
-        return {}
