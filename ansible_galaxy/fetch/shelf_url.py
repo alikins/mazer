@@ -2,7 +2,6 @@ import logging
 
 import yaml
 
-from ansible_galaxy import collection_info
 from ansible_galaxy import download
 from ansible_galaxy import exceptions
 from ansible_galaxy import url_client
