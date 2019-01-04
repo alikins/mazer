@@ -32,6 +32,9 @@ class RepositorySpec(object):
     scm = attr.ib(default=None, cmp=False)
     spec_string = attr.ib(default=None, cmp=False)
     src = attr.ib(default=None, cmp=False)
+    # TODO: do we want shelve id to count? Or do we need a ShelfRepositorySpec to join a
+    #       repo spec and a shelf id?
+    shelf = attr.ib(default=None, cmp=False)
 
     @property
     def label(self):
@@ -46,6 +49,7 @@ class RepositorySpec(object):
                        scm=data.get('scm', None),
                        spec_string=data.get('spec_string', None),
                        src=data.get('src', None),
+                       shelf=data.get('shelf', None),
                        )
         return instance
 

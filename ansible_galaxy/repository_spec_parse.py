@@ -69,14 +69,15 @@ def parse_string(repository_spec_text, valid_keywords=None):
     And return a dict with keys: 'name', 'src', 'scm', 'version'
     '''
 
-    valid_keywords = valid_keywords or ('src', 'version', 'name', 'namespace', 'scm')
+    valid_keywords = valid_keywords or ('src', 'version', 'name', 'namespace', 'scm', 'shelf')
     data = {'src': None,
             'name': None,
             'namespace': None,
             # 'sub_name': None,
             'version': None,
             'scm': None,
-            'spec_string': None}
+            'spec_string': None,
+            'shelf': None}
 
     data['spec_string'] = repository_spec_text
 
@@ -105,7 +106,7 @@ class FetchMethods(object):
 
 
 def chose_repository_fetch_method(repository_spec_string):
-    # log.debug('repository_spec_string: %s', repository_spec_string)
+    log.debug('WHO CALLS ME? repository_spec_string: %s', repository_spec_string)
 
     if is_scm(repository_spec_string):
         # create tar file from scm url
