@@ -24,9 +24,9 @@ handlers:
     filename: "~/.ansible/mazer.log"
     formatter: file_verbose
     level: DEBUG
-  http_file:
+  url_file:
     class: ansible_galaxy_cli.logger.setup.ExpandTildeWatchedFileHandler
-    filename: "~/.ansible/mazer-http.log"
+    filename: "~/.ansible/mazer-url.log"
     formatter: file_verbose
     level: DEBUG
 loggers:
@@ -46,13 +46,13 @@ loggers:
     propagate: false
   ansible_galaxy.archive.extract:
     level: INFO
-  ansible_galaxy.rest_api.(http):
+  ansible_galaxy.url_client.(url):
     level: INFO
     propagate: false
     handlers:
       - file
-    # to log verbose debug level logging to http_file handler:
+    # to log verbose debug level logging to url_file handler:
     # level: DEBUG
     # handlers:
-    #   - http_file
+    #   - url_file
 version: 1
