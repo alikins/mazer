@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import datetime
 import logging
 import os
 import pprint
@@ -16,8 +17,8 @@ import yamlloader
 # from ansible_galaxy import collection_info
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
-from ansible_galaxy.models.shelf_index import ShelfIndex
-from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex
+from ansible_galaxy.models.shelf_index import ShelfIndex, ShelfIndexFile
+from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
@@ -104,8 +105,10 @@ def _create(galaxy_context,
 
     clean_data = attr.asdict(collection_index, dict_factory=OrderedDict)
 
-    def semver_json_default(obj):
+    def shelf_json_default(obj):
         if isinstance(obj, semver.VersionInfo):
+            return str(obj)
+        if isinstance(obj, datetime.datetime):
             return str(obj)
         raise TypeError(repr(obj) + " is not JSON serializable")
 
@@ -123,13 +126,35 @@ def _create(galaxy_context,
         collection_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
                                                   'collections.json')
         with open(collection_index_file_path, 'w+') as collection_index_stream:
-            json.dump(clean_data, collection_index_stream, default=semver_json_default, indent=4)
+            json.dump(clean_data, collection_index_stream, default=shelf_json_default, indent=4)
 
     except Exception as e:
         log.exception(e)
         log.error('Unable to save collection index file (%s): %s', collection_index_file_path, e)
 
         raise
+
+    shelf_index_file = ShelfIndexFile(123, [ShelfCollectionIndexFileInfo("collections.yml",
+                                                                         datetime.datetime.now(),
+                                                                         1234234)])
+    shelf_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
+                                         'index.yml')
+
+    shelf_index_data = attr.asdict(shelf_index_file, dict_factory=OrderedDict)
+
+    with open(shelf_index_file_path, 'w+') as shelf_index_stream:
+        log.debug('shelf_index_stream: %s', shelf_index_stream)
+
+        dumpresult = yaml.dump(shelf_index_data,
+                               shelf_index_stream,
+                               Dumper=yamlloader.ordereddict.CSafeDumper,
+                               default_flow_style=False)
+        log.debug('yaml.dump result: %s', dumpresult)
+
+    shelf_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
+                                         'index.json')
+    with open(shelf_index_file_path, 'w+') as shelf_index_stream:
+        json.dump(shelf_index_data, shelf_index_stream, default=shelf_json_default, indent=4)
 
     # collection_index_file = ShelfCollectionIndexFile
     results['create_results'] = {'placeholder': 'nothing to see here yet'}
