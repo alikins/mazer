@@ -2,8 +2,10 @@ import logging
 import os
 import pprint
 import uuid
+import yaml
 
 import attr
+import yamlloader
 
 # from ansible_galaxy.build import Build, BuildStatuses
 # from ansible_galaxy import collection_info
@@ -70,6 +72,25 @@ def _create(galaxy_context,
     log.debug('shelf_index: %s', shelf_index)
     log.debug('shelf_index asdict: %s', pprint.pformat(attr.asdict(shelf_index)))
 
+    # FIXME: extract and refactor to method in different module
+    # write out the collection_index file
+    # flush/save, get size and chksum return
+    collection_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
+                                              'collections.yml')
+    try:
+        with open(collection_index_file_path, 'w+') as collections_index_stream:
+            dumpresult = yaml.dump(attr.asdict(collection_index),
+                                   collections_index_stream,
+                                   Dumper=yamlloader.ordereddict.CSafeDumper,
+                                   default_flow_style=False)
+            log.debug('yaml.dump result: %s', dumpresult)
+    except Exception as e:
+        log.exception(e)
+        log.error('Unable to save collection index file (%s): %s', collection_index_file_path, e)
+
+        raise
+
+    # collection_index_file = ShelfCollectionIndexFile
     results['create_results'] = {'placeholder': 'nothing to see here yet'}
     results['success'] = True
 
