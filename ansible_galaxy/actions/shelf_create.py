@@ -85,6 +85,13 @@ def _create(galaxy_context,
 
     ensure_output_dir(shelf_creation_context.shelf_output_path)
 
+    # find/load collections info from collections_path
+    #  - using InstalledRepositoryDB and or loader helpers (TODO: rename InstalledRepositoryDB)
+    # create a ShelfIndex, ShelfRootIndex, ShelfCollectionsIndex, ShelfOtherIndex etc
+    # do any file bookkeeping (making backups, or versioning, or scm hook, etc)
+    # serialize ShelfIndex etc to shelf_output_path
+    # populate any results info needed (date, version, chksums, warnings/errors, etc)
+
     results['create_results'] = {'placeholder': 'nothing to see here yet'}
     results['success'] = True
 
