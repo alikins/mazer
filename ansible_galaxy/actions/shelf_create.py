@@ -1,10 +1,16 @@
 import logging
 import os
+import pprint
+import uuid
+
+import attr
 
 # from ansible_galaxy.build import Build, BuildStatuses
 # from ansible_galaxy import collection_info
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
+from ansible_galaxy.models.shelf_index import ShelfIndex
+from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
@@ -48,8 +54,21 @@ def _create(galaxy_context,
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
+    repositories = []
     for candidate_repository in irdb.select(repository_match_filter=all_repository_match):
         log.debug('candidate_repo: %s', candidate_repository)
+
+        repositories.append(candidate_repository)
+
+    collection_index = ShelfCollectionIndex(collections=repositories)
+    # TODO/FIXME: serial numbers are a PITA, maybe just a UUID
+
+    shelf_serial_number = uuid.uuid4().int
+    shelf_index = ShelfIndex(shelf_serial_number,
+                             collection_index=collection_index)
+
+    log.debug('shelf_index: %s', shelf_index)
+    log.debug('shelf_index asdict: %s', pprint.pformat(attr.asdict(shelf_index)))
 
     results['create_results'] = {'placeholder': 'nothing to see here yet'}
     results['success'] = True
