@@ -32,6 +32,7 @@ from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
 from ansible_galaxy.actions import remove
+from ansible_galaxy.actions import shelf_create
 from ansible_galaxy.actions import version
 from ansible_galaxy.actions import publish
 from ansible_galaxy.config import defaults
@@ -42,6 +43,7 @@ from ansible_galaxy import rest_api
 
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
+from ansible_galaxy.models.shelf_creation_context import ShelfCreationContext
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
@@ -77,7 +79,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "shelfcreate", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -119,6 +121,14 @@ class GalaxyCLI(cli.CLI):
                                    help='The namespace to use when installing content (required for installs from local scm repo or archives)')
         elif self.action == "remove":
             self.parser.set_usage("usage: %prog remove repo1 repo2 ...")
+        elif self.action == 'shelfcreate':
+            self.parser.set_usage("usage: %prog shelfcreate [options]")
+            self.parser.add_option('--collections-path', dest='collections_path', default=None,
+                                   help='The path in which the collections is located. The default is the current working directory.')
+            self.parser.add_option('--shelf-output-path', dest='shelf_output_path', default=None,
+                                   help='The path in which the shelf will be created. The default is ./shelf/.')
+            self.parser.add_option('--some-shelf-arg', dest='some_shelf_arg',
+                                   help='Does not do anything just placeholder FIXME')
         elif self.action == "list":
             self.parser.set_usage("usage: %prog list [repo_name]")
             self.parser.add_option('--content', dest='list_content', default=False, action='store_true', help="List each content item type in a repo")
@@ -338,3 +348,26 @@ class GalaxyCLI(cli.CLI):
         return version.version(config_file_path=self.config_file_path,
                                cli_version=galaxy_cli_version,
                                display_callback=self.display)
+
+    def execute_shelfcreate(self):
+
+        log.debug('options: %s', self.options)
+        log.debug('args: %s', self.args)
+
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+
+        # default to looking for collections in cwd if not specified
+        cwd = os.getcwd()
+
+        collections_path = self.options.collections_path or cwd
+
+        # write the created shelf to output_path, which will default to collection
+        # relative shelf/
+        shelf_output_path = self.options.shelf_output_path or os.path.join(collections_path, 'shelf')
+
+        shelf_creation_context = ShelfCreationContext(collections_path=collections_path,
+                                                      shelf_output_path=shelf_output_path)
+
+        return shelf_create.create(galaxy_context,
+                                   shelf_creation_context,
+                                   display_callback=self.display)
