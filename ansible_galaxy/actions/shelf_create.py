@@ -1,11 +1,16 @@
+from collections import OrderedDict
 import logging
 import os
 import pprint
 import uuid
 import yaml
+import json
 
 import attr
+import semver
+import six
 import yamlloader
+
 
 # from ansible_galaxy.build import Build, BuildStatuses
 # from ansible_galaxy import collection_info
@@ -16,6 +21,25 @@ from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
+
+
+def represent_semver(self, data):
+    log.debug('repr_semver: %s %r %s', data, data, type(data))
+
+    if six.PY3:
+        res = self.represent_str(str(data))
+    else:
+        res = self.represent_unicode(data)
+    log.debug('semver res: %s %r', res, res)
+    return res
+
+
+yamlloader.ordereddict.CSafeDumper.add_representer(
+    semver.VersionInfo,
+    represent_semver
+)
+
+yamlloader.ordereddict.CSafeDumper.ignore_aliases = lambda *args: True
 
 
 # FIXME: move to utils
@@ -77,13 +101,30 @@ def _create(galaxy_context,
     # flush/save, get size and chksum return
     collection_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
                                               'collections.yml')
+
+    clean_data = attr.asdict(collection_index, dict_factory=OrderedDict)
+
+    def semver_json_default(obj):
+        if isinstance(obj, semver.VersionInfo):
+            return str(obj)
+        raise TypeError(repr(obj) + " is not JSON serializable")
+
     try:
-        with open(collection_index_file_path, 'w+') as collections_index_stream:
-            dumpresult = yaml.dump(attr.asdict(collection_index),
-                                   collections_index_stream,
+        with open(collection_index_file_path, 'w+') as collection_index_stream:
+            log.debug('collections_index_stream: %s', collection_index_stream)
+
+            dumpresult = yaml.dump(clean_data,
+                                   collection_index_stream,
                                    Dumper=yamlloader.ordereddict.CSafeDumper,
                                    default_flow_style=False)
             log.debug('yaml.dump result: %s', dumpresult)
+
+        # argh yaml, dump it as json
+        collection_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
+                                                  'collections.json')
+        with open(collection_index_file_path, 'w+') as collection_index_stream:
+            json.dump(clean_data, collection_index_stream, default=semver_json_default, indent=4)
+
     except Exception as e:
         log.exception(e)
         log.error('Unable to save collection index file (%s): %s', collection_index_file_path, e)
