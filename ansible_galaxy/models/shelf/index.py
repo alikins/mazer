@@ -1,7 +1,7 @@
 import attr
 import logging
 
-from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
+from ansible_galaxy.models.shelf.collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
 
 log = logging.getLogger(__name__)
 

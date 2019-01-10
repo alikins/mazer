@@ -17,8 +17,8 @@ import yamlloader
 # from ansible_galaxy import collection_info
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
-from ansible_galaxy.models.shelf_index import ShelfIndex, ShelfIndexFile
-from ansible_galaxy.models.shelf_collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
+from ansible_galaxy.models.shelf.index import ShelfIndex, ShelfIndexFile
+from ansible_galaxy.models.shelf.collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
@@ -145,10 +145,12 @@ def _create(galaxy_context,
     with open(shelf_index_file_path, 'w+') as shelf_index_stream:
         log.debug('shelf_index_stream: %s', shelf_index_stream)
 
-        dumpresult = yaml.dump(shelf_index_data,
-                               shelf_index_stream,
-                               Dumper=yamlloader.ordereddict.CSafeDumper,
-                               default_flow_style=False)
+        dumpresult = \
+            yaml.dump(shelf_index_data,
+                      shelf_index_stream,
+                      Dumper=yamlloader.ordereddict.CSafeDumper,
+                      default_flow_style=False)
+
         log.debug('yaml.dump result: %s', dumpresult)
 
     shelf_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
