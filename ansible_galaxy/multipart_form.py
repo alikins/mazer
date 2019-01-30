@@ -2,6 +2,8 @@ import mimetypes
 import io
 import uuid
 
+from ansible_galaxy.utils.text import to_bytes
+
 
 class MultiPartForm(object):
     """
@@ -14,6 +16,33 @@ class MultiPartForm(object):
         self.files = []
         self.boundary = '--------------------------%s' % uuid.uuid4().hex
         return
+
+    def __repr__(self):
+        return 'MultiPartForm(form_fields=%s, files=%s, boundary="%s")' \
+            % (self.form_fields, [f[0:2] for f in self.files], self.boundary)
+
+    def linesgen(self, summarize=False):
+        part_boundary = '--' + self.boundary
+        part_boundary_end = '--' + self.boundary + '--'
+
+        for name, value in self.form_fields:
+            yield part_boundary
+            yield 'Content-Disposition: form-data; name="%s"' % name
+            yield value
+
+        # TODO: we could potentially compute the content-length first, without
+        #       creating the whole buffer and then stream the file bodies, if
+        #       memory use becomes an issue.
+        for field_name, filename, content_type, body in self.files:
+            yield part_boundary
+            yield 'Content-Disposition: file; name="%s"; filename="%s"' % (field_name, filename)
+            yield 'Content-Type: %s' % content_type
+            if summarize:
+                yield '< the %s bytes body of %s here >' % (len(body), filename)
+            else:
+                yield body
+
+        yield part_boundary_end
 
     def get_content_type(self):
         return 'multipart/form-data; boundary=%s' % self.boundary

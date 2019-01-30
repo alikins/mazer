@@ -39,7 +39,7 @@ from six.moves import http_client
 from ansible_galaxy import __version__ as mazer_version
 from ansible_galaxy import exceptions
 from ansible_galaxy.multipart_form import MultiPartForm
-from ansible_galaxy.utils.text import to_native, to_text
+from ansible_galaxy.utils.text import to_native, to_text, to_bytes
 
 from ansible_galaxy.flat_rest_api.urls import open_url
 
@@ -277,8 +277,22 @@ class GalaxyAPI(object):
 
         _, netloc, url, _, _, _ = urlparse(url)
 
+        # linesgen = form.linesgen(summarize=True)
+        # for line in linesgen:
+        #    log.debug(line)
+
+        log.debug('start joined lines')
+        linesgen2 = form.linesgen(summarize=True)
+        log.debug(to_text(to_bytes('\r\n').join([to_bytes(x) for x in linesgen2])))
+        # if not summarizing
+        # log.debug(to_text(to_bytes('\r\n').join([to_bytes(x) for x in linesgen2]), errors='backslashreplace'))
+        log.debug('end joined lines')
+
         try:
-            form_buffer = form.get_binary().getvalue()
+            log.debug('form=%s', form)
+            form_buffer = to_bytes('\r\n').join([to_bytes(x) for x in linesgen2])
+            # form_buffer = form.get_binary().getvalue()
+            # log.debug(b'form_buffer:\n%s', form_buffer)
             http = http_client.HTTPConnection(netloc)
             http.connect()
             http.putrequest("POST", url)
