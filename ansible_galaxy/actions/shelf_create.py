@@ -17,6 +17,7 @@ import yamlloader
 # from ansible_galaxy import collection_info
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
+from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.shelf.index import ShelfIndex, ShelfIndexFile
 from ansible_galaxy.models.shelf.collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
 # from ansible_galaxy.models.repository_spec import RepositorySpec
@@ -68,6 +69,8 @@ def _create(galaxy_context,
 
     ensure_output_dir(shelf_creation_context.shelf_output_path)
 
+    # FIXME: kluge until we git InstalledRepositoryDatabase
+    shelf_galaxy_context = GalaxyContext(server={}, content_path=collections_path)
     # create a ShelfIndex, ShelfRootIndex, ShelfCollectionsIndex, ShelfOtherIndex etc
     # find/load collections info from collections_path
     #     add items to ShelfIndex and friends
@@ -79,7 +82,7 @@ def _create(galaxy_context,
     #  - using InstalledRepositoryDB and or loader helpers (TODO: rename InstalledRepositoryDB)
     all_repository_match = repository_match_filter or matchers.MatchAll()
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    irdb = installed_repository_db.InstalledRepositoryDatabase(shelf_galaxy_context)
 
     repositories = []
     for candidate_repository in irdb.select(repository_match_filter=all_repository_match):
@@ -134,9 +137,10 @@ def _create(galaxy_context,
 
         raise
 
-    shelf_index_file = ShelfIndexFile(123, [ShelfCollectionIndexFileInfo("collections.yml",
-                                                                         datetime.datetime.now(),
-                                                                         1234234)])
+    shelf_index_file = ShelfIndexFile(123, [ShelfCollectionIndexFileInfo(location="collections.yml",
+                                                                         index_type="collection",
+                                                                         timestamp=datetime.datetime.now(),
+                                                                         size_bytes=1234234)])
     shelf_index_file_path = os.path.join(shelf_creation_context.shelf_output_path,
                                          'index.yml')
 
