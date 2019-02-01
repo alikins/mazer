@@ -26,13 +26,10 @@ def get_namespace_paths(content_path):
         # namespace_paths = []
         dirs = []
 
-    def valid_dir(dir_path):
-        if dir_path in ('.git', '.hg'):
-            return False
-        return True
+    namespace_path_matcher = matchers.MatchNamespacePathShelf()
 
     log.debug('dirs:%s', dirs)
-    namespace_paths = [ns_dir for ns_dir in dirs if valid_dir(ns_dir)]
+    namespace_paths = [ns_dir for ns_dir in dirs if namespace_path_matcher(ns_dir)]
     return namespace_paths
 
 
@@ -46,6 +43,8 @@ def installed_namespace_iterator(galaxy_context,
     namespace_paths = get_namespace_paths(content_path)
 
     log.debug('Looking for namespaces in %s', content_path)
+    log.debug('candidate namespace paths: %s', namespace_paths)
+
     for namespace_path in namespace_paths:
         namespace_full_path = os.path.join(content_path, namespace_path)
 

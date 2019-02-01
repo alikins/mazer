@@ -95,3 +95,17 @@ class MatchNamespacesOrLabels(Match):
         # TODO: should this matcher require a namespace string or a namespace object? either?
         return any([other.repository_spec.label in self.namespaces_or_labels,
                     other.repository_spec.namespace in self.namespaces_or_labels])
+
+
+class MatchNamespacePathShelf(Match):
+    '''Matches on valid names for namespaces in a path'''
+    def __init__(self, namespace_paths=None):
+        self.namespace_paths = namespace_paths
+
+    def match(self, other):
+        if other in ('shelf', '.git', '.hg'):
+            return False
+
+        # FIXME/TODO: ignore invalid namespace names
+
+        return True
