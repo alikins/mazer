@@ -19,7 +19,7 @@ def is_scm(repository_spec_string):
     return False
 
 
-def chose_repository_fetch_method(repository_spec_string, editable=False, repo_shelf=None):
+def choose_repository_fetch_method(repository_spec_string, editable=False, repo_shelf=None):
     log.debug('repository_spec_string: %s editable: %s, repo_shelf: %s',
               repository_spec_string, editable, repo_shelf)
     if ',shelf=' in repository_spec_string:
@@ -115,7 +115,7 @@ def shelf_resolve(data, shelf_name=None):
 
 def spec_data_from_string(repository_spec_string, namespace_override=None, fetch_method=None, editable=False, repo_shelf=None):
     log.debug('repository_spec_string: %s', repository_spec_string)
-    fetch_method = chose_repository_fetch_method(repository_spec_string, editable=editable, repo_shelf=repo_shelf)
+    fetch_method = choose_repository_fetch_method(repository_spec_string, editable=editable, repo_shelf=repo_shelf)
 
     log.debug('fetch_method: %s', fetch_method)
 
