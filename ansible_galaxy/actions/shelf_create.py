@@ -19,7 +19,7 @@ from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.shelf.index import ShelfIndex, ShelfIndexFile
-from ansible_galaxy.models.shelf.collection_index import ShelfCollectionIndex, ShelfCollectionIndexFileInfo
+from ansible_galaxy.models.shelf.collection_index import ShelfCollection, ShelfCollectionIndex, ShelfCollectionIndexFileInfo
 # from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
@@ -85,12 +85,16 @@ def _create(galaxy_context,
     irdb = installed_repository_db.InstalledRepositoryDatabase(shelf_galaxy_context)
 
     repositories = []
+    collections = []
     for candidate_repository in irdb.select(repository_match_filter=all_repository_match):
         log.debug('candidate_repo: %s', candidate_repository)
 
         repositories.append(candidate_repository)
+        shelf_col = ShelfCollection.from_repository(candidate_repository)
+        log.debug('shelf_col: %s', shelf_col)
+        collections.append(shelf_col)
 
-    collection_index = ShelfCollectionIndex(collections=repositories)
+    collection_index = ShelfCollectionIndex(collections=collections)
     # TODO/FIXME: serial numbers are a PITA, maybe just a UUID
 
     shelf_serial_number = uuid.uuid4().int

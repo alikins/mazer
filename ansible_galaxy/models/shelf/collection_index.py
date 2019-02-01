@@ -2,13 +2,41 @@ import datetime
 import logging
 
 import attr
+import semver
+
+from ansible_galaxy.models.repository import Repository
+from ansible_galaxy.utils.version import convert_string_to_semver
 
 log = logging.getLogger(__name__)
 
 
 @attr.s(frozen=True)
+class ShelfCollection(object):
+    '''Model for the object in collections.yml that holds info about the Repository/Collection'''
+    namespace = attr.ib()
+    name = attr.ib()
+    version = attr.ib(type=semver.VersionInfo, default=None,
+                      converter=convert_string_to_semver)
+
+    fetch_url = attr.ib(default=None)
+    relative_source_url = attr.ib(default=None)
+    relative_artifact_url = attr.ib(default=None)
+
+    @classmethod
+    def from_repository(cls, repository):
+        return cls(namespace=repository.repository_spec.namespace,
+                   name=repository.repository_spec.name,
+                   version=repository.repository_spec.version,
+                   relative_source_url='%s/%s' % (repository.repository_spec.namespace,
+                                                  repository.repository_spec.name))
+
+    # TODO: add a from_repository_artifact, so shelf_create can pass in
+    #       a set of artifacts as well
+
+
+@attr.s(frozen=True)
 class ShelfCollectionIndex(object):
-    collections = attr.ib(default=tuple)
+    collections = attr.ib(default=tuple, type=ShelfCollection)
 
 
 # Based on yum repo metadata 'repomd.xml'
