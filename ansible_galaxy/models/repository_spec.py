@@ -14,6 +14,7 @@ class FetchMethods(object):
     REMOTE_URL = 'REMOTE_URL'
     GALAXY_URL = 'GALAXY_URL'
     EDITABLE = 'EDITABLE'
+    SHELF = 'SHELF'
 
 
 @attr.s(frozen=True)
