@@ -17,13 +17,22 @@ def get_namespace_paths(content_path):
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
         #
-        namespace_paths = os.listdir(content_path)
+        # just the dirs in that folder directly
+        dirs = [d for d in os.listdir(content_path) if os.path.isdir(os.path.join(content_path, d))]
     except OSError as e:
         log.exception(e)
         log.warning('The content path %s did not exist so no content or repositories were found.',
                     content_path)
-        namespace_paths = []
+        # namespace_paths = []
+        dirs = []
 
+    def valid_dir(dir_path):
+        if dir_path in ('.git', '.hg'):
+            return False
+        return True
+
+    log.debug('dirs:%s', dirs)
+    namespace_paths = [ns_dir for ns_dir in dirs if valid_dir(ns_dir)]
     return namespace_paths
 
 
