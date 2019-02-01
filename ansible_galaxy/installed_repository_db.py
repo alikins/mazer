@@ -102,6 +102,8 @@ def repository_spec_iterator(galaxy_context,
 #       like 'is some_repo_spec already installed?'
 class InstalledRepositoryDatabase(object):
 
+    # FIXME/TODO: we dont need to pass a full GalaxyContext here, just enough to find collections
+    #             so maybe just a dir
     def __init__(self, installed_context=None):
         self.installed_context = installed_context
 
