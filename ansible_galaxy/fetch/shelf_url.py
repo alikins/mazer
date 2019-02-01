@@ -11,6 +11,7 @@ from ansible_galaxy.fetch import base
 from ansible_galaxy.models.collection_info import CollectionInfo
 
 from ansible_galaxy.utils.text import to_text
+from ansible_galaxy.utils import attr_utils
 
 log = logging.getLogger(__name__)
 
@@ -80,14 +81,15 @@ class ShelfFetch(base.BaseFetch):
 
         log.debug('%s response data:\n%s', response_slug, data_dict)
 
-        shelf_files = data_dict.get('files', [])
+        shelf_files = data_dict.get('collection_index_file_info', [])
 
         collections_location = None
 
         for shelf_file in shelf_files:
             log.debug('shelf index file: %s', shelf_file)
             # FIXME: no dupe detections
-            if shelf_file['type'] == 'collections':
+            # FIXME: enum the index_types
+            if shelf_file['index_type'] == 'collection':
                 collections_location = shelf_file['location']
 
         log.debug('collections_location: %s', collections_location)
@@ -99,7 +101,7 @@ class ShelfFetch(base.BaseFetch):
             collections_response = urlclient.request(collections_yml_url)
             collections_data = yaml.safe_load(collections_response)
 
-            log.debug('collections_data: %s', collections_data)
+            log.debug('collections_data: %s', attr_utils.pf_attr(collections_data))
 
         namespaces = {}
         if collections_data:
@@ -108,7 +110,7 @@ class ShelfFetch(base.BaseFetch):
         if namespaces:
             target_namespace = namespaces.get(self.repository_spec.namespace, {})
             target_collection = target_namespace['collections'].get(self.repository_spec.name, {})
-            log.debug('tns: %s tc: %s', target_namespace, target_collection)
+            log.debug('tns: %s tc: %s', attr_utils.pf_attr(target_namespace), attr_utils.pf_attr(target_collection))
 
             # FIXME: we are changing name in galaxy.yml/collection_info
             # target_collection['name'] = '%s.%s' % (self.repository_spec.namespace, self.repository_spec.name)
