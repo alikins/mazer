@@ -20,6 +20,9 @@ class ShelfCollectionIndexFileInfo(object):
     # TODO: validation of location string
     location = attr.ib()
 
+    # "collections", "roles", whatever high level content types we index
+    index_type = attr.ib()
+
     # serialized to serializers formats datetime, for ex
     # JSON Date (just a string with iso8601 format)
     timestamp = attr.ib(type=datetime.datetime)
