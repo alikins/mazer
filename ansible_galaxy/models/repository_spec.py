@@ -25,7 +25,6 @@ class RepositorySpec(object):
                   namespace=testing, raw=testing.ansible-testing-content)'''
     namespace = attr.ib()
     name = attr.ib()
-    # TODO: would it be worthwhile to make this a Semver type?
     version = attr.ib(type=semantic_version.Version, default=None,
                       converter=convert_string_to_semver)
 
