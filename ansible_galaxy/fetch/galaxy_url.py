@@ -1,7 +1,6 @@
 
 import logging
 
-import semantic_version
 
 # mv details of this here
 from ansible_galaxy import exceptions
@@ -49,7 +48,8 @@ def select_repository_version(repoversions, version):
     # we could build a map/dict first and search in it, but we only use this
     # once, so this linear search is ok, since building the map would be that
     # plus the getitem
-    results = [x for x in repoversions if semantic_version.Version(x['version']) == version]
+    results = [x for x in repoversions if x['version'] == version]
+    # results = [x for x in repoversions if semantic_version.Version(x['version']) == version]
 
     # no matching versions, return an empty dict
     # TODO: raise VersionNotFoundError ? return some sort of NullRepositoryVersion instance?
@@ -62,6 +62,7 @@ def select_repository_version(repoversions, version):
     return repoversion
 
 
+# TODO: split into galaxy_role/galaxy_collection ?
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
@@ -73,8 +74,49 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
-        log.debug('repository_spec: %s', requirement_spec)
+        log.debug('requirement_spec: %s', requirement_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
+
+    def _find_role(self, api, repo_data):
+        # FIXME - Need to update our API calls once Galaxy has them implemented
+        related = repo_data.get('related', {})
+
+        repo_versions_url = related.get('versions', None)
+
+        # FIXME: exception handling
+        repoversions = api.fetch_content_related(repo_versions_url)
+
+        content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
+
+        # TODO: see if we can figure out if this is a collection or a trad role at this point
+        #       and then split the version selection mechanism
+        #       trad roles have to try things like 'master', 'devel', some shasum,
+        #       'v1.1.1.1.1', 'V2.0.0', '0.1beta' etc
+        #       while collections should be just semver
+        # FIXME: mv to it's own method
+        # FIXME: pass these to fetch() if it really needs it
+        # need a TradRoleRequirementSpec?
+        repo_version_best = repository_version.get_repository_version(repo_data,
+                                                                      version_spec=self.requirement_spec.version_spec,
+                                                                      repository_versions=content_repo_versions,
+                                                                      content_content_name=self.requirement_spec.name)
+
+        # get the RepositoryVersion obj (or its data anyway)
+        _repoversion = select_repository_version(repoversions, repo_version_best)
+        log.debug('_repoversion: %s', _repoversion)
+        # external_url isnt specific, it could be something like github.com/alikins/some_collection
+        # external_url is the third option after a 'download_url' provided by the galaxy rest API
+        # (repo version specific download_url first if applicable, then the general download_url)
+        # Note: download_url can point anywhere...
+        external_url = repo_data.get('external_url', None)
+        role_find_results = {'custom': {
+            'external_url': external_url,
+            'repo_data': repo_data,
+            'repoversion': _repoversion,
+        },
+        }
+
+        return role_find_results
 
     def find(self):
         api = GalaxyAPI(self.galaxy_context)
@@ -89,67 +131,52 @@ class GalaxyUrlFetch(base.BaseFetch):
         # FIXME: exception handling
         repo_data = api.lookup_repo_by_name(namespace, repo_name)
 
+        import pprint
+        log.debug('repo_data: %s', pprint.pformat(repo_data))
+
         if not repo_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
                                                                                      api.api_server))
 
-        # FIXME - Need to update our API calls once Galaxy has them implemented
-        related = repo_data.get('related', {})
+        # figure out if trad role or collection
+        repo_format = repo_data['format']
 
-        repo_versions_url = related.get('versions', None)
+        if repo_format == 'role':
+            format_find_results = self._find_role(api=api, repo_data=repo_data)
+        else:
+            # assume a collection, ie, repo_format=='multi'
+            format_find_results = self._find_collection(api=api, repo_data=repo_data)
 
-        # FIXME: exception handling
-        repoversions = api.fetch_content_related(repo_versions_url)
-
-        content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
-
-        # FIXME: mv to it's own method
-        # FIXME: pass these to fetch() if it really needs it
-        repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      version_spec=self.requirement_spec.version_spec,
-                                                                      repository_versions=content_repo_versions,
-                                                                      content_content_name=self.requirement_spec.name)
-
-        # get the RepositoryVersion obj (or its data anyway)
-        _repoversion = select_repository_version(repoversions, repo_version_best)
-        log.debug('_repoversion: %s', _repoversion)
-        # external_url isnt specific, it could be something like github.com/alikins/some_collection
-        # external_url is the third option after a 'download_url' provided by the galaxy rest API
-        # (repo version specific download_url first if applicable, then the general download_url)
-        # Note: download_url can point anywhere...
-        external_url = repo_data.get('external_url', None)
+        external_url = format_find_results['custom']['external_url']
+        _repoversion = format_find_results['custom']['repoversion']
 
         if not external_url:
             raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
-
-        #                                            name=repo_name,
-        #                                            version=_repoversion['version'],
-        #                                            fetch_method=self.requirement_spec.fetch_method,
-        #                                            scm=self.requirement_spec.scm,
-        #                                            spec_string=self.requirement_spec.spec_string,
-        #                                            src=self.requirement_spec.src)
 
         results = {'content': {'galaxy_namespace': namespace,
                                'repo_name': repo_name,
                                'version': _repoversion.get('version')},
                    # 'specified_content_version': self.requirement_spec.version,
                    'requirement_spec_version_spec': self.requirement_spec.version_spec,
+                   'custom': format_find_results['custom'],
                    # 'specified_repository_spec': self.requirement_spec,
-                   'custom': {'content_repo_versions': content_repo_versions,
-                              'external_url': external_url,
-                              'galaxy_context': self.galaxy_context,
-                              'related': related,
-                              'repo_data': repo_data,
-                              'repo_versions_url': repo_versions_url,
-                              'repoversion': _repoversion,
-                              # 'potential_repository_spec': potential_repository_spec
-                              },
+                   # # 'custom': {
+                   #            # 'content_repo_versions': content_repo_versions,
+                   #            'external_url': external_url,
+                   #            # 'galaxy_context': self.galaxy_context,
+                   #            # 'related': related,
+                   #            'repo_data': repo_data,
+                   #            # 'repo_versions_url': repo_versions_url,
+                   #            'repoversion': _repoversion,
+                   #            # 'potential_repository_spec': potential_repository_spec
+                   #            },
                    }
 
         return results
 
     def fetch(self, find_results=None):
-        # log.debug('fetch: find_results: %s', find_results)
+        import pprint
+        log.debug('fetch: find_results: %s', pprint.pformat(find_results))
         find_results = find_results or {}
 
         results = {}
