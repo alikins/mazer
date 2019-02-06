@@ -42,9 +42,19 @@ class MatchLabels(Match):
         return other.repository_spec.label in self.labels
 
 
+class MatchRequirementSpec(Match):
+    def __init__(self, requirement_specs):
+        self.requirement_specs = requirement_specs
+        log.debug('req_specs: %s', self.requirement_specs)
+
+    def match(self, other):
+        return other.requirement_spec in self.requirement_specs
+
+
 class MatchRepositorySpec(Match):
     def __init__(self, repository_specs):
         self.repository_specs = repository_specs or []
+        log.debug('repo_specs: %s', self.repository_specs)
 
     def match(self, other):
         res = other.repository_spec in self.repository_specs

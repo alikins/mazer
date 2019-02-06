@@ -62,19 +62,19 @@ def installed_repository_iterator(galaxy_context,
                 yield repository_
 
 
-def repository_spec_iterator(galaxy_context,
-                             repository_spec):
+def requeiremtn_spec_iterator(galaxy_context,
+                              requirement_spec):
 
     # should only be one match here...
-    log.debug('Looking for repos  "%s"', repository_spec)
+    log.debug('Looking for repos that match req_spec "%s"', requirement_spec)
 
 #    path_name = os.path.join(galaxy_context.content_path,
 #                             repository_spec.namespace,
 #                             repository_spec.name)
 
     repository_ = repository.load_from_dir(galaxy_context.content_path,
-                                           namespace=repository_spec.namespace,
-                                           name=repository_spec.name,
+                                           namespace=requirement_spec.namespace,
+                                           name=requirement_spec.name,
                                            installed=True)
 
     log.debug('loaded repository_ %s', repository_)
@@ -83,10 +83,12 @@ def repository_spec_iterator(galaxy_context,
 
     # Verify the repo matches what we asked for.
     # no version specified
-    if repository_spec.version is None:
-        repository_match_filter = matchers.MatchRepositorySpecNamespaceName([repository_spec])
-    else:
-        repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([repository_spec])
+    # if repository_spec.version is None:
+    #    repository_match_filter = matchers.MatchRepositorySpecNamespaceName([repository_spec])
+    # else:
+    #    repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([repository_spec])
+
+    repository_match_filter = matchers.MatchRequirementSpec([requirement_spec])
 
     if repository_match_filter(repository_):
         log.debug('Found repository "%s" in namespace "%s" at %s',
@@ -108,7 +110,7 @@ class InstalledRepositoryDatabase(object):
     # TODO: add a repository_type_filter (ie, 'collection' or 'role' or 'other' etc)
     # TODO: something like namespace_condition or namespace_callable might be more accurate
     # TODO: "search" would be more accurate name for select()
-    def select(self, namespace_match_filter=None, repository_match_filter=None, repository_spec=None):
+    def select(self, namespace_match_filter=None, repository_match_filter=None, repository_spec=None, requirement_spec=None):
         # ie, default to select * more or less
         repository_match_filter = repository_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
@@ -139,3 +141,8 @@ class InstalledRepositoryDatabase(object):
         log.debug('required_spec: %s', required_spec)
 
         return self.select(repository_spec=required_spec)
+
+    def by_requirement_spec(self, requirement_spec):
+        log.debug('requirement_spec: %s', requirement_spec)
+
+        return self.select(requirement_spec=requirement_spec)
