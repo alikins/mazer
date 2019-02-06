@@ -45,11 +45,6 @@ def get_latest_version(available_normalized_versions, content_data):
 
 
 def normalize_versions(content_versions):
-    '''Return a list of tuples of (normalized_version, origin) for content_versions
-
-    'normalized' in this case meaning stripping any leave 'v' from the version field.
-    We have to support both for role requirements compat for now'''
-
     # a list of tuples of (normalized_version, original_version) for building
     # map of normalized version to original version
     normalized_versions = [(normalize_version_string(x), x) for x in content_versions]
@@ -76,7 +71,7 @@ def validate_versions(content_versions):
     return (valid_versions, invalid_versions)
 
 
-def get_repository_version(repository_data, version_spec, repository_versions, content_content_name):
+def get_repository_version(repository_data, version, repository_versions, content_content_name):
     '''find and compare repository version found in repository_data dict
 
     repository_data is a dict based on /api/v1/repositories/13 for ex
@@ -85,7 +80,7 @@ def get_repository_version(repository_data, version_spec, repository_versions, c
     content_versions is a list of version strings in order
     '''
 
-    log.debug('%s wants ver: %s type: %s', content_content_name, version_spec, type(version_spec))
+    log.debug('%s wants ver: %s type: %s', content_content_name, version, type(version))
 #    log.debug('%s vers avail: %s',
 #              content_content_name, json.dumps(content_versions, indent=2))
 
@@ -99,46 +94,40 @@ def get_repository_version(repository_data, version_spec, repository_versions, c
 
     # FIXME: support direct semver usage all the way through
     # str or semver to string, but leave None alone
-    if version_spec:
-        version_spec_str = str(version_spec)
+    if version:
+        version = str(version)
 
-    # TODO: remove all of this code. It doesn't make much sense to try to normalize
-    # an implementation specific semver match spec string ('==1.0.0' or '>=1.2.3' etc)
-    normalized_version_spec = normalize_version_string(version_spec_str)
+    normalized_version = normalize_version_string(version)
 
-    log.debug('normalized_version_spec: %s', normalized_version_spec)
+#    log.debug('normalized_version: %s', normalized_version)
 #    log.debug('avail_normalized_versions: %s', json.dumps(available_normalized_versions, indent=4))
 
     # we specified a particular version is required so look for it in available versions
-    # FIXME: remove all the logic for attempting to guess what the right default branch is
-    #        since it doesn't mean anything for only collections
-    #         # FIXME: should we show the actual available versions or the available
-    #         #        versions we searched in?  act: ['v1.0.0', '1.1'] nor: ['1.0.0', '1.1']
-    #         msg = "- The list of available versions for %s is empty (%s)." % \
-    #             (content_content_name or 'content', available_versions)
-    #         raise exceptions.GalaxyError(msg)
+    if version and version != 'master':
+        if not available_versions:
+            # FIXME: should we show the actual available versions or the available
+            #        versions we searched in?  act: ['v1.0.0', '1.1'] nor: ['1.0.0', '1.1']
+            msg = "- The list of available versions for %s is empty (%s)." % \
+                (content_content_name or 'content', available_versions)
+            raise exceptions.GalaxyError(msg)
 
-    #     # FIXME: convert to Spec.select()
-    #     #     #       in actual version tags or ones we made up without the leading v'
-    #     #     msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
-    #     #         (version, content_content_name or 'content', available_versions)
-    #     #     raise exceptions.GalaxyError(msg)
+        if str(normalized_version) not in available_versions:
+            # TODO: how do we msg 'couldn't find the version you specified
+            #       in actual version tags or ones we made up without the leading v'
+            msg = "- the specified version (%s) of %s was not found in the list of available versions (%s)." % \
+                (version, content_content_name or 'content', available_versions)
+            raise exceptions.GalaxyError(msg)
 
-    #     # if we get here, 'version' is in available_normalized_versions
-    #     # return the exact match version since it was available
+        # if we get here, 'version' is in available_normalized_versions
+        # return the exact match version since it was available
+        orig_version = norm_to_orig_map[normalized_version]
+        log.debug('%s requested ver: %s, matched: %s, using real ver: %s ', content_content_name, version, normalized_version, orig_version)
+        return orig_version
 
-    #     # FIXME
-    #     # orig_version = norm_to_orig_map[normalized_version]
-    #     # log.debug('%s requested ver: %s, matched: %s, using real ver: %s ', content_content_name, version, normalized_version, orig_version)
-    #     # return orig_version
-    #     return normalized_version
-
-    semver_available_versions = [semantic_version.Version(v) for v in available_versions]
-    content_version = version_spec.select(semver_available_versions)
     # At this point, we have a list of the available versions. The available versions have
     # been normalized (leading 'v' or 'V' stripped off).
     # No specific version was requested, so we return the latest one.
-    # content_version = get_latest_version(available_versions, repository_data)
+    content_version = get_latest_version(available_versions, repository_data)
 
     log.debug('%s using latest ver: %s', content_content_name, content_version)
     return content_version
