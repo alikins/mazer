@@ -3,7 +3,6 @@ import logging
 import semantic_version
 import yaml
 
-from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps, RequirementScopes
 from ansible_galaxy.models.requirement_spec import RequirementSpec
 from ansible_galaxy.repository_spec import spec_data_from_string
