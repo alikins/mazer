@@ -42,13 +42,20 @@ class MatchLabels(Match):
         return other.repository_spec.label in self.labels
 
 
-class MatchRequirementSpec(Match):
+class MatchRepositoryToRequirementSpec(Match):
     def __init__(self, requirement_specs):
         self.requirement_specs = requirement_specs
         log.debug('req_specs: %s', self.requirement_specs)
 
     def match(self, other):
-        return other.requirement_spec in self.requirement_specs
+        for req_spec in self.requirement_specs:
+            if other.repository_spec.namespace != req_spec.namespace or \
+                    other.repository_spec.name != req_spec.name or \
+                    not req_spec.version_spec.match(other.repository_spec.version):
+                log.debug('other: %s did not match %s', other, req_spec)
+                return False
+        return True
+        # return other.requirement_spec in self.requirement_specs
 
 
 class MatchRepositorySpec(Match):

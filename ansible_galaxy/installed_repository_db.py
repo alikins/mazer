@@ -4,11 +4,11 @@ import os
 from ansible_galaxy import repository
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
-from ansible_galaxy.models.requirement_spec import RequirementSpec
-
-log = logging.getLogger(__name__)
+# from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 from icecream import ic
+
+log = logging.getLogger(__name__)
 
 
 def get_repository_paths(namespace_path):
@@ -34,11 +34,13 @@ def get_repository_paths(namespace_path):
 
 def installed_repository_iterator(galaxy_context,
                                   namespace_match_filter=None,
-                                  repository_match_filter=None):
+                                  repository_spec_match_filter=None,
+                                  requirement_spec_match_filter=None):
     '''For each repository in galaxy_context.content_path, yield matching repositories'''
 
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
-    repository_match_filter = repository_match_filter or matchers.MatchAll()
+    repository_spec_match_filter = repository_spec_match_filter or matchers.MatchAll()
+    requirement_spec_match_filter = requirement_spec_match_filter or matchers.MatchAll()
 
     installed_namespace_db = installed_namespaces_db.InstalledNamespaceDatabase(galaxy_context)
 
@@ -60,45 +62,13 @@ def installed_repository_iterator(galaxy_context,
 
             # log.debug('candidate installed repo (pre filter): %s', repository_)
 
-            if repository_match_filter(repository_):
-                log.debug('Found repository "%s" in namespace "%s"', repository_path, namespace.namespace)
-                yield repository_
+            if repository_spec_match_filter(repository_):
+                log.debug('Found repository "%s" (%s) in namespace "%s"', repository_path, str(repository), namespace.namespace)
 
-
-def requirement_spec_iterator(galaxy_context,
-                              requirement_spec):
-
-    # should only be one match here...
-    log.debug('Looking for repos that match req_spec "%s"', requirement_spec)
-
-#    path_name = os.path.join(galaxy_context.content_path,
-#                             repository_spec.namespace,
-#                             repository_spec.name)
-
-    repository_ = repository.load_from_dir(galaxy_context.content_path,
-                                           namespace=requirement_spec.namespace,
-                                           name=requirement_spec.name,
-                                           installed=True)
-
-    log.debug('loaded repository_ %s', repository_)
-    if not repository_:
-        return
-
-    # Verify the repo matches what we asked for.
-    # no version specified
-    # if repository_spec.version is None:
-    #    repository_match_filter = matchers.MatchRepositorySpecNamespaceName([repository_spec])
-    # else:
-    #    repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([repository_spec])
-
-    repository_match_filter = matchers.MatchRequirementSpec([requirement_spec])
-
-    if repository_match_filter(repository_):
-        log.debug('Found repository "%s" in namespace "%s" at %s',
-                  repository_.repository_spec.name,
-                  repository_.repository_spec.namespace,
-                  repository_.path)
-        yield repository_
+                if requirement_spec_match_filter(repository_):
+                    log.debug('Found repository "%s" in namespace "%s"',
+                              repository_path, namespace.namespace)
+                    yield repository_
 
 
 # TODO: add a get(namespace_id, repository_id) for loading a known ns.n directly without iterating
@@ -113,44 +83,38 @@ class InstalledRepositoryDatabase(object):
     # TODO: add a repository_type_filter (ie, 'collection' or 'role' or 'other' etc)
     # TODO: something like namespace_condition or namespace_callable might be more accurate
     # TODO: "search" would be more accurate name for select()
-    def select(self, namespace_match_filter=None, repository_match_filter=None, repository_spec=None, requirement_spec=None):
+    def select(self, namespace_match_filter=None,
+               repository_spec_match_filter=None,
+               requirement_spec_match_filter=None):
         # ie, default to select * more or less
-        repository_match_filter = repository_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
+        repository_spec_match_filter = repository_spec_match_filter or matchers.MatchAll()
+        requirement_spec_match_filter = requirement_spec_match_filter or matchers.MatchAll()
 
-        log.debug('repository_spec: %s', repository_spec)
-        log.debug(ic(repository_spec))
-        if repository_spec:
-            # convert the repo spec to a requirement spec with version_spec '==repospec.version'
-            # We are being specific and looking for the repo identified by repository_spec
-            requirement_spec_match_repo = RequirementSpec(namespace=repository_spec.namespace,
-                                                          name=repository_spec.name,
-                                                          version_spec='==%s' % repository_spec.version)
-            installed_repositories = requirement_spec_iterator(self.installed_context, requirement_spec_match_repo)
-        elif requirement_spec:
-            requirement_spec_match_repo = RequirementSpec(namespace=requirement_spec.namespace,
-                                                          name=requirement_spec.name,
-                                                          version_spec=requirement_spec.version_spec)
-            installed_repositories = requirement_spec_iterator(self.installed_context, requirement_spec_match_repo)
+        log.debug('repository_spec_match_filter: %s', repository_spec_match_filter)
+        log.debug(ic(repository_spec_match_filter))
 
-        else:
-            installed_repositories = installed_repository_iterator(self.installed_context,
-                                                                   namespace_match_filter=namespace_match_filter,
-                                                                   repository_match_filter=repository_match_filter)
+        installed_repositories = installed_repository_iterator(self.installed_context,
+                                                               namespace_match_filter=namespace_match_filter,
+                                                               repository_spec_match_filter=repository_spec_match_filter,
+                                                               requirement_spec_match_filter=requirement_spec_match_filter)
 
         for matched_installed_repository in installed_repositories:
             yield matched_installed_repository
 
     def by_repository_spec(self, repository_spec):
-        return self.select(repository_spec=repository_spec)
+        log.debug('repository_spec: %s', repository_spec)
+        repository_spec_match_filter = matchers.MatchRepositorySpec([repository_spec])
+        return self.select(repository_spec=repository_spec_match_filter)
 
     def by_requirement(self, requirement):
         requirement_spec = requirement.requirement_spec
         log.debug('requirement_spec: %s', requirement_spec)
 
-        return self.select(requirement_spec=requirement_spec)
+        return self.by_requirement_spec(requirement_spec=requirement_spec)
 
     def by_requirement_spec(self, requirement_spec):
         log.debug('requirement_spec: %s', requirement_spec)
+        requirement_spec_match_filter = matchers.MatchRepositoryToRequirementSpec([requirement_spec])
 
-        return self.select(requirement_spec=requirement_spec)
+        return self.select(requirement_spec_match_filter=requirement_spec_match_filter)
