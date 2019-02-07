@@ -108,9 +108,8 @@ class GalaxyUrlFetch(base.BaseFetch):
         content_repo_versions = [a.get('version') for a in repoversions if a.get('version', None)]
 
         repo_version_best = repository_version.get_repository_version(repo_data,
-                                                                      version_spec=self.requirement_spec.version_spec,
-                                                                      repository_versions=content_repo_versions,
-                                                                      content_content_name=self.requirement_spec.name)
+                                                                      requirement_spec=self.requirement_spec,
+                                                                      repository_versions=content_repo_versions)
 
         # get the RepositoryVersion obj (or its data anyway)
         _repoversion = select_repository_version(repoversions, repo_version_best)

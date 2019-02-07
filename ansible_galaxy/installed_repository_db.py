@@ -105,7 +105,7 @@ class InstalledRepositoryDatabase(object):
     def by_repository_spec(self, repository_spec):
         log.debug('repository_spec: %s', repository_spec)
         repository_spec_match_filter = matchers.MatchRepositorySpec([repository_spec])
-        return self.select(repository_spec=repository_spec_match_filter)
+        return self.select(repository_spec_match_filter=repository_spec_match_filter)
 
     def by_requirement(self, requirement):
         requirement_spec = requirement.requirement_spec
