@@ -4,8 +4,11 @@ import os
 from ansible_galaxy import repository
 from ansible_galaxy import matchers
 from ansible_galaxy import installed_namespaces_db
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
+
+from icecream import ic
 
 
 def get_repository_paths(namespace_path):
@@ -62,7 +65,7 @@ def installed_repository_iterator(galaxy_context,
                 yield repository_
 
 
-def requeiremtn_spec_iterator(galaxy_context,
+def requirement_spec_iterator(galaxy_context,
                               requirement_spec):
 
     # should only be one match here...
@@ -115,9 +118,21 @@ class InstalledRepositoryDatabase(object):
         repository_match_filter = repository_match_filter or matchers.MatchAll()
         namespace_match_filter = namespace_match_filter or matchers.MatchAll()
 
+        log.debug('repository_spec: %s', repository_spec)
+        log.debug(ic(repository_spec))
         if repository_spec:
+            # convert the repo spec to a requirement spec with version_spec '==repospec.version'
             # We are being specific and looking for the repo identified by repository_spec
-            installed_repositories = repository_spec_iterator(self.installed_context, repository_spec)
+            requirement_spec_match_repo = RequirementSpec(namespace=repository_spec.namespace,
+                                                          name=repository_spec.name,
+                                                          version_spec='==%s' % repository_spec.version)
+            installed_repositories = requirement_spec_iterator(self.installed_context, requirement_spec_match_repo)
+        elif requirement_spec:
+            requirement_spec_match_repo = RequirementSpec(namespace=requirement_spec.namespace,
+                                                          name=requirement_spec.name,
+                                                          version_spec=requirement_spec.version_spec)
+            installed_repositories = requirement_spec_iterator(self.installed_context, requirement_spec_match_repo)
+
         else:
             installed_repositories = installed_repository_iterator(self.installed_context,
                                                                    namespace_match_filter=namespace_match_filter,
@@ -129,18 +144,11 @@ class InstalledRepositoryDatabase(object):
     def by_repository_spec(self, repository_spec):
         return self.select(repository_spec=repository_spec)
 
-        # namespace_match_filter = matchers.MatchNamespace([repository_spec.namespace])
-
-        # repository_match_filter = matchers.MatchRepositorySpecNamespaceNameVersion([repository_spec])
-
-        # return self.select(namespace_match_filter=namespace_match_filter,
-        #                   repository_match_filter=repository_match_filter)
-
     def by_requirement(self, requirement):
-        required_spec = requirement.requirement_spec
-        log.debug('required_spec: %s', required_spec)
+        requirement_spec = requirement.requirement_spec
+        log.debug('requirement_spec: %s', requirement_spec)
 
-        return self.select(repository_spec=required_spec)
+        return self.select(requirement_spec=requirement_spec)
 
     def by_requirement_spec(self, requirement_spec):
         log.debug('requirement_spec: %s', requirement_spec)

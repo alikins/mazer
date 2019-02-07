@@ -317,7 +317,7 @@ def install_repository(galaxy_context,
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
 
-    already_installed_iter = irdb.by_repository_spec(requirement_spec_to_install)
+    already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
 
     log.debug('already_installed: %s', already_installed)
