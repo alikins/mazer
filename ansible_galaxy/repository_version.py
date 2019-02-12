@@ -48,7 +48,6 @@ def normalize_versions(content_versions):
     # a list of tuples of (normalized_version, original_version) for building
     # map of normalized version to original version
     normalized_versions = [(normalize_version_string(x), x) for x in content_versions]
-    log.debug('normalized_versions: %s', normalized_versions)
     available_normalized_versions = [v[0] for v in normalized_versions]
 
     # map the 'normalized' version back to the original version string, we need it for

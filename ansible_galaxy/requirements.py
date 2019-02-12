@@ -36,12 +36,9 @@ def load(data_or_file_object, repository_spec=None):
             version_spec_str = '==%s' % version_str
 
         version_spec = semantic_version.Spec(version_spec_str)
-        log.debug('version_spec_str: %s', version_spec_str)
 
         req_spec_data['version_spec'] = version_spec
-        log.debug('req_spec_data: %s', req_spec_data)
 
-        # name_info = content_name.parse_content_name(data_name)
         # log.debug('data_name (after): %s', data_name)
         # log.debug('name_info: %s', name_info)
 
