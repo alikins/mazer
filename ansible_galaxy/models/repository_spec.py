@@ -1,9 +1,11 @@
 import logging
 
 import attr
-import semantic_version
+# import semver
 
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.utils.version import convert_string_to_semver
+
 log = logging.getLogger(__name__)
 
 
@@ -25,10 +27,10 @@ class RepositorySpec(object):
                   namespace=testing, raw=testing.ansible-testing-content)'''
     namespace = attr.ib()
     name = attr.ib()
-    version = attr.ib(type=semantic_version.Version,
+    version = attr.ib(type=strict_semver.StrictSemVer,
                       # default=None,
                       converter=convert_string_to_semver,
-                      validator=attr.validators.optional(attr.validators.instance_of(semantic_version.Version)))
+                      validator=attr.validators.optional(attr.validators.instance_of(strict_semver.StrictSemVer)))
 
     # only namespace/name/version are used for eq checks currently
 

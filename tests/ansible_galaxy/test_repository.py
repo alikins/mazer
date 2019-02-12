@@ -1,12 +1,11 @@
 import logging
 import os
 
-import semantic_version
-
 from ansible_galaxy import repository
 from ansible_galaxy import repository_archive
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.actions import build
 from ansible_galaxy.models.build_context import BuildContext
 
@@ -38,7 +37,7 @@ def test_load_from_archive_artifact(galaxy_context, tmpdir):
 
     assert isinstance(res, Repository)
     assert isinstance(res.repository_spec, RepositorySpec)
-    assert isinstance(res.repository_spec.version, semantic_version.Version)
+    assert isinstance(res.repository_spec.version, strict_semver.StrictSemVer)
 
     assert res.repository_spec.namespace == 'greetings_namespace'
     assert res.repository_spec.name == 'hello'

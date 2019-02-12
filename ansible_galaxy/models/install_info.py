@@ -2,8 +2,8 @@ import datetime
 import logging
 
 import attr
-import semantic_version
 
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.utils.version import convert_string_to_semver
 
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class InstallInfo(object):
     install_date = attr.ib()
     install_date_iso = attr.ib(type=datetime.datetime)
 
-    version = attr.ib(type=semantic_version.Version, default=None,
+    version = attr.ib(type=strict_semver.StrictSemVer, default=None,
                       converter=convert_string_to_semver)
 
     @classmethod

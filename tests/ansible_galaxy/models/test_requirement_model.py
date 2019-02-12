@@ -20,7 +20,7 @@ def test_requirement():
 
     provides_spec2 = requirement_spec.RequirementSpec(namespace='othernamespace',
                                                       name='provides_something',
-                                                      version_spec='==1.0.0')
+                                                      version_spec='1.0.0')
 
     req = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=provides_spec2,
                                   op=requirement.RequirementOps.EQ)
@@ -37,7 +37,7 @@ def test_repository_spec_requirement_spec_cmp():
 
     req_spec = requirement_spec.RequirementSpec(namespace='ns',
                                                 name='n',
-                                                version_spec='==3.4.5')
+                                                version_spec='3.4.5')
 
     req = requirement.Requirement(repository_spec=repo_spec1, requirement_spec=req_spec,
                                   op=requirement.RequirementOps.EQ)

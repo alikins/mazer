@@ -1,7 +1,7 @@
 import logging
 import re
 
-import semantic_version
+from ansible_galaxy.models import strict_semver
 
 log = logging.getLogger(__name__)
 
@@ -15,10 +15,10 @@ def convert_string_to_semver(version):
     if version is None:
         return None
 
-    if isinstance(version, semantic_version.Version):
+    if isinstance(version, strict_semver.StrictSemVer):
         return version
 
-    return semantic_version.Version(version)
+    return strict_semver.StrictSemVer(version)
 
 
 def convert_string_to_version_spec(version_spec):
@@ -26,10 +26,10 @@ def convert_string_to_version_spec(version_spec):
     if version_spec is None:
         return None
 
-    if isinstance(version_spec, semantic_version.Spec):
+    if isinstance(version_spec, strict_semver.StrictRange):
         return version_spec
 
-    return semantic_version.Spec(version_spec)
+    return strict_semver.StrictRange(version_spec)
 
 
 def version_needs_aka(version_string):

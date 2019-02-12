@@ -2,16 +2,16 @@
 import logging
 
 import pytest
-import semantic_version
 
 from ansible_galaxy import repository_version
 from ansible_galaxy import exceptions
 from ansible_galaxy.models.requirement_spec import RequirementSpec
+from ansible_galaxy.models import strict_semver
 
 log = logging.getLogger(__name__)
 
 
-any_version = semantic_version.Spec('*')
+any_version = strict_semver.StrictRange('*')
 
 
 def test_get_content_version_none():
@@ -229,7 +229,7 @@ def test_get_latest_version_invalid_semver():
                                               content_data={})
     except exceptions.GalaxyClientError as e:
         assert 'Unable to compare' in '%s' % e
-        assert "Invalid version string: '4.2'" in '%s' % e
+        assert "Invalid Version: 4.2" in '%s' % e
         return
 
     assert False, 'Expected a GalaxyClientError about invalid versions here, but that did not happen.'

@@ -54,7 +54,7 @@ def test_local_file_fetch(mocker):
     tmp_file_fo = tempfile.NamedTemporaryFile(prefix='tmp', suffix='.tar.gz', delete=True)
     log.debug('tmp_file_fo.name=%s tmp_file=%s', tmp_file_fo.name, tmp_file_fo)
 
-    requirement_spec_ = RequirementSpec(namespace='namespace', name='name', version_spec='==1.2.3',
+    requirement_spec_ = RequirementSpec(namespace='namespace', name='name', version_spec='1.2.3',
                                         fetch_method=FetchMethods.LOCAL_FILE,
                                         src=tmp_file_fo.name)
 

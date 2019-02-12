@@ -1,7 +1,6 @@
 import logging
 
 import attr
-# import semantic_version
 
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement_spec import RequirementSpec

@@ -1,10 +1,11 @@
 import logging
 
-import semantic_version
+# import semver
 import yaml
 
 from ansible_galaxy.models.requirement import Requirement, RequirementOps, RequirementScopes
 from ansible_galaxy.models.requirement_spec import RequirementSpec
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.repository_spec import spec_data_from_string
 from ansible_galaxy.utils import yaml_parse
 
@@ -35,7 +36,7 @@ def load(data_or_file_object, repository_spec=None):
         if version_str:
             version_spec_str = '==%s' % version_str
 
-        version_spec = semantic_version.Spec(version_spec_str)
+        version_spec = strict_semver.StrictRange(version_spec_str)
         log.debug('version_spec_str: %s', version_spec_str)
 
         req_spec_data['version_spec'] = version_spec

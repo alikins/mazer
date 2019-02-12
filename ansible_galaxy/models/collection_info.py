@@ -4,7 +4,7 @@ import logging
 import re
 
 import attr
-import semantic_version
+import semver
 
 from ansible_galaxy.data import spdx_licenses
 
@@ -29,6 +29,7 @@ def convert_none_to_empty_dict(val):
 class CollectionInfo(object):
     namespace = attr.ib(default=None)
     name = attr.ib(default=None)
+    # FIXME: mak
     version = attr.ib(default=None)
     license = attr.ib(default=None)
     description = attr.ib(default=None)
@@ -64,7 +65,7 @@ class CollectionInfo(object):
 
     @version.validator
     def _check_version_format(self, attribute, value):
-        if not semantic_version.validate(value):
+        if not semver.valid(value, loose=False):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
 

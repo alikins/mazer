@@ -1,11 +1,9 @@
 import logging
 
 import pytest
-import semantic_version
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import galaxy_url
-from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)

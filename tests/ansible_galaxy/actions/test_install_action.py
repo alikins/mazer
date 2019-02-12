@@ -105,7 +105,7 @@ def test_find_new_deps_from_installed(galaxy_context):
 
     req_spec = RequirementSpec(namespace='some_required_namespace',
                                name='some_required_name',
-                               version_spec='==1.0.0')
+                               version_spec='1.0.0')
 
     some_requirement = Requirement(repository_spec=repo_spec,
                                    op=RequirementOps.EQ,

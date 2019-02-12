@@ -1,8 +1,9 @@
 import logging
 
-import semantic_version
+import semver
 
 from ansible_galaxy import exceptions
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.utils.version import normalize_version_string
 
 log = logging.getLogger(__name__)
@@ -12,8 +13,8 @@ def sort_versions(versions):
     # list of tuples of loose_version and original string, the sort
     # will sort based on first value of tuple, then we return just the
     # original strings
-    semver_versions = [(semantic_version.Version(a), a) for a in versions]
-    semver_versions.sort()
+    semver_versions = [(strict_semver.StrictSemVer(a), a) for a in versions]
+    semver.sort(semver_versions, loose=False)
     return [v[1] for v in semver_versions]
 
 
@@ -63,7 +64,7 @@ def validate_versions(content_versions):
     valid_versions = []
     invalid_versions = []
     for version in content_versions:
-        if not semantic_version.validate(version):
+        if not semver.valid(version, loose=False):
             log.warning('The version string "%s" is not valid, skipping.', version)
             invalid_versions.append(version)
             continue
@@ -99,9 +100,10 @@ def get_repository_version(repository_data, requirement_spec, repository_version
             (requirement_spec.label or 'content', available_versions)
         raise exceptions.GalaxyError(msg)
 
-    semver_available_versions = [semantic_version.Version(ver) for ver in available_versions]
+    semver_available_versions = [strict_semver.StrictSemVer(ver) for ver in available_versions]
 
-    latest_version = requirement_spec.version_spec.select(semver_available_versions)
+    latest_version = semver.max_satisfying(semver_available_versions, requirement_spec.version_spec, loose=False)
+
     if latest_version is None:
         # TODO: how do we msg 'couldn't find the version you specified
         #       in actual version tags or ones we made up without the leading v'

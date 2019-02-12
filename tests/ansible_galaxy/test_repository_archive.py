@@ -3,8 +3,6 @@ import datetime
 import logging
 import os
 
-import semantic_version
-
 from ansible_galaxy import repository_archive
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
@@ -12,6 +10,7 @@ from ansible_galaxy.models.install_info import InstallInfo
 from ansible_galaxy.models.installation_results import InstallationResults
 from ansible_galaxy.models.repository_archive import RepositoryArchiveInfo
 from ansible_galaxy.models.repository_archive import CollectionRepositoryArtifactArchive
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.actions import build
 from ansible_galaxy.models.build_context import BuildContext
 
@@ -71,7 +70,7 @@ def test_install(galaxy_context, tmpdir):
 
     assert isinstance(res, InstallationResults)
     assert isinstance(res.install_info, InstallInfo)
-    assert isinstance(res.install_info.version, semantic_version.Version)
+    assert isinstance(res.install_info.version, strict_semver.StrictSemVer)
     assert isinstance(res.installed_datetime, datetime.datetime)
 
 

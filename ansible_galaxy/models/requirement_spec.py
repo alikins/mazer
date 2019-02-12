@@ -1,8 +1,8 @@
 import logging
 
 import attr
-import semantic_version
 
+from ansible_galaxy.models import strict_semver
 from ansible_galaxy.utils.version import convert_string_to_version_spec, version_needs_aka, \
     normalize_version_string
 
@@ -18,7 +18,7 @@ class RequirementSpec(object):
 
     namespace = attr.ib()
     name = attr.ib()
-    version_spec = attr.ib(type=semantic_version.Spec, default=semantic_version.Spec('*'),
+    version_spec = attr.ib(type=strict_semver.StrictRange, default=strict_semver.StrictRange('*'),
                            converter=convert_string_to_version_spec)
 
     # This is for supporting 'v1.0.0' etc. In that case the version_spec is '==1.0.0' and
