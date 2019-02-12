@@ -92,7 +92,6 @@ class InstalledRepositoryDatabase(object):
         requirement_spec_match_filter = requirement_spec_match_filter or matchers.MatchAll()
 
         log.debug('repository_spec_match_filter: %s', repository_spec_match_filter)
-        log.debug(ic(repository_spec_match_filter))
 
         installed_repositories = installed_repository_iterator(self.installed_context,
                                                                namespace_match_filter=namespace_match_filter,
