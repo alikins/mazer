@@ -79,7 +79,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "migrate_role", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "migrate_role", "publish", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
