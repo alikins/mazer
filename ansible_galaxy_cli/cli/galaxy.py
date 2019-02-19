@@ -43,6 +43,7 @@ from ansible_galaxy import rest_api
 
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.build_context import BuildContext
+from ansible_galaxy.models.migrate_role_context import MigrateRoleContext
 
 from ansible_galaxy_cli import cli
 from ansible_galaxy_cli import __version__ as galaxy_cli_version
@@ -136,6 +137,8 @@ class GalaxyCLI(cli.CLI):
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
 
         if self.action == "migrate_role":
+            self.parser.add_option('--role', dest='role_convertee_path',
+                                   help='The path to the role that will be converted to a collection')
             self.parser.add_option('--output-dir', dest='collection_output_dir',
                                    help='The path to write the new collection to')
 
@@ -339,5 +342,7 @@ class GalaxyCLI(cli.CLI):
                                display_callback=self.display)
 
     def execute_migrate_role(self):
-        return migrate_role.migrate(collection_output_dir=self.options.collection_output_dir,
+        migrate_role_context = MigrateRoleContext(role_path=self.options.role_convertee_path,
+                                                  output_path=self.options.collection_output_dir)
+        return migrate_role.migrate(migrate_role_context=migrate_role_context,
                                     display_callback=self.display)
