@@ -161,7 +161,8 @@ def load_from_dir(content_dir, namespace, name, installed=True):
 
     try:
         with open(galaxy_filename, 'r') as gfd:
-            collection_info_data = collection_info.load(gfd)
+            if gfd:
+                collection_info_data = collection_info.load(gfd)
     except EnvironmentError:
         # log.debug('No galaxy.yml collection info found for collection %s.%s: %s', namespace, name, e)
         pass
