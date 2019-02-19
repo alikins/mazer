@@ -31,6 +31,7 @@ from ansible_galaxy.actions import build
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
+from ansible_galaxy.actions import migrate_role
 from ansible_galaxy.actions import remove
 from ansible_galaxy.actions import version
 from ansible_galaxy.actions import publish
@@ -77,7 +78,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "version")
+    VALID_ACTIONS = ("build", "info", "install", "list", "publish", "remove", "migrate_role", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -133,6 +134,10 @@ class GalaxyCLI(cli.CLI):
             self.parser.add_option('-C', '--content-path', dest='content_path',
                                    help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
+
+        if self.action == "migrate_role":
+            self.parser.add_option('--output-dir', dest='collection_output_dir',
+                                   help='The path to write the new collection to')
 
         if self.action in ("install",):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing collection')
@@ -332,3 +337,7 @@ class GalaxyCLI(cli.CLI):
         return version.version(config_file_path=self.config_file_path,
                                cli_version=galaxy_cli_version,
                                display_callback=self.display)
+
+    def execute_migrate_role(self):
+        return migrate_role.migrate(collection_output_dir=self.options.collection_output_dir,
+                                    display_callback=self.display)
