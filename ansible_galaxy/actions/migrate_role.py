@@ -56,6 +56,13 @@ def migrate(migrate_role_context,
     # create/populate dicts for collection_info
     # fill in namespace, name, version, deps, tags, etc
 
+    # migrate role style dependencies dict to a collections style
+    # list of dicts
+    # collection_deps = OrderedDict([tuple(key, role_md.dependencies[key]) for key in role_md.dependencies])
+    collection_deps = OrderedDict([(req.requirement_spec.label, str(req.requirement_spec.version_spec)) for req in role_md.dependencies])
+
+    log.debug('collection_deps: %s', collection_deps)
+
     # FIXME: license format is different, will have to map
     collection_info_dict = OrderedDict([
         # TODO: namespace, name
@@ -68,7 +75,7 @@ def migrate(migrate_role_context,
         ('authors', [role_md.author]),
         ('tags', role_md.galaxy_tags),
         ('issues', role_md.issue_tracker),
-        ('dependencies', role_md.dependencies)
+        ('dependencies', collection_deps)
     ])
 
     log.debug('collection_info_dict: %s', collection_info_dict)

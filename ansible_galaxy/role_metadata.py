@@ -42,6 +42,7 @@ def load(data_or_file_object, role_name=None):
                            cloud_platforms=galaxy_info.get('cloud_platforms'),
                            min_ansible_version=galaxy_info.get('min_ansible_version'),
                            min_ansible_container_version=galaxy_info.get('min_ansible_container_version'),
+                           issue_tracker=galaxy_info.get('issue_tracker_url'),
                            # from outside of galaxy_info dict
                            dependencies=deps,
                            allow_duplicates=allow_duplicates)
