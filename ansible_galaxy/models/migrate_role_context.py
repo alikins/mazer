@@ -9,3 +9,4 @@ log = logging.getLogger(__name__)
 class MigrateRoleContext(object):
     role_path = attr.ib()
     output_path = attr.ib()
+    role_name = attr.ib(default=None)

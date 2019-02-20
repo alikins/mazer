@@ -66,3 +66,12 @@ def load_from_filename(filename, role_name=None):
         return False
     finally:
         f.close()
+
+
+def load_from_dir(dirname, role_name=None):
+    log.debug("Going to load role from dir %s %s", dirname, role_name or "")
+
+    role_meta_main_filename = os.path.join(dirname, 'meta', 'main.yml')
+    # role_name = '%s.%s' % (namespace, name)
+
+    return load_from_filename(role_meta_main_filename, role_name=role_name)

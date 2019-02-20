@@ -1,6 +1,8 @@
 import logging
 import os
 
+from ansible_galaxy import role_metadata
+
 log = logging.getLogger(__name__)
 
 
@@ -15,6 +17,12 @@ def migrate(migrate_role_context,
 
     # load role from migrate_role_context.role_path
     # though, that may be just loading the role_path/meta/main.yml
+
+    role_md = role_metadata.load_from_dir(migrate_role_context.role_path,
+                                          role_name=migrate_role_context.role_name)
+
+    log.debug('role_metadata: %s', role_md)
+
     #  maybe some file tree walking
 
     # (or just let CollectionInfo construct fail...)
