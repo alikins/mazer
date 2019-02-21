@@ -5,6 +5,7 @@ import os
 
 from ansible_galaxy import role_metadata
 from ansible_galaxy.models.collection_info import CollectionInfo
+from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
 
@@ -79,10 +80,15 @@ def migrate(migrate_role_context,
     ])
 
     log.debug('collection_info_dict: %s', collection_info_dict)
+
     # create a CollectionInfo
     col_info = CollectionInfo(**collection_info_dict)
 
     log.debug('col_info: %s', col_info)
+
+    col_info_yaml_str = yaml_persist.safe_dump(col_info)
+
+    log.debug('direct: %s', col_info_yaml_str)
 
     # hmmm... should probably have a Collection/Repository save()
     # support, but if not, do the equiv
