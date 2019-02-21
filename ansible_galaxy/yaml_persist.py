@@ -39,7 +39,6 @@ class MazerSafeDumper(yaml.SafeDumper):
 
         if attr_utils.is_attr(data):
             odict = attr.asdict(data, recurse=True, dict_factory=OrderedDict)
-            # return self.represent_mapping(u'tag:yaml.org,2002:map', odict, flow_style=False)
             return super(MazerSafeDumper, self).represent_data(odict)
 
         return super(MazerSafeDumper, self).represent_data(data)
@@ -49,11 +48,15 @@ def dict_representer(dumper, data):
     return dumper.represent_mapping(u'tag:yaml.org,2002:map', data, flow_style=False)
 
 
+def odict_representer(dumper, data):
+    return dumper.represent_mapping(u'tag:yaml.org,2002:map', data.items(), flow_style=False)
+
+
 def list_representer(dumper, data):
     return dumper.represent_sequence(u'tag:yaml.org,2002:seq', data, flow_style=False)
 
 
-MazerSafeDumper.add_representer(OrderedDict, dict_representer)
+MazerSafeDumper.add_representer(OrderedDict, odict_representer)
 MazerSafeDumper.add_representer(dict, dict_representer)
 MazerSafeDumper.add_representer(list, list_representer)
 MazerSafeDumper.add_representer(tuple, list_representer)
@@ -87,7 +90,7 @@ def save(data, filename):
         # FIXME: just return the install_info dict (or better, build it elsewhere and pass in)
         # FIXME: stop minging self state
         try:
-            install_info_ = yaml.safe_dump(attr.asdict(data), f, default_flow_style=False)
+            install_info_ = safe_dump(data, stream=f)
         except Exception as e:
             log.warning('unable to serialize data to filename=%s for data=%s', filename, install_info_)
             log.exception(e)
