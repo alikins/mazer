@@ -35,8 +35,6 @@ class MazerSafeDumper(yaml.SafeDumper):
         for maps/dicts/lists/tuples
         '''
 
-        log.debug('represent_data: %r', data)
-
         if attr_utils.is_attr(data):
             odict = attr.asdict(data, recurse=True, dict_factory=OrderedDict)
             return super(MazerSafeDumper, self).represent_data(odict)

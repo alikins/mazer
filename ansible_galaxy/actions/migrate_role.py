@@ -90,6 +90,10 @@ def migrate(migrate_role_context,
 
     log.debug('direct: %s', col_info_yaml_str)
 
+    # write out galaxy.yml
+    output_filename = os.path.join(migrate_role_context.output_path, 'galaxy.yml')
+    yaml_persist.save(col_info, output_filename)
+
     # hmmm... should probably have a Collection/Repository save()
     # support, but if not, do the equiv
 
