@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import errno
 import logging
 import os
 import shutil
@@ -104,12 +105,21 @@ def migrate(migrate_role_context,
     # create any needed dirs in output_path/ like roles/
     output_roles_dirpath = os.path.join(migrate_role_context.output_path, 'roles')
     log.debug('creating dir at %s', output_roles_dirpath)
-    os.mkdir(output_roles_dirpath)
 
-    # create the roles/ subdir for this role name
+    try:
+        os.makedirs(output_roles_dirpath)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+    #  the roles/ subdir for this role name
     named_role_subdir_in_output = os.path.join(output_roles_dirpath, collection_name)
-    # log.debug('creating dir at %s', named_role_subdir_in_output)
-    # os.mkdir(named_role_subdir_in_output)
+
+    # If the dest roles/$rolename/ dir exists, and --force was used, then delete roles/$rolename/ so we
+    # can recreate it. It that dir exists and --force isn't provided, there will be an exception raised
+    if migrate_role_context.output_force:
+        log.debug('removing %s', named_role_subdir_in_output)
+        shutil.rmtree(named_role_subdir_in_output)
 
     # TODO: should we migrate plugins and modules to be collection level
     #       or just keep the role level?

@@ -7,8 +7,9 @@ log = logging.getLogger(__name__)
 
 @attr.s(frozen=True)
 class MigrateRoleContext(object):
-    role_path = attr.ib()
-    output_path = attr.ib()
+    role_path = attr.ib(validator=attr.validators.instance_of(str))
+    output_path = attr.ib(validator=attr.validators.instance_of(str))
+    output_force = attr.ib(default=False, validator=attr.validators.instance_of(bool))
 
     # roles always have a name, but not a namespace
     role_name = attr.ib(default=None)
