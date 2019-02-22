@@ -2,12 +2,15 @@ from collections import OrderedDict
 
 import logging
 import os
+import shutil
 
 from ansible_galaxy import role_metadata
 from ansible_galaxy.models.collection_info import CollectionInfo
 from ansible_galaxy import yaml_persist
 
 log = logging.getLogger(__name__)
+
+# TODO: split this up into small methods
 
 
 def migrate(migrate_role_context,
@@ -91,19 +94,31 @@ def migrate(migrate_role_context,
     log.debug('direct: %s', col_info_yaml_str)
 
     # write out galaxy.yml
+    # persist CollectionInfo to output_path/galaxy.yml
     output_filename = os.path.join(migrate_role_context.output_path, 'galaxy.yml')
     yaml_persist.save(col_info, output_filename)
 
     # hmmm... should probably have a Collection/Repository save()
     # support, but if not, do the equiv
 
-    # create any needed dirs in output_path/
+    # create any needed dirs in output_path/ like roles/
+    output_roles_dirpath = os.path.join(migrate_role_context.output_path, 'roles')
+    log.debug('creating dir at %s', output_roles_dirpath)
+    os.mkdir(output_roles_dirpath)
 
-    # persist CollectionInfo to output_path/galaxy.yml
+    # create the roles/ subdir for this role name
+    named_role_subdir_in_output = os.path.join(output_roles_dirpath, collection_name)
+    # log.debug('creating dir at %s', named_role_subdir_in_output)
+    # os.mkdir(named_role_subdir_in_output)
 
-    # cp role_path/role_stuff* dirs to output_path
     # TODO: should we migrate plugins and modules to be collection level
     #       or just keep the role level?
+    log.debug('copytree %s -> %s', migrate_role_context.role_path, named_role_subdir_in_output)
+
+    # cp role_path/role_stuff* dirs to output_path
+    # FIXME/NOTE: This does nothing clever, it doesn't ignore anything, it doesn't copy an
+    #             explicit list of dirs, doesn't ignore .git, etc.
+    shutil.copytree(migrate_role_context.role_path, named_role_subdir_in_output)
 
     # TODO: if there are modules or plugins using a bundled module_utils
     #       just moving the plugins isnt enough since the source code itself
