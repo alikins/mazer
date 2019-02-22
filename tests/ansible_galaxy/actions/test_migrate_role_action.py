@@ -40,12 +40,13 @@ def _migrate_role(output_path,
 def test_migrate_role_galaxy_yml(tmpdir):
     output_path = tmpdir.mkdir('mazer_test_migrate_role_action_test_migrate_role')
 
-    res, migrate_role_context = _migrate_role(output_path=output_path)
+    res, migrate_role_context = _migrate_role(output_path=output_path.strpath)
 
     assert res == 0
-    assert os.path.isdir(output_path)
+    assert os.path.isdir(output_path.strpath)
 
-    galaxy_yml_path = os.path.join(output_path, 'galaxy.yml')
+    galaxy_yml_path = os.path.join(output_path.strpath, 'galaxy.yml')
+
     assert os.path.isfile(galaxy_yml_path)
 
     with open(galaxy_yml_path, 'r') as cfd:
