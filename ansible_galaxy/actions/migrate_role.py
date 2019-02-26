@@ -30,7 +30,6 @@ def migrate(migrate_role_context,
     log.debug('dir_basename: %s', dir_basename)
 
     name_parts = dir_basename.split('.', 1)
-    log.debug('name_parts: %s', name_parts)
 
     role_name = name_parts[0]
     role_namespace = None
@@ -44,16 +43,12 @@ def migrate(migrate_role_context,
     collection_name = migrate_role_context.collection_name or role_name
     collection_namespace = migrate_role_context.collection_namespace or role_namespace
 
-    log.debug('role_name: %s mrc.role_name: %s dir_basename: %s name_parts: %s',
-              role_name, migrate_role_context.role_name, dir_basename, name_parts)
-
     role_md = role_metadata.load_from_dir(migrate_role_context.role_path,
                                           role_name=migrate_role_context.role_name)
 
     log.debug('role_metadata: %s', role_md)
 
     valid_licenses = spdx_licenses.get_spdx()
-    log.debug('valid_license.get(%s): %s', role_md.license, valid_licenses.get(role_md.license, None))
 
     # Check this here so errors can show more context
     if valid_licenses.get(role_md.license, None) is None:
@@ -108,10 +103,6 @@ def migrate(migrate_role_context,
         raise exceptions.GalaxyClientError(e)
 
     log.debug('col_info: %s', col_info)
-
-    col_info_yaml_str = yaml_persist.safe_dump(col_info)
-
-    log.debug('direct: %s', col_info_yaml_str)
 
     # write out galaxy.yml
     # persist CollectionInfo to output_path/galaxy.yml
