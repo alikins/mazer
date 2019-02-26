@@ -5,7 +5,9 @@ import logging
 import os
 import shutil
 
+from ansible_galaxy import exceptions
 from ansible_galaxy import role_metadata
+from ansible_galaxy.data import spdx_licenses
 from ansible_galaxy.models.collection_info import CollectionInfo
 from ansible_galaxy import yaml_persist
 
@@ -18,8 +20,6 @@ def migrate(migrate_role_context,
             display_callback):
 
     log.debug('migrate_role_context: %s', migrate_role_context)
-
-    display_callback("migrate_role something")
 
     # validate paths
 
@@ -51,6 +51,20 @@ def migrate(migrate_role_context,
                                           role_name=migrate_role_context.role_name)
 
     log.debug('role_metadata: %s', role_md)
+
+    valid_licenses = spdx_licenses.get_spdx()
+    log.debug('valid_license.get(%s): %s', role_md.license, valid_licenses.get(role_md.license, None))
+
+    # Check this here so errors can show more context
+    if valid_licenses.get(role_md.license, None) is None:
+        display_callback('The value for "license" found in "%s" is "%s" which is not a valid SPDX license' %
+                         (migrate_role_context.role_path, role_md.license),
+                         level='warning')
+
+    if valid_licenses.get(migrate_role_context.collection_license, None) is None:
+        display_callback('The value provided by --license is "%s" which is not a valid SPDX license' %
+                         migrate_role_context.collection_license,
+                         level='warning')
 
     collection_license = migrate_role_context.collection_license or role_md.license
 
@@ -88,7 +102,10 @@ def migrate(migrate_role_context,
     log.debug('collection_info_dict: %s', collection_info_dict)
 
     # create a CollectionInfo
-    col_info = CollectionInfo(**collection_info_dict)
+    try:
+        col_info = CollectionInfo(**collection_info_dict)
+    except ValueError as e:
+        raise exceptions.GalaxyClientError(e)
 
     log.debug('col_info: %s', col_info)
 
