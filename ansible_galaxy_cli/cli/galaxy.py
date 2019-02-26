@@ -149,6 +149,8 @@ class GalaxyCLI(cli.CLI):
                                    help='The name to use for the new collection')
             self.parser.add_option('--version', dest='collection_version',
                                    help='The version to use for the new collection')
+            self.parser.add_option('--license', dest='collection_license', default=None,
+                                   help='The SPDX license identifier to use for the new collection. For ex, "GPL-3.0-or-later", "MIT", "BSD-3-Clause"')
 
         if self.action in ("install",):
             self.parser.add_option('-f', '--force', dest='force', action='store_true', default=False, help='Force overwriting an existing collection')
@@ -356,6 +358,7 @@ class GalaxyCLI(cli.CLI):
                                                   collection_namespace=self.options.collection_namespace,
                                                   collection_name=self.options.collection_name,
                                                   collection_version=self.options.collection_version,
+                                                  collection_license=self.options.collection_license,
                                                   output_force=self.options.output_force)
 
         return migrate_role.migrate(migrate_role_context=migrate_role_context,

@@ -18,3 +18,6 @@ class MigrateRoleContext(object):
     collection_namespace = attr.ib(default=None)
     collection_name = attr.ib(default=None)
     collection_version = attr.ib(default=None)
+    # Note: Not validating this as valid spdx here, collection_info
+    #       will do that later
+    collection_license = attr.ib(default=None)

@@ -52,6 +52,8 @@ def migrate(migrate_role_context,
 
     log.debug('role_metadata: %s', role_md)
 
+    collection_license = migrate_role_context.collection_license or role_md.license
+
     #  maybe some file tree walking
 
     # (or just let CollectionInfo construct fail...)
@@ -74,7 +76,7 @@ def migrate(migrate_role_context,
         ('namespace', collection_namespace),
         ('name', collection_name),
         ('version', migrate_role_context.collection_version),
-        ('license', role_md.license),
+        ('license', collection_license),
         ('description', role_md.description),
         # FIXME: verify role_md.author is a list or single
         ('authors', [role_md.author]),
