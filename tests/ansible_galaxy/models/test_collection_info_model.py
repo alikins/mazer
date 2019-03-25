@@ -247,11 +247,18 @@ def test_name_invalid_has_dots(col_info, invalid_name_has_dots):
     assert invalid_name_has_dots in str(exc)
 
 
+def test_license_empty_list(col_info):
+    col_info['license'] = []
+    res = CollectionInfo(**col_info)
+    assert res.license == []
+    log.debug('res: %s', res)
+
+
 def test_license_deprecated(col_info):
     col_info['license'] = 'AGPL-1.0'
     res = CollectionInfo(**col_info)
     # Not much to assert, behavior is just a print() side effect
-    assert res.license == 'AGPL-1.0'
+    assert res.license == ['AGPL-1.0']
 
 
 # TODO maybe... build a text fixture for all of these cases
@@ -266,7 +273,43 @@ def test_license_error(col_info):
 
     with pytest.raises(ValueError) as exc:
         CollectionInfo(**col_info)
+
+    log.debug(str(exc))
+
     assert 'license' in str(exc)
+
+
+def test_license_with_valid_license_file(col_info):
+    # license=None will be converted to license=[]
+    col_info['license'] = None
+    col_info['license_file'] = 'MY_LICENSE.txt'
+
+    res = CollectionInfo(**col_info)
+
+    assert res.license_file == 'MY_LICENSE.txt'
+    assert res.license == []
+
+
+def test_license_with_contradicting_license_file(col_info):
+    col_info['license_file'] = 'MY_LICENSE.txt'
+
+    res = CollectionInfo(**col_info)
+
+    assert res.license_file == 'MY_LICENSE.txt'
+    assert res.license == ['GPL-3.0-or-later']
+
+
+def test_license_with_none_license_file(col_info):
+    col_info['license'] = None
+    col_info['license_file'] = None
+
+    # with pytest.raises(ValueError) as exc:
+    res = CollectionInfo(**col_info)
+
+    log.debug('col_info: %s', col_info)
+    log.debug('res: %s', res)
+    assert res.license == []
+    assert res.license_file is None
 
 
 def test_name_required_error(col_info):

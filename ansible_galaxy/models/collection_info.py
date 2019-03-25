@@ -12,13 +12,19 @@ from ansible_galaxy.data import spdx_licenses
 log = logging.getLogger(__name__)
 
 TAG_REGEXP = re.compile('^[a-z0-9]+$')
+
 # match only lowercase alphanumerics or underscore without
 # leading numbers or underscores or multiple consecutive underscores
 # This excludes dashes '-', punct (',' or '.' etc).
-# NAME_REGEXP = re.compile(r'^[a-z0-9_]+$')
+# Valid: 'my_collection', 'stuff', 'the_0cho', 'abc123'
+# Invalid: '_main', 'dots.inname', 'TheBigExampleCo',
+#          'kilroy-_____-was_here', '¯\_(ツ)_/¯ ', '11__'
 NAME_REGEXP = re.compile(r'^(?!.*__)[a-z]+[0-9a-z_]*$')
-MATCH_LEADING_NUMBER_REGEXP = re.compile(r'^[0-9]')
+
+# Valid: 'abc123', 'blip'
+# Invalid: '2legit2fast2sig11', '123abc', '10_9_8'
 # see https://github.com/ansible/galaxy/issues/957
+MATCH_LEADING_NUMBER_REGEXP = re.compile(r'^[0-9]')
 
 
 def convert_none_to_empty_dict(val):
@@ -31,12 +37,24 @@ def convert_none_to_empty_dict(val):
     return val
 
 
+def convert_single_to_list(val):
+    '''If a single object is provided, replace with a list containing only that object'''
+    if val is None:
+        return []
+
+    if not isinstance(val, list):
+        return [val]
+
+    return val
+
+
 @attr.s(frozen=True)
 class CollectionInfo(object):
     namespace = attr.ib(default=None)
     name = attr.ib(default=None)
     version = attr.ib(default=None)
-    license = attr.ib(default=None)
+    # license = attr.ib(default=None)
+    license = attr.ib(factory=list, converter=convert_single_to_list)
     description = attr.ib(default=None)
 
     repository = attr.ib(default=None)
@@ -46,6 +64,10 @@ class CollectionInfo(object):
 
     authors = attr.ib(factory=list)
     tags = attr.ib(factory=list)
+
+    # TODO: check these are valid paths at some point
+    license_file = attr.ib(default=None,
+                           validator=attr.validators.optional(attr.validators.instance_of(six.string_types)))
     readme = attr.ib(default=None,
                      validator=attr.validators.optional(attr.validators.instance_of(six.string_types)))
 
@@ -74,24 +96,40 @@ class CollectionInfo(object):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
 
+    def _check_license_file(self, attribute, value):
+        if value is None and self.license is None:
+            self.value_error("Either 'license' or 'license_file' is required."
+                             "The value of 'license_files' needs to be a file path to a license file, but both were None '%s'. ")
+
     @license.validator
-    def _check_license(self, attribute, value):
+    def _check_licenses(self, attribute, value):
+        '''Validate that 'licenses' value is either empty list or list of valid license identifiers'''
         if value is None:
-            self.value_error("'%s' is required and needs to be a valid SPDX license ID, instead found '%s'. "
-                             "For more info, visit https://spdx.org" % (attribute.name, value))
+            if self.license_file:
+                return
+
+            self.value_error("The value of 'license' needs to be a valid SPDX license identifier, instead found '%s'. "
+                             "For more info, visit https://spdx.org" % value)
 
         # load or return already loaded data
-        licenses = spdx_licenses.get_spdx()
+        valid_license_ids = spdx_licenses.get_spdx()
 
-        valid = licenses.get(value, None)
+        invalid_licenses = [x for x in value if not self._is_valid_license_id(x, valid_license_ids)]
+        if invalid_licenses:
+            self.value_error("Expecting 'licenses' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s'. "
+                             "For more info, visit https://spdx.org" % (','.join(invalid_licenses)))
+
+    def _is_valid_license_id(self, license_id, valid_license_ids):
+        valid = valid_license_ids.get(license_id, None)
         if valid is None:
-            self.value_error("Expecting 'license' to be a valid SPDX license ID, instead found '%s'. "
-                             "For more info, visit https://spdx.org" % value)
+            return False
 
         # license was in list, but is deprecated
         if valid and valid.get('deprecated', None):
-            print("Warning: collection metadata 'license' value '%s' is "
-                  "deprecated." % value)
+            print("Warning: collection metadata 'license' ID '%s' is "
+                  "deprecated." % license_id)
+
+        return True
 
     @authors.validator
     @tags.validator
