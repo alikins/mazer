@@ -1,7 +1,7 @@
 import logging
 import pytest
 
-from ansible_galaxy.models.collection_info import CollectionInfo
+from ansible_galaxy.models.collection_info import CollectionInfo, GalaxyCollectionInfo
 
 log = logging.getLogger(__name__)
 
@@ -250,31 +250,12 @@ def test_name_invalid_has_dots(col_info, invalid_name_has_dots):
 def test_license_empty_list(col_info):
     col_info['license'] = []
 
-    error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
-
-    with pytest.raises(ValueError, match=error_re) as exc:
-        CollectionInfo(**col_info)
-
-    log.debug('exc: %s', str(exc))
-
-
-def test_license_valid_and_none_list(col_info):
-    col_info['license'] = ['GPL-3.0-or-later', None]
-
-    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
-    "instead found invalid license identifiers: '.*' in 'license' value .*."
-
-    with pytest.raises(ValueError, match=error_re) as exc:
-        CollectionInfo(**col_info)
-
-    log.debug('exc: %s', str(exc))
-
-
-def test_license_deprecated(col_info):
-    col_info['license'] = 'AGPL-1.0'
     res = CollectionInfo(**col_info)
-    # Not much to assert, behavior is just a print() side effect
-    assert res.license == ['AGPL-1.0']
+
+    log.debug('res: %s', res)
+
+    assert isinstance(res, CollectionInfo)
+    assert res.license == []
 
 
 # TODO maybe... build a text fixture for all of these cases
@@ -282,17 +263,6 @@ def test_license_unknown(col_info):
     col_info['license'] = 'SOME-UNKNOWN'
     with pytest.raises(ValueError, match=".*license.*SOME-UNKNOWN.*"):
         CollectionInfo(**col_info)
-
-
-def test_license_error(col_info):
-    col_info['license'] = 'GPLv2'
-
-    with pytest.raises(ValueError) as exc:
-        CollectionInfo(**col_info)
-
-    log.debug(str(exc))
-
-    assert 'license' in str(exc)
 
 
 def test_license_with_valid_license_file(col_info):
@@ -309,28 +279,16 @@ def test_license_with_valid_license_file(col_info):
     log.debug('exc: %s', str(exc))
 
 
-def test_license_with_contradicting_license_file(col_info):
-    col_info['license_file'] = 'MY_LICENSE.txt'
-
-    res = CollectionInfo(**col_info)
-
-    assert res.license_file == 'MY_LICENSE.txt'
-    assert res.license == ['GPL-3.0-or-later']
-
-
 def test_license_with_none_license_file(col_info):
     col_info['license'] = None
     col_info['license_file'] = None
 
-    # error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
-    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
-    "instead found invalid license identifiers: '.*' in 'license' value .*."
+    res = CollectionInfo(**col_info)
+    log.debug('res: %s', res)
 
-    with pytest.raises(ValueError, match=error_re) as exc:
-        CollectionInfo(**col_info)
-
-    log.debug('col_info: %s', col_info)
-    log.debug(str(exc))
+    assert isinstance(res, CollectionInfo)
+    assert res.license == []
+    assert res.license_file is None
 
 
 def test_name_required_error(col_info):
@@ -477,3 +435,95 @@ def test_namespace_property(col_info):
 def test_label_property(col_info):
     info = CollectionInfo(**col_info)
     assert info.label == 'foo.foo'
+
+
+def test_galaxy_collection_info(col_info):
+    res = GalaxyCollectionInfo(**col_info)
+
+    assert isinstance(res, GalaxyCollectionInfo)
+
+
+def test_galaxy_license_empty_list(col_info):
+    col_info['license'] = []
+
+    error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        GalaxyCollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+
+
+def test_galaxy_license_valid_and_none_list(col_info):
+    col_info['license'] = ['GPL-3.0-or-later', None]
+
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        GalaxyCollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+
+
+def test_galaxy_license_deprecated(col_info):
+    col_info['license'] = 'AGPL-1.0'
+    res = GalaxyCollectionInfo(**col_info)
+    # Not much to assert, behavior is just a print() side effect
+    assert res.license == ['AGPL-1.0']
+
+
+# TODO maybe... build a text fixture for all of these cases
+def test_galaxy_license_unknown(col_info):
+    col_info['license'] = 'SOME-UNKNOWN'
+    with pytest.raises(ValueError, match=".*license.*SOME-UNKNOWN.*"):
+        GalaxyCollectionInfo(**col_info)
+
+
+def test_galaxy_license_error(col_info):
+    col_info['license'] = 'GPLv2'
+
+    with pytest.raises(ValueError) as exc:
+        GalaxyCollectionInfo(**col_info)
+
+    log.debug(str(exc))
+
+    assert 'license' in str(exc)
+
+
+def test_galaxy_license_with_valid_license_file(col_info):
+    # license=None will be converted to license=[]
+    col_info['license'] = None
+    col_info['license_file'] = 'MY_LICENSE.txt'
+
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        GalaxyCollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+
+
+def test_galaxy_license_with_contradicting_license_file(col_info):
+    col_info['license_file'] = 'MY_LICENSE.txt'
+
+    res = GalaxyCollectionInfo(**col_info)
+
+    assert res.license_file == 'MY_LICENSE.txt'
+    assert res.license == ['GPL-3.0-or-later']
+
+
+def test_galaxy_license_with_none_license_file(col_info):
+    col_info['license'] = None
+    col_info['license_file'] = None
+
+    # error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        GalaxyCollectionInfo(**col_info)
+
+    log.debug('col_info: %s', col_info)
+    log.debug(str(exc))

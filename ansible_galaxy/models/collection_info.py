@@ -48,13 +48,25 @@ def convert_single_to_list(val):
     return val
 
 
+def validate_a_license_id(license_id):
+    '''Check the valid of a license id from the list in 'license'
+
+    For generic CollectionInfo, all values are valid.
+
+    Subclasses should override this to be more picky about the license ids in 'license'
+    '''
+    log.debug('foo license_id: %s', license_id)
+    return True
+
+
 @attr.s(frozen=True)
 class CollectionInfo(object):
     namespace = attr.ib(default=None)
     name = attr.ib(default=None)
     version = attr.ib(default=None)
     # license = attr.ib(default=None)
-    license = attr.ib(factory=list, converter=convert_single_to_list)
+    license = attr.ib(factory=list, converter=convert_single_to_list,
+                      validator=[validate_a_license_id])
     description = attr.ib(default=None)
 
     repository = attr.ib(default=None)
@@ -74,10 +86,6 @@ class CollectionInfo(object):
     # Note galaxy.yml 'dependencies' field is what mazer and ansible
     # consider 'requirements'. ie, install time requirements.
     dependencies = attr.ib(factory=dict, converter=convert_none_to_empty_dict)
-
-    def __attrs_post_init__(self):
-        # validate with have something in license or license_file
-        self._check_for_license_or_license_file(self.license, self.license_file)
 
     @property
     def label(self):
@@ -99,43 +107,6 @@ class CollectionInfo(object):
         if not semantic_version.validate(value):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
-
-    def _check_for_license_or_license_file(self, license, license_file):
-        if len(license) or license_file:
-            return
-
-        self.value_error("Valid values for 'license' or 'license_file' are required. "
-                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license, license_file))
-
-    @license.validator
-    def _check_licenses(self, attribute, value):
-        '''Validate that 'licenses' value is a list of valid license identifiers'''
-
-        # load or return already loaded data
-        valid_license_ids = spdx_licenses.get_spdx()
-
-        invalid_licenses = [license_id for license_id in value if not self._is_valid_license_id(license_id, valid_license_ids)]
-
-        if invalid_licenses:
-            self.value_error("Expecting 'license' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s' "
-                             "in 'license' value %s. "
-                             "For more info, visit https://spdx.org" % (','.join([str(license_value) for license_value in invalid_licenses]),
-                                                                        value))
-
-    def _is_valid_license_id(self, license_id, valid_license_ids):
-        if license_id is None:
-            return False
-
-        valid = valid_license_ids.get(license_id, None)
-        if valid is None:
-            return False
-
-        # license was in list, but is deprecated
-        if valid and valid.get('deprecated', None):
-            print("Warning: collection metadata 'license' ID '%s' is "
-                  "deprecated." % license_id)
-
-        return True
 
     @authors.validator
     @tags.validator
@@ -167,3 +138,61 @@ class CollectionInfo(object):
             self.value_error("Expecting 'name' and 'namespace' to not start with '_' but '%s' did" % value)
         if not re.match(NAME_REGEXP, value):
             self.value_error("Expecting 'name' and 'namespace' to contain only lowercase alphanumeric characters or '_' only but '%s' contains others" % value)
+
+    @license.validator
+    def _check_licenses(self, attribute, value):
+        '''Validate that 'licenses' value is a list of valid license identifiers'''
+
+        invalid_licenses = [license_id for license_id in value if not self._is_valid_license_id(license_id)]
+
+        if invalid_licenses:
+            self.value_error("Expecting 'license' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s' "
+                             "in 'license' value %s. "
+                             "For more info, visit https://spdx.org" % (','.join([str(license_value) for license_value in invalid_licenses]),
+                                                                        value))
+
+
+def validate_spdx_license_id(license_id):
+    '''Galaxy collection specific valid license rules
+
+    Check license id to see if it is an SPDX valid license'''
+
+    log.debug('license_id: %s', license_id)
+    if license_id is None:
+        return False
+
+    # load or return already loaded data
+    valid_license_ids = spdx_licenses.get_spdx()
+
+    valid = valid_license_ids.get(license_id, None)
+    if valid is None:
+        return False
+
+    # license was in list, but is deprecated
+    if valid and valid.get('deprecated', None):
+        print("Warning: collection metadata 'license' ID '%s' is "
+              "deprecated." % license_id)
+
+    return True
+
+
+@attr.s(frozen=True)
+class GalaxyCollectionInfo(CollectionInfo):
+    license = attr.ib(factory=list, converter=convert_single_to_list,
+                      validator=[validate_spdx_license_id])
+    license_file = attr.ib(default=None,
+                           validator=attr.validators.optional(attr.validators.instance_of(six.string_types)))
+
+    def __attrs_post_init__(self):
+        # validate with have something in license or license_file
+        self._check_for_license_or_license_file(self.license, self.license_file)
+
+    def _check_for_license_or_license_file(self, license, license_file):
+        '''Validate that Galaxy collections have either a valid license or license_file'''
+        log.debug('license: %s license_file: %s', license, license_file)
+
+        if len(license) or license_file:
+            return
+
+        self.value_error("Valid values for 'license' or 'license_file' are required. "
+                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license, license_file))
