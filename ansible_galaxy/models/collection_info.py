@@ -75,6 +75,10 @@ class CollectionInfo(object):
     # consider 'requirements'. ie, install time requirements.
     dependencies = attr.ib(factory=dict, converter=convert_none_to_empty_dict)
 
+    def __attrs_post_init__(self):
+        # validate with have something in license or license_file
+        self._check_for_license_or_license_file(self.license, self.license_file)
+
     @property
     def label(self):
         return '%s.%s' % (self.namespace, self.name)
@@ -96,10 +100,12 @@ class CollectionInfo(object):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
 
-    def _check_license_file(self, attribute, value):
-        if value is None and self.license is None:
-            self.value_error("Either 'license' or 'license_file' is required."
-                             "The value of 'license_files' needs to be a file path to a license file, but both were None '%s'. ")
+    def _check_for_license_or_license_file(self, license, license_file):
+        if len(license) or license_file:
+            return
+
+        self.value_error("Valid values for 'license' or 'license_file' are required. "
+                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license, license_file))
 
     @license.validator
     def _check_licenses(self, attribute, value):
