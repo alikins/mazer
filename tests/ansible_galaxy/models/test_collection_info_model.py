@@ -389,6 +389,25 @@ def test_empty():
         CollectionInfo(**col_info)
 
 
+def test_deps_is_none(col_info):
+    col_info['dependencies'] = None
+    res = CollectionInfo(**col_info)
+
+    log.debug('res: %s', res)
+
+    assert res.dependencies == {}
+
+
+def test_deps_is_list(col_info):
+    col_info['dependencies'] = ['blip', {'sub_dict': 'these_deps_are_wrong'}]
+    error_re = r"Invalid collection metadata. Expecting 'dependencies' to be a dict"
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug(str(exc))
+
+
 def test_minimal(col_info):
     del col_info['authors']
     res = CollectionInfo(**col_info)
