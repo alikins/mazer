@@ -258,6 +258,18 @@ def test_license_empty_list(col_info):
     log.debug('exc: %s', str(exc))
 
 
+def test_license_valid_and_none_list(col_info):
+    col_info['license'] = ['GPL-3.0-or-later', None]
+
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
+
+    with pytest.raises(ValueError, match=error_re) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
+
+
 def test_license_deprecated(col_info):
     col_info['license'] = 'AGPL-1.0'
     res = CollectionInfo(**col_info)
@@ -288,10 +300,13 @@ def test_license_with_valid_license_file(col_info):
     col_info['license'] = None
     col_info['license_file'] = 'MY_LICENSE.txt'
 
-    res = CollectionInfo(**col_info)
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
 
-    assert res.license_file == 'MY_LICENSE.txt'
-    assert res.license == []
+    with pytest.raises(ValueError, match=error_re) as exc:
+        CollectionInfo(**col_info)
+
+    log.debug('exc: %s', str(exc))
 
 
 def test_license_with_contradicting_license_file(col_info):
@@ -307,7 +322,9 @@ def test_license_with_none_license_file(col_info):
     col_info['license'] = None
     col_info['license_file'] = None
 
-    error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
+    # error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
+    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    "instead found invalid license identifiers: '.*' in 'license' value .*."
 
     with pytest.raises(ValueError, match=error_re) as exc:
         CollectionInfo(**col_info)

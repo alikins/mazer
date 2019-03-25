@@ -39,8 +39,6 @@ def convert_none_to_empty_dict(val):
 
 def convert_single_to_list(val):
     '''If a single object is provided, replace with a list containing only that object'''
-    if val is None:
-        return []
 
     if not isinstance(val, list):
         return [val]
@@ -109,23 +107,23 @@ class CollectionInfo(object):
 
     @license.validator
     def _check_licenses(self, attribute, value):
-        '''Validate that 'licenses' value is either empty list or list of valid license identifiers'''
-        if value is None:
-            if self.license_file:
-                return
-
-            self.value_error("The value of 'license' needs to be a valid SPDX license identifier, instead found '%s'. "
-                             "For more info, visit https://spdx.org" % value)
+        '''Validate that 'licenses' value is a list of valid license identifiers'''
 
         # load or return already loaded data
         valid_license_ids = spdx_licenses.get_spdx()
 
-        invalid_licenses = [x for x in value if not self._is_valid_license_id(x, valid_license_ids)]
+        invalid_licenses = [license_id for license_id in value if not self._is_valid_license_id(license_id, valid_license_ids)]
+
         if invalid_licenses:
-            self.value_error("Expecting 'licenses' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s'. "
-                             "For more info, visit https://spdx.org" % (','.join(invalid_licenses)))
+            self.value_error("Expecting 'license' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s' "
+                             "in 'license' value %s. "
+                             "For more info, visit https://spdx.org" % (','.join([str(license_value) for license_value in invalid_licenses]),
+                                                                        value))
 
     def _is_valid_license_id(self, license_id, valid_license_ids):
+        if license_id is None:
+            return False
+
         valid = valid_license_ids.get(license_id, None)
         if valid is None:
             return False
