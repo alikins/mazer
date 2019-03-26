@@ -300,13 +300,10 @@ def test_license_with_valid_license_file(col_info):
     col_info['license'] = None
     col_info['license_file'] = 'MY_LICENSE.txt'
 
-    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
-    "instead found invalid license identifiers: '.*' in 'license' value .*."
+    res = CollectionInfo(**col_info)
 
-    with pytest.raises(ValueError, match=error_re) as exc:
-        CollectionInfo(**col_info)
-
-    log.debug('exc: %s', str(exc))
+    assert res.license_file == 'MY_LICENSE.txt'
+    assert res.license == []
 
 
 def test_license_with_contradicting_license_file(col_info):
@@ -322,9 +319,9 @@ def test_license_with_none_license_file(col_info):
     col_info['license'] = None
     col_info['license_file'] = None
 
-    # error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
-    error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
-    "instead found invalid license identifiers: '.*' in 'license' value .*."
+    error_re = r"Valid values for 'license' or 'license_file' are required. But 'license' \(.*\) and 'license_file' \(.*\) were invalid."
+    # error_re = r"Invalid collection metadata. Expecting 'license' to be a list of valid SPDX license identifiers, "
+    # "instead found invalid license identifiers: '.*' in 'license' value .*."
 
     with pytest.raises(ValueError, match=error_re) as exc:
         CollectionInfo(**col_info)

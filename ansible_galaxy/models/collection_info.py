@@ -42,6 +42,9 @@ def convert_none_to_empty_dict(val):
 def convert_single_to_list(val):
     '''If a single object is provided, replace with a list containing only that object'''
 
+    if val is None:
+        return []
+
     if not isinstance(val, list):
         return [val]
 
@@ -100,12 +103,12 @@ class CollectionInfo(object):
             self.value_error("Expecting '%s' to be in semantic version format, "
                              "instead found '%s'." % (attribute.name, value))
 
-    def _check_for_license_or_license_file(self, license_id, license_file):
-        if len(license_id) or license_file:
+    def _check_for_license_or_license_file(self, license_ids, license_file):
+        if license_ids or license_file:
             return
 
         self.value_error("Valid values for 'license' or 'license_file' are required. "
-                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license_id, license_file))
+                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license_ids, license_file))
 
     @license.validator
     def _check_licenses(self, attribute, value):
