@@ -123,7 +123,8 @@ class CollectionInfo(object):
                                                                         ','.join([str(license_value) for license_value in invalid_licenses]),
                                                                         value))
 
-    def _is_valid_license_id(self, license_id, valid_license_ids):
+    @staticmethod
+    def _is_valid_license_id(license_id, valid_license_ids):
         if license_id is None:
             return False
 
