@@ -100,12 +100,12 @@ class CollectionInfo(object):
             self.value_error("Expecting 'version' to be in semantic version format, "
                              "instead found '%s'." % value)
 
-    def _check_for_license_or_license_file(self, license, license_file):
-        if len(license) or license_file:
+    def _check_for_license_or_license_file(self, license_id, license_file):
+        if len(license_id) or license_file:
             return
 
         self.value_error("Valid values for 'license' or 'license_file' are required. "
-                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license, license_file))
+                         "But 'license' (%s) and 'license_file' (%s) were invalid." % (license_id, license_file))
 
     @license.validator
     def _check_licenses(self, attribute, value):
