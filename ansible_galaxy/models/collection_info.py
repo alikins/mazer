@@ -97,8 +97,8 @@ class CollectionInfo(object):
     @version.validator
     def _check_version_format(self, attribute, value):
         if not semantic_version.validate(value):
-            self.value_error("Expecting 'version' to be in semantic version format, "
-                             "instead found '%s'." % value)
+            self.value_error("Expecting '%s' to be in semantic version format, "
+                             "instead found '%s'." % (attribute.name, value))
 
     def _check_for_license_or_license_file(self, license_id, license_file):
         if len(license_id) or license_file:
@@ -117,9 +117,10 @@ class CollectionInfo(object):
         invalid_licenses = [license_id for license_id in value if not self._is_valid_license_id(license_id, valid_license_ids)]
 
         if invalid_licenses:
-            self.value_error("Expecting 'license' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s' "
+            self.value_error("Expecting '%s' to be a list of valid SPDX license identifiers, instead found invalid license identifiers: '%s' "
                              "in 'license' value %s. "
-                             "For more info, visit https://spdx.org" % (','.join([str(license_value) for license_value in invalid_licenses]),
+                             "For more info, visit https://spdx.org" % (attribute.name,
+                                                                        ','.join([str(license_value) for license_value in invalid_licenses]),
                                                                         value))
 
     def _is_valid_license_id(self, license_id, valid_license_ids):
@@ -152,12 +153,12 @@ class CollectionInfo(object):
     def _check_keywords(self, attribute, value):
         for k in value:
             if not re.match(TAG_REGEXP, k):
-                self.value_error("Expecting tags to contain lowercase alphanumeric characters only, "
-                                 "instead found '%s'." % k)
+                self.value_error("Expecting %s to contain lowercase alphanumeric characters only, "
+                                 "instead found '%s'." % (attribute.name, k))
 
     @name.validator
     @namespace.validator
-    def _check_name(self, attribute, value):
+    def _check_name(self, _unused, value):
         if '.' in value:
             self.value_error("Expecting 'name' and 'namespace' to not include any '.' but '%s' has a '.'" % value)
         if re.match(MATCH_LEADING_NUMBER_REGEXP, value):
