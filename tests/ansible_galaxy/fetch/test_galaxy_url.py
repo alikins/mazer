@@ -4,6 +4,7 @@ import pytest
 
 from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import galaxy_url
+from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
@@ -56,28 +57,44 @@ def galaxy_url_fetch(galaxy_context):
     return galaxy_url_fetch
 
 
-def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
-    MockedGalaxyAPI = mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyAPI', autospec=True)
+def test_galaxy_url_fetch_find(galaxy_context, mocker, requests_mock):
+    download_url = 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/artifact'
+    requests_mock.get('http://localhost:8000/api/',
+                      json={'current_version': 'v1'})
 
-    download_url = '/some/path/some_ns/some_name/versions/9.3.245/artifact'
+    requests_mock.get('http://example.invalid/api/',
+                      json={'current_version': 'v2'})
 
-    instance = MockedGalaxyAPI.return_value
-    instance._api_server = mocker.Mock(return_value='http://example.invalid/')
-    instance.get_collection_detail.return_value = {'related': {'versions': 'http://example.invalid/foo'},
-                                                   'download_url': download_url}
-    instance.get_collection_version_list.return_value = [{'version': '1.2.3',
-                                                          'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/1.2.3/'},
-                                                         {'version': '9.3.245',
-                                                          'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/'}]
+    # get CollectionVersionList
+    requests_mock.get('http://example.invalid/api/v2/collections/some_ns/some_name/versions/',
+                      json={
+                          'count': 2,
+                          'next': None,
+                          'previous': None,
+                          'results':
+                          [{'version': '1.2.3',
+                            'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/1.2.3/'},
+                           {'version': '9.3.245',
+                            'href': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/'}]})
 
     # The request to get the CollectionVersion detail via href from CollectionVersion list
-    instance.get_href.return_value = {'download_url': download_url,
-                                      'metadata': '',
-                                      'version': '1.2.3'}
+    requests_mock.get('http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/',
+                      json={'download_url': download_url,
+                            'metadata': {},
+                            'version': '9.3.245'})
 
-    # FIXME: Remove this when we get download_url from CollectionVersion detail instead of building it from server url
-    # mocker.patch('ansible_galaxy.fetch.galaxy_url.GalaxyUrlFetch.galaxy_context.server',
-    #             return_value={'url': 'http://example.invalid/'})
+    # The Collection detail
+    requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name',
+                      json={'versions_url': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/'})
+
+    req_spec = RequirementSpec(namespace='some_namespace',
+                               name='some_name',
+                               version_spec='==9.3.245')
+
+    context = GalaxyContext(content_path=galaxy_context.content_path,
+                            server={'url': 'http://example.invalid',
+                                    'ignore_certs': False})
+    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=context)
     res = galaxy_url_fetch.find()
 
     log.debug('res:%s', res)
@@ -85,7 +102,7 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, mocker):
     assert res['content']['galaxy_namespace'] == 'some_namespace'
     assert res['content']['repo_name'] == 'some_name'
 
-    assert res['custom']['download_url'] == "http://localhost:8000%s" % download_url
+    assert res['custom']['download_url'] == download_url
 
 
 def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, mocker):
@@ -93,7 +110,7 @@ def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, mocker):
 
     instance = MockedGalaxyAPI.return_value
     instance.get_collection_detail.return_value = {}
-    instance.get_collection_version_list.return_value = []
+    # instance.get_collection_version_list.return_value = []
 
     faux_server_url = 'http://galaxy.invalid/'
     instance.api_server = faux_server_url
