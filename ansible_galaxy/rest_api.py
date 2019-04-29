@@ -58,6 +58,18 @@ def user_agent():
     return USER_AGENT_FORMAT.format(**user_agent_data)
 
 
+def response_slug(response):
+    # The slug we use to identify a request by method, url and request id
+    # For ex, '"GET https://galaxy.ansible.com/api/v1/repositories" c48937f4e8e849828772c4a0ce0fd5ed'
+    slug = '"%s %s" %s' % (response.request.method, response.url, response.request.headers['X-Request-Id'])
+    return slug
+
+
+def request_slug(request):
+    slug = '"%s %s" %s' % (request.method, request.url, request.headers['X-Request-Id'])
+    return slug
+
+
 def g_connect(method):
     ''' wrapper to lazily initialize connection info to galaxy '''
 
