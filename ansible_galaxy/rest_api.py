@@ -75,6 +75,29 @@ def g_connect(method):
     return wrapped
 
 
+class RestClient(object):
+    def __init__(self, http_context=None):
+        self.http_context = http_context or {}
+
+        log.debug('http_context: %s', http_context)
+
+        # self._validate_certs = not galaxy_context.server['ignore_certs']
+        self.initialized = False
+        self.initialized = False
+
+        self.user_agent = user_agent()
+        log.debug('User Agent: %s', self.user_agent)
+
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': self.user_agent})
+
+        self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
+
+    @property
+    def validate_certs(self):
+        return not self.http_context['server']['ignore_certs']
+
+
 class GalaxyAPI(object):
     ''' This class is meant to be used as a API client for an Ansible Galaxy server '''
 
@@ -86,21 +109,12 @@ class GalaxyAPI(object):
 
         log.debug('Using galaxy server URL %s with ignore_certs=%s', galaxy_context.server['url'], galaxy_context.server['ignore_certs'])
 
-        self._validate_certs = not galaxy_context.server['ignore_certs']
-        self.initialized = False
-
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
 
         # set the API server
         self._api_server = galaxy_context.server['url']
 
         # self.log.debug('Validate TLS certificates for %s: %s', self._api_server, self._validate_certs)
-
-        self.user_agent = user_agent()
-        log.debug('User Agent: %s', self.user_agent)
-
-        self.session = requests.Session()
-        self.session.headers.update({'User-Agent': self.user_agent})
 
     # TODO: raise an API/net specific exception?
     @g_connect
@@ -195,9 +209,6 @@ class GalaxyAPI(object):
     def base_api_url(self):
         return '%s/api' % self._api_server
 
-    @property
-    def validate_certs(self):
-        return self._validate_certs
 
     def _get_server_api_version(self):
         """
