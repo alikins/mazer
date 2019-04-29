@@ -2,6 +2,7 @@ import json
 import logging
 
 import semantic_version
+from six.moves.urllib.parse import quote as urlquote
 
 # mv details of this here
 from ansible_galaxy import exceptions
@@ -76,7 +77,13 @@ class GalaxyUrlFetch(base.BaseFetch):
         # TODO: extract parsing of cli content sorta-url thing and add better tests
 
         # FIXME: Remove? We kind of need the actual Collection detail yet (ever?)
-        collection_detail_data = api.get_collection_detail(namespace, collection_name)
+        collection_detail_url = '{base_api_url}/v2/collections/{namespace}/{name}'.format(base_api_url=api.base_api_url,
+                                                                                          namespace=urlquote(namespace),
+                                                                                          name=urlquote(collection_name))
+
+        log.debug('collection_detail_url: %s', collection_detail_url)
+
+        collection_detail_data = api.get_object(href=collection_detail_url)
 
         if not collection_detail_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
