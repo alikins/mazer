@@ -138,30 +138,18 @@ def test_galaxy_api_get_server_api_version(galaxy_context_example_invalid, reque
     assert res == 'v1'
 
 
-def test_galaxy_api_get_server_api_version_not_supported_version(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={'current_version': 'v11.22.13beta4.preRC-16.0.0.0.42.42.37.1final'}),
-                         # doesn't matter response, just need a second call
-                         FauxUrlOpenResponse(data={'results': 'stuff'},
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
+def test_galaxy_api_get_server_api_version_not_supported_version(galaxy_context_example_invalid, requests_mock):
+    requests_mock.get('http://bogus.invalid:9443/api/',
+                      json={'current_version': 'v11.22.13beta4.preRC-16.0.0.0.42.42.37.1final'})
 
-    gc = GalaxyContext(server=default_server_dict)
-    api = rest_api.GalaxyAPI(gc)
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
 
     # expected to raise a client error about the server version not being supported in client
     # TODO: should be the server deciding if the client version is sufficient
-    try:
+    with pytest.raises(exceptions.GalaxyClientError, match='.*Unsupported Galaxy server API.*') as exc_info:
         api.get_collection_detail('test-namespace', 'test-repo')
-    except exceptions.GalaxyClientError as e:
-        log.exception(e)
-        assert 'Unsupported Galaxy server API' in '%s' % e
-        return
 
-    assert False, 'Expected a GalaxyClientError about supported server apis, but didnt happen'
+    log.debug('exc_info: %s', exc_info)
 
 
 def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
