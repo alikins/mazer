@@ -5,7 +5,6 @@ import ssl
 import sys
 
 import pytest
-import requests
 
 from six import text_type
 
@@ -26,65 +25,6 @@ def test_galaxy_api_init():
     assert api.galaxy_context == gc
 
 
-class FauxUrlOpenResponse(object):
-    def __init__(self, url=None, body=None, status=None, data=None, info=None, redirect_url=None):
-        self.status_code = status or 200
-        self.data = data
-        if self.data is not None:
-            self.body = json.dumps(self.data)
-        else:
-            self.body = body or ''
-        self.url = url
-        self._info = info
-        self.redirect_url = redirect_url or url
-        self.request = requests.Request(method='GET', url=self.redirect_url)
-        self.reason = 'Some Reason'
-        self.headers = {}
-        self.history = []
-        self.text = ''
-
-    # mock requests.Response.json
-    def json(self):
-        if self.body is None:
-            raise ValueError('Response body was not valid JSON')
-
-        return json.loads(self.body)
-
-    def raise_for_status(self):
-        if self.status_code >= 400:
-            raise requests.exceptions.HTTPError("A Faux %s error occurred" % self.status_code, response=self)
-
-    def __repr__(self):
-        return '%s(url="%s", status_code=%s, info="%s", body="%s", data="%s")' % \
-            (self.__class__.__name__, self.url, self.status_code, self._info, self.body, self.data)
-
-
-class FauxUrlResponder(object):
-    def __init__(self, list_of_responses=None):
-        self.responses = list_of_responses or []
-        self.calls = []
-        # log.debug('self.responses: %s', pprint.pformat(self.responses))
-
-    def __call__(self, *args, **kwargs):
-        next_response = self.responses.pop(0)
-
-        # set the response url to the same as the request url
-        url = args[1]
-
-        next_response.url = url
-
-        self.calls.append({'args': args,
-                           'kwargs': kwargs,
-                           'response': next_response})
-        # log.debug('next_response: %s', next_response)
-        return next_response
-
-    def __repr__(self):
-        return '%s(responses=%s, calls=%s)' % (self.__class__.__name__,
-                                               self.responses,
-                                               self.calls)
-
-
 default_server_dict = {'url': 'http://bogus.invalid:9443',
                        'ignore_certs': False}
 
@@ -95,10 +35,6 @@ def galaxy_context_example_invalid(galaxy_context):
                             server={'url': default_server_dict['url'],
                                     'ignore_certs': False})
     return context
-
-
-galaxy_context_params = [{'server': default_server_dict,
-                          'content_dir': None}]
 
 
 @pytest.fixture
@@ -152,18 +88,14 @@ def test_galaxy_api_get_server_api_version_not_supported_version(galaxy_context_
     log.debug('exc_info: %s', exc_info)
 
 
-def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
+def test_galaxy_api_get_server_api_version_HTTPError_500(galaxy_context_example_invalid, requests_mock):
     data = {"detail": "Stuff broke, 500 error but server response has valid json include the detail key"}
+    requests_mock.get('http://bogus.invalid:9443/api/',
+                      json=data,
+                      status_code=500)
 
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(status=500, data=data),
-                     ],
-                 ))
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
 
-    gc = GalaxyContext(server=default_server_dict)
-    api = rest_api.GalaxyAPI(gc)
     try:
         api._get_server_api_version()
     except exceptions.GalaxyClientError as e:
@@ -175,16 +107,13 @@ def test_galaxy_api_get_server_api_version_HTTPError_500(mocker):
     assert False, 'Expected a GalaxyClientError here but that did not happen'
 
 
-def test_galaxy_api_get_server_api_version_HTTPError_not_json(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(status=500, body='{stuff-that-is-not-valid-json'),
-                     ]
-                 ))
+def test_galaxy_api_get_server_api_version_HTTPError_not_json(galaxy_context_example_invalid, requests_mock):
+    requests_mock.get('http://bogus.invalid:9443/api/',
+                      text='{stuff-that-is-not-valid-json',
+                      status_code=500)
 
-    gc = GalaxyContext(server=default_server_dict)
-    api = rest_api.GalaxyAPI(gc)
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
+
     try:
         api._get_server_api_version()
     except exceptions.GalaxyClientError as e:
@@ -197,17 +126,13 @@ def test_galaxy_api_get_server_api_version_HTTPError_not_json(mocker):
     assert False, 'Expected a GalaxyClientError here but that did not happen'
 
 
-def test_galaxy_api_get_server_api_version_no_current_version(mocker):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(status=200, data={'some_key': 'some_value',
-                                                               'but_not_current_value': 2}),
-                     ]
-                 ))
+def test_galaxy_api_get_server_api_version_no_current_version(galaxy_context_example_invalid, requests_mock):
+    requests_mock.get('http://bogus.invalid:9443/api/',
+                      json={'some_key': 'some_value',
+                            'but_not_current_value': 2},
+                      status_code=200)
 
-    gc = GalaxyContext(server=default_server_dict)
-    api = rest_api.GalaxyAPI(gc)
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
     try:
         api._get_server_api_version()
     except exceptions.GalaxyClientError as e:
