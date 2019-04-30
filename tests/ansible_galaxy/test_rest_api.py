@@ -291,31 +291,28 @@ def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, 
     log.debug('exc_info:%s', exc_info)
 
 
-def test_galaxy_api_get_collection_detail(mocker, galaxy_api):
+def test_galaxy_api_get_collection_detail(mocker, galaxy_api, requests_mock):
     data_dict = {
         "id": 24,
-        "href": "/api/v2/collections/ansible/k8s/",
+        "href": "http://bogus.invalid:9443/api/v2/collections/ansible/k8s/",
         "name": "k8s",
         "namespace": {
             "id": 12,
-            "href": "/api/v2/namespaces/ansible/",
+            "href": "http://bogus.invalid:9443/api/v2/namespaces/ansible/",
             "name": "ansible",
         },
+        "versions_url": "http://bogus.invalid:9443/api/v2/collections/ansible/k8s/versions/",
         "highest_version": {
             "version": "4.2.0",
-            "href": "/api/v2/collections/ansible/k8s/versions/4.2.0",
+            "href": "http://bogus.invalid:9443/api/v2/collections/ansible/k8s/versions/4.2.0",
         },
         "deprecated": "false",
         "created": "2019-03-15T10:05:11.589728-04:00",
         "modified": "2019-03-22T10:05:11.589728-04:00",
     }
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data=data_dict,
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
+
+    requests_mock.get('http://bogus.invalid:9443/api/v2/collections/ansible/k8s',
+                      json=data_dict)
 
     namespace = 'ansible'
     name = 'k8s'
@@ -327,7 +324,7 @@ def test_galaxy_api_get_collection_detail(mocker, galaxy_api):
     assert isinstance(res, dict)
     assert res['id'] == 24
     assert 'highest_version' in res
-    assert res['href'] == "/api/v2/collections/ansible/k8s/"
+    assert res['href'] == "http://bogus.invalid:9443/api/v2/collections/ansible/k8s/"
 
 
 def test_galaxy_api_get_collection_detail_empty_results(mocker, galaxy_api):
