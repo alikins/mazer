@@ -6,7 +6,6 @@ import sys
 
 import pytest
 import requests
-import mock
 
 from six import text_type
 
@@ -86,7 +85,7 @@ class FauxUrlResponder(object):
                                                self.calls)
 
 
-default_server_dict = {'url': 'http://bogus.invalid:9553',
+default_server_dict = {'url': 'http://bogus.invalid:9443',
                        'ignore_certs': False}
 
 
@@ -202,36 +201,38 @@ def test_galaxy_api_get_server_api_version_no_current_version(mocker):
     assert False, 'Expected a GalaxyClientError here but that did not happen'
 
 
+@pytest.fixture
+def galaxy_context_example_invalid(galaxy_context):
+    context = GalaxyContext(content_path=galaxy_context.content_path,
+                            server={'url': default_server_dict['url'],
+                                    'ignore_certs': False})
+    return context
+
+
 galaxy_context_params = [{'server': default_server_dict,
                           'content_dir': None}]
 
 
-@pytest.fixture(scope='module',
-                params=galaxy_context_params)
-def galaxy_api(request):
-    gc = GalaxyContext(server=request.param['server'])
-    # log.debug('gc: %s', gc)
+@pytest.fixture
+def galaxy_api(galaxy_context_example_invalid, requests_mock):
 
     # mock the result of _get_server_api_versions here, so that we dont get the extra
     # call when calling the tests
 
-    patcher = mock.patch('ansible_galaxy.rest_api.requests.Session.request',
-                         new=FauxUrlResponder(
-                             [
-                                 FauxUrlOpenResponse(data={'current_version': 'v1'}),
-                                 FauxUrlOpenResponse(data={'results': [{'foo1': 11, 'foo2': 12}]},
-                                                     url='blippyblopfakeurl'),
-                             ]
-                         ))
+    requests_mock.get('http://bogus.invalid:9443/api/',
+                      json={'current_version': 'v1'})
+    requests_mock.get('http://bogus.invalid:9443/api/whatever/',
+                      json={'results': [{'foo1': 11,
+                                         'foo2': 12}
+                                        ]
+                            })
 
-    patcher.start()
-    api = rest_api.GalaxyAPI(gc)
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
 
     # do a call so that we run g_connect and _get_server_api_versions by side effect now
-    api.get_collection_detail('test-namespace', 'test-repo')
+    api.get_object(href='http://bogus.invalid:9443/api/whatever/')
 
-    # now unpatch
-    patcher.stop()
+    log.debug('api: %s', api)
 
     yield api
 
@@ -245,14 +246,6 @@ def test_galaxy_api_properties(galaxy_api):
 
 
 @pytest.fixture
-def galaxy_context_example_invalid(galaxy_context):
-    context = GalaxyContext(content_path=galaxy_context.content_path,
-                            server={'url': 'http://example.invalid',
-                                    'ignore_certs': False})
-    return context
-
-
-@pytest.fixture
 def galaxy_api_mocked(mocker, galaxy_context_example_invalid, requests_mock):
     mocker.patch('ansible_galaxy.rest_api.MultiPartForm.add_file')
     mocker.patch('ansible_galaxy.rest_api.MultiPartForm.get_binary',
@@ -260,7 +253,7 @@ def galaxy_api_mocked(mocker, galaxy_context_example_invalid, requests_mock):
     mocker.patch('ansible_galaxy.rest_api.GalaxyAPI._form_add_file_args',
                  return_value=('file', 'dummy args', None, 'application/octet-stream'))
 
-    requests_mock.get('http://example.invalid/api/',
+    requests_mock.get('http://bogus.invalid:9443/api/',
                       json={'current_version': 'v2'})
 
     api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
@@ -271,8 +264,8 @@ def galaxy_api_mocked(mocker, galaxy_context_example_invalid, requests_mock):
 def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
     status_202_json = {"task": "https://galaxy-dev.ansible.com/api/v2/collection-imports/224/"}
 
-    # POST http://example.invalid/api/v2/collections/
-    requests_mock.post('http://example.invalid/api/v2/collections/',
+    # POST http://bogus.invalid:9443/api/v2/collections/
+    requests_mock.post('http://bogus.invalid:9443/api/v2/collections/',
                        status_code=202,
                        json=status_202_json)
 
@@ -287,8 +280,8 @@ def test_galaxy_api_publish_file_202(galaxy_api_mocked, requests_mock, tmpdir):
 def test_galaxy_api_publish_file_conflict_409(galaxy_api_mocked, requests_mock, tmpdir):
     err_409_conflict_json = {'code': 'conflict.collection_exists', 'message': 'Collection "testing-ansible_testing_content-4.0.4" already exists.'}
 
-    # POST http://example.invalid/api/v2/collections/
-    requests_mock.post('http://example.invalid/api/v2/collections/',
+    # POST http://bogus.invalid:9443/api/v2/collections/
+    requests_mock.post('http://bogus.invalid:9443/api/v2/collections/',
                        status_code=409,
                        json=err_409_conflict_json)
 
@@ -384,7 +377,7 @@ def test_galaxy_api_get_collection_detail_redirect_url(mocker, galaxy_api):
     # FIXME: should probably return the full list and let the app care what that means
     assert isinstance(res, dict)
     assert blip.calls[0]['args'] == ('GET',
-                                     'http://bogus.invalid:9553/api/v2/collections/alikins/some_collection_that_doesnt_exist')
+                                     'http://bogus.invalid:9443/api/v2/collections/alikins/some_collection_that_doesnt_exist')
     # assert res == {}
 
 # # FIXME:use mocked requests.Response, set status. requests wont raise an exception so side_effect is wrong
