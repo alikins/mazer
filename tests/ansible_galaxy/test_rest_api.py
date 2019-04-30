@@ -1,5 +1,7 @@
-import logging
+import io
 import json
+import logging
+import os
 import ssl
 import sys
 
@@ -241,6 +243,48 @@ def test_galaxy_api_properties(galaxy_api):
 
     assert galaxy_api.api_server == default_server_dict['url']
     assert galaxy_api.validate_certs is True
+
+
+@pytest.fixture
+def galaxy_context_example_invalid(galaxy_context):
+    context = GalaxyContext(content_path=galaxy_context.content_path,
+                            server={'url': 'http://example.invalid',
+                                    'ignore_certs': False})
+    return context
+
+
+def test_galaxy_api_publish_file(galaxy_context_example_invalid, mocker, requests_mock, tmpdir):
+    archive_path = '/dev/null/faux/artifact/ns-n-1.2.3.tar.gz'
+
+    mocker.patch('ansible_galaxy.rest_api.MultiPartForm.add_file')
+    mocker.patch('ansible_galaxy.rest_api.MultiPartForm.get_binary',
+                 return_value=io.BytesIO())
+    mocker.patch('ansible_galaxy.rest_api.GalaxyAPI._form_add_file_args',
+                 return_value=('file', 'dummy args', None, 'application/octet-stream'))
+
+    # [('file',
+    #                'some_namespace-some_name-1.3.9.tar.gz',
+    #                'application/octet-stream',
+    #                b'Stuff from test_galaxy_api_publish_file, whatever\n')])
+
+    err_409_conflict_json = {'code': 'conflict.collection_exists', 'message': 'Collection "testing-ansible_testing_content-4.0.4" already exists.'}
+    status_202_json = {"task": "https://galaxy-dev.ansible.com/api/v2/collection-imports/224/"}
+
+    # form.files content to mock out
+    # [('file', 'some_namespace-some_name-1.3.9.tar.gz', 'application/octet-stream', b'Stuff from test_galaxy_api_publish_file, whatever\n')]
+    requests_mock.get('http://example.invalid/api/',
+                      json={'current_version': 'v2'})
+
+    # POST http://example.invalid/api/v2/collections/
+    requests_mock.post('http://example.invalid/api/v2/collections/',
+                       status_code=409,
+                       json=err_409_conflict_json)
+    api = rest_api.GalaxyAPI(galaxy_context_example_invalid)
+
+    with pytest.raises(ansible_galaxy.exceptions.GalaxyPublishError) as exc_info:
+        api.publish_file(data={}, archive_path=archive_path, publish_api_key=None)
+
+    log.debug('exc_info:%s', exc_info)
 
 
 def test_galaxy_api_get_collection_detail(mocker, galaxy_api):
