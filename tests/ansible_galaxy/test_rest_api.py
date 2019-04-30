@@ -327,14 +327,9 @@ def test_galaxy_api_get_collection_detail(mocker, galaxy_api, requests_mock):
     assert res['href'] == "http://bogus.invalid:9443/api/v2/collections/ansible/k8s/"
 
 
-def test_galaxy_api_get_collection_detail_empty_results(mocker, galaxy_api):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 new=FauxUrlResponder(
-                     [
-                         FauxUrlOpenResponse(data={},
-                                             url='blippyblopfakeurl'),
-                     ]
-                 ))
+def test_galaxy_api_get_collection_detail_empty_results(mocker, galaxy_api, requests_mock):
+    requests_mock.get('http://bogus.invalid:9443/api/v2/collections/alikins/role-awx',
+                      json={})
 
     namespace = 'alikins'
     name = 'role-awx'
@@ -417,19 +412,16 @@ def test_galaxy_api_get_collection_detail_redirect_url(mocker, galaxy_api):
 #     assert False, 'Excepted to get a GalaxyClientError here but did not.'
 
 
-def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api):
-    mocker.patch('ansible_galaxy.rest_api.requests.Session.request',
-                 side_effect=ssl.SSLError('ssl stuff broke... good luck and godspeed.'))
+def test_galaxy_api_get_collection_detail_SSLError(mocker, galaxy_api, requests_mock):
+    ssl_msg = 'ssl stuff broke... good luck and godspeed.'
+    requests_mock.get('http://bogus.invalid:9443/api/v2/collections/some-test-namespace/some-test-name',
+                      exc=ssl.SSLError(ssl_msg)
+                      )
 
-    try:
+    with pytest.raises(exceptions.GalaxyClientAPIConnectionError, match='.*%s.*' % ssl_msg) as exc_info:
         galaxy_api.get_collection_detail('some-test-namespace', 'some-test-name')
-    except exceptions.GalaxyClientAPIConnectionError as e:
-        log.exception(e)
-        log.debug(e)
 
-        return
-
-    assert False, 'Excepted to get a GalaxyClientAPIConnectionError here but did not.'
+    log.debug('exc_info: %s', exc_info)
 
 
 def test_user_agent():
