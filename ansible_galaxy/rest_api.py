@@ -187,6 +187,20 @@ class RestClient(object):
 
         return resp
 
+# main objects we will deal with
+# Collection
+#     GET    /api/v2/collections/{namespace}/{name}
+#     GET    /api/v2/collections/{id}
+#    POST    /api/v2/collections/       (multiparm form post) "publish"
+#
+# CollectionVersion
+#     GET     /api/v2/collections/{namespace}/{name}/versions/{version}
+#
+# CollectionCollectionVersion
+#     GET    /api/v2/collections/{namespace}/{name}/versions/
+#            ('versions_url' ref on Collection)
+#
+
 
 class GalaxyAPI(object):
     ''' This class is meant to be used as a API client for an Ansible Galaxy server '''
