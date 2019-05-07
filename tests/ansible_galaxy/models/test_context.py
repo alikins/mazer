@@ -24,7 +24,7 @@ def test_context_with_content_path_and_server():
     server = {'url': server_url,
               'ignore_certs': ignore_certs}
 
-    galaxy_context = context.GalaxyContext(server=server, content_path=content_path)
+    galaxy_context = context.GalaxyContext(server=server, collections_path=content_path)
 
     log.debug('galaxy_context: %s', galaxy_context)
     assert isinstance(galaxy_context, context.GalaxyContext)
@@ -52,7 +52,7 @@ def test_context_from_empty_server():
 def test_context_server_none_content_path_none():
 
     galaxy_context = context.GalaxyContext(server=None,
-                                           content_path=None)
+                                           collections_path=None)
 
     assert galaxy_context.content_path is None
     assert isinstance(galaxy_context.server, dict)
@@ -68,7 +68,7 @@ def test_context_repr():
     server = {'url': server_url,
               'ignore_certs': ignore_certs}
 
-    galaxy_context = context.GalaxyContext(server=server, content_path=content_path)
+    galaxy_context = context.GalaxyContext(server=server, collections_path=content_path)
     rep_res = repr(galaxy_context)
 
     log.debug('rep_res: %s', rep_res)
