@@ -133,6 +133,7 @@ def install(galaxy_context,
     if not os.path.isdir(galaxy_context.collections_path):
         log.debug('No content path (%s) found so creating it', galaxy_context.collections_path)
 
+        # FIXME: This needs to include 'ansible_collections'
         os.makedirs(galaxy_context.collections_path)
 
     # Build up all the info about where the repository will be installed to
@@ -140,15 +141,20 @@ def install(galaxy_context,
                                             repository_spec.name)
 
     install_info_path = os.path.join(galaxy_context.collections_path,
+                                     # FIXME: define a 'collections_python_namespace' to use here
+                                     #        (ie, 'ansible_collections')
                                      namespaced_repository_path,
                                      'meta/.galaxy_install_info')
 
     # extract_archive_to_dir depends on the repo_archive type, so ask it
     extract_archive_to_dir = os.path.join(galaxy_context.collections_path,
+                                          # FIXME: compensate for 'ansible_collections'
                                           namespaced_repository_path)
 
     editable = repository_spec.fetch_method == FetchMethods.EDITABLE
 
+    # FIXME: compensate for 'ansible_collections' in InstallDestinationInfo?
+    #        ie, build extract_archive_to_dir instead of setting explicitly
     destination_info = InstallDestinationInfo(destination_root_dir=galaxy_context.collections_path,
                                               repository_spec=repository_spec,
                                               extract_archive_to_dir=extract_archive_to_dir,
