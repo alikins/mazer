@@ -153,7 +153,7 @@ server:
 #
 # default: /usr/share/ansible/collections/ansible_collections
 #
-global_content_path: /usr/share/ansible/collections/ansible_collections
+global_collections_path: /usr/share/ansible/collections/ansible_collections
 
 # When installing content like ansible collections, mazer will install into
 # sub directories of this path.

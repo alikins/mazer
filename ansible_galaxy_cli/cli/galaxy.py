@@ -94,7 +94,7 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog install [options] [-r FILE | repo_name(s)[,version] | scm+repo_url[,version] | tar_file(s)]")
             self.parser.add_option('-g', '--global', dest='global_install', action='store_true',
                                    help='Install content to the path containing your global or system-wide content. The default is the '
-                                   'global_content_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')
+                                   'global_collections_path configured in your mazer.yml file (/usr/share/ansible/content, if not configured)')
             self.parser.add_option('-e', '--editable', dest='editable_install', action='store_true',
                                    help='Link a local directory into the content path for development and testing')
             self.parser.add_option('-i', '--ignore-errors', dest='ignore_errors', action='store_true', default=False,
@@ -172,7 +172,7 @@ class GalaxyCLI(cli.CLI):
         raw_collections_path = options_collections_path or config.collections_path
 
         if hasattr(options, 'global_install') and options.global_install:
-            raw_collections_path = config.global_content_path
+            raw_collections_path = config.global_collections_path
 
         collections_path = os.path.abspath(os.path.expanduser(raw_collections_path))
 
