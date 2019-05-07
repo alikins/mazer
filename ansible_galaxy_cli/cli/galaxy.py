@@ -118,7 +118,7 @@ class GalaxyCLI(cli.CLI):
         if self.action not in ("publish", "version",):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
-            self.parser.add_option('-C', '--content-path', dest='content_path',
+            self.parser.add_option('-C', '--collections-path', dest='collections_path',
                                    help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
 
@@ -160,22 +160,21 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).parse()
 
-        if self.action == 'install' and getattr(self.options, 'content_path') and getattr(self.options, 'global_install'):
+        if self.action == 'install' and getattr(self.options, 'collections_path') and getattr(self.options, 'global_install'):
             raise cli_exceptions.CliOptionsError('--content-path and --global are mutually exclusive')
 
     def _get_galaxy_context(self, options, config):
-        # use content_path from options if availble but fallback to configured content_path
-        options_content_path = None
-        if hasattr(options, 'content_path'):
-            options_content_path = options.content_path
+        # use collections_path from options if availble but fallback to configured content_path
+        options_collections_path = None
+        if hasattr(options, 'collections_path'):
+            options_collections_path = options.collections_path
 
-        raw_content_path = options_content_path or config.content_path
+        raw_collections_path = options_collections_path or config.content_path
 
         if hasattr(options, 'global_install') and options.global_install:
-            raw_content_path = config.global_content_path
+            raw_collections_path = config.global_content_path
 
-        # content_path = os.path.expanduser(raw_content_path)
-        content_path = os.path.abspath(os.path.expanduser(raw_content_path))
+        collections_path = os.path.abspath(os.path.expanduser(raw_collections_path))
 
         server = config.server.copy()
 
@@ -186,7 +185,7 @@ class GalaxyCLI(cli.CLI):
             # use ignore certs from options if available, but fallback to configured ignore_certs
             server['ignore_certs'] = options.ignore_certs
 
-        galaxy_context = GalaxyContext(server=server, collections_path=content_path)
+        galaxy_context = GalaxyContext(server=server, collections_path=collections_path)
 
         return galaxy_context
 
