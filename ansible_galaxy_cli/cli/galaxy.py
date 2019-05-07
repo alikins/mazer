@@ -119,7 +119,7 @@ class GalaxyCLI(cli.CLI):
             # NOTE: while the option type=str, the default is a list, and the
             # callback will set the value to a list.
             self.parser.add_option('-C', '--collections-path', dest='collections_path',
-                                   help='The path to the directory containing your Galaxy content. The default is the content_path configured in your'
+                                   help='The path to the directory containing your Galaxy content. The default is the collections_path configured in your'
                                         'mazer.yml file (~/.ansible/content, if not configured)', type='str')
 
         if self.action == "migrate_role":
@@ -164,12 +164,12 @@ class GalaxyCLI(cli.CLI):
             raise cli_exceptions.CliOptionsError('--content-path and --global are mutually exclusive')
 
     def _get_galaxy_context(self, options, config):
-        # use collections_path from options if availble but fallback to configured content_path
+        # use collections_path from options if availble but fallback to configured collections_path
         options_collections_path = None
         if hasattr(options, 'collections_path'):
             options_collections_path = options.collections_path
 
-        raw_collections_path = options_collections_path or config.content_path
+        raw_collections_path = options_collections_path or config.collections_path
 
         if hasattr(options, 'global_install') and options.global_install:
             raw_collections_path = config.global_content_path
