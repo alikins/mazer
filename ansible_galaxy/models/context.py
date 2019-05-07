@@ -34,8 +34,8 @@ class GalaxyContext(object):
     def __init__(self, collections_path=None, server=None):
         self.server = server or {'url': None,
                                  'ignore_certs': False}
-        self.content_path = collections_path
+        self.collections_path = collections_path
 
     def __repr__(self):
         return 'GalaxyContext(content_path=%s, server=%s)' % \
-            (self.content_path, self.server)
+            (self.collections_path, self.server)

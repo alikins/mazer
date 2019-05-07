@@ -12,7 +12,7 @@ def test_context_empty_init():
     galaxy_context = context.GalaxyContext()
 
     assert galaxy_context.server is not None
-    assert galaxy_context.content_path is None
+    assert galaxy_context.collections_path is None
     assert isinstance(galaxy_context.server, dict)
 
 
@@ -29,20 +29,20 @@ def test_context_with_content_path_and_server():
     log.debug('galaxy_context: %s', galaxy_context)
     assert isinstance(galaxy_context, context.GalaxyContext)
 
-    assert isinstance(galaxy_context.content_path, six.string_types)
+    assert isinstance(galaxy_context.collections_path, six.string_types)
     assert isinstance(galaxy_context.server, dict)
 
     assert galaxy_context.server['url'] == server_url
     assert galaxy_context.server['ignore_certs'] == ignore_certs
 
-    assert galaxy_context.content_path == content_path
+    assert galaxy_context.collections_path == content_path
 
 
 def test_context_from_empty_server():
     server = {}
     galaxy_context = context.GalaxyContext(server=server)
 
-    assert galaxy_context.content_path is None
+    assert galaxy_context.collections_path is None
     assert isinstance(galaxy_context.server, dict)
     log.debug('server: %s', galaxy_context.server)
     assert galaxy_context.server['url'] is None
@@ -54,7 +54,7 @@ def test_context_server_none_content_path_none():
     galaxy_context = context.GalaxyContext(server=None,
                                            collections_path=None)
 
-    assert galaxy_context.content_path is None
+    assert galaxy_context.collections_path is None
     assert isinstance(galaxy_context.server, dict)
     assert galaxy_context.server['url'] is None
     assert galaxy_context.server['ignore_certs'] is False
