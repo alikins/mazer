@@ -33,7 +33,7 @@ def installed_repository_iterator(galaxy_context,
                                   namespace_match_filter=None,
                                   repository_spec_match_filter=None,
                                   requirement_spec_match_filter=None):
-    '''For each repository in galaxy_context.content_path, yield matching repositories'''
+    '''For each repository in galaxy_context.collections_path, yield matching repositories'''
 
     namespace_match_filter = namespace_match_filter or matchers.MatchAll()
     repository_spec_match_filter = repository_spec_match_filter or matchers.MatchAll()

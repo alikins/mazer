@@ -37,5 +37,5 @@ class GalaxyContext(object):
         self.collections_path = collections_path
 
     def __repr__(self):
-        return 'GalaxyContext(content_path=%s, server=%s)' % \
+        return 'GalaxyContext(collections_path=%s, server=%s)' % \
             (self.collections_path, self.server)
