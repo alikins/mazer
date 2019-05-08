@@ -2,21 +2,20 @@
 import logging
 import os
 
+from ansible_galaxy.config.defaults import COLLECTIONS_PYTHON_NAMESPACE
 from ansible_galaxy import matchers
 from ansible_galaxy.models.galaxy_namespace import GalaxyNamespace
 
 log = logging.getLogger(__name__)
 
 
-# FIXME: This could be used to automatically include the last 'ansible_collections'
-#        part of collections_path
 def get_namespace_paths(collections_path):
     # TODO: abstract this a bit?  one to make it easier to mock, but also
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
     #       fs ordering, etc
 
-    ansible_collections_path = os.path.join(collections_path, 'ansible_collections')
+    ansible_collections_path = os.path.join(collections_path, COLLECTIONS_PYTHON_NAMESPACE)
 
     try:
         # TODO: filter on any rules for what a namespace path looks like
@@ -45,8 +44,7 @@ def installed_namespace_iterator(galaxy_context,
 
     log.debug('Looking for namespaces in %s', collections_path)
     for namespace_path in namespace_paths:
-        # FIXME: mv 'ansible_collections' to a constants/enum somewhere...
-        namespace_full_path = os.path.join(collections_path, 'ansible_collections', namespace_path)
+        namespace_full_path = os.path.join(collections_path, COLLECTIONS_PYTHON_NAMESPACE, namespace_path)
 
         collection_namespace = GalaxyNamespace(namespace=namespace_path,
                                                path=namespace_full_path)
