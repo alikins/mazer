@@ -26,7 +26,7 @@ DEFAULTS = [
 
     # In order of priority
     ('collections_path', os.path.join(MAZER_HOME, 'collections')),
-    ('global_collections_path', '/usr/share/ansible/collections/'),
+    ('global_collections_path', '/usr/share/ansible/collections'),
 
     # runtime options
     ('options',
