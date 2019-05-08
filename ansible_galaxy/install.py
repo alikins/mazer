@@ -133,7 +133,6 @@ def install(galaxy_context,
     if not os.path.isdir(galaxy_context.collections_path):
         log.debug('No content path (%s) found so creating it', galaxy_context.collections_path)
 
-        # FIXME: This needs to include 'ansible_collections'
         os.makedirs(galaxy_context.collections_path)
 
     # Build up all the info about where the repository will be installed to
