@@ -15,15 +15,20 @@ def get_namespace_paths(collections_path):
     #       possibly to prepare for nested dirs, multiple paths, various
     #       filters/whitelist/blacklist/excludes, caching, or respecting
     #       fs ordering, etc
+
+    ansible_collections_path = os.path.join(collections_path, 'ansible_collections')
+
     try:
         # TODO: filter on any rules for what a namespace path looks like
         #       may one being 'somenamespace.somename' (a dot sep ns and name)
         #
-        namespace_paths = os.listdir(collections_path)
+        namespace_paths = os.listdir(ansible_collections_path)
     except OSError as e:
         log.exception(e)
-        log.warning('The content path %s did not exist so no content or repositories were found.',
-                    collections_path)
+        # FIXME: need to make it clearer that 'collections_path' does not include an explicit 'ansible_collections'
+        #        but that it is added implictly
+        log.warning('The collections path %s did not exist so no content or repositories were found.',
+                    ansible_collections_path)
         namespace_paths = []
 
     return namespace_paths
@@ -40,8 +45,8 @@ def installed_namespace_iterator(galaxy_context,
 
     log.debug('Looking for namespaces in %s', collections_path)
     for namespace_path in namespace_paths:
-        # FIXME: This needs to compensate for 'ansible_collections'
-        namespace_full_path = os.path.join(collections_path, namespace_path)
+        # FIXME: mv 'ansible_collections' to a constants/enum somewhere...
+        namespace_full_path = os.path.join(collections_path, 'ansible_collections', namespace_path)
 
         collection_namespace = GalaxyNamespace(namespace=namespace_path,
                                                path=namespace_full_path)
