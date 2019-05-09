@@ -49,8 +49,6 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
 # pass a list of repository_spec objects
 def install_repositories_matching_repository_specs(galaxy_context,
                                                    requirements_list,
-                                                   editable=False,
-                                                   namespace_override=None,
                                                    display_callback=None,
                                                    # TODO: error handling callback ?
                                                    ignore_errors=False,
@@ -58,7 +56,6 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                                    force_overwrite=False):
     '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
-    # log.debug('editable: %s', editable)
     log.debug('requirements_list: %s', requirements_list)
 
     _verify_requirements_repository_spec_have_namespaces(requirements_list)
@@ -95,20 +92,10 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                 force_overwrite=force_overwrite)
 
 
-# FIXME: probably pass the point where passing around all the data to methods makes sense
-#        so probably needs a stateful class here
-def install_repository_specs_loop(galaxy_context,
-                                  repository_spec_strings=None,
-                                  requirements_list=None,
-                                  editable=False,
-                                  namespace_override=None,
-                                  display_callback=None,
-                                  # TODO: error handling callback ?
-                                  ignore_errors=False,
-                                  no_deps=False,
-                                  force_overwrite=False):
-
-    requirements_list = requirements_list or []
+def requirements_from_strings(repository_spec_strings,
+                              namespace_override=None,
+                              editable=False):
+    requirements_list = []
 
     for repository_spec_string in repository_spec_strings:
         fetch_method = \
@@ -130,9 +117,8 @@ def install_repository_specs_loop(galaxy_context,
             log.debug('repository_spec_string: %s', repository_spec_string)
 
             tmp_downloaded_path = download.fetch_url(repository_spec_string,
-                                                     # Note: ignore_certs is meant for galaxy server,
-                                                     # overloaded to apply for arbitrary http[s] downloads here
-                                                     validate_certs=not galaxy_context.server['ignore_certs'])
+                                                     # This is for random remote_urls, so always validate_certs
+                                                     validate_certs=True)
             spec_data = collection_artifact.load_data_from_collection_artifact(tmp_downloaded_path)
 
             # pretend like this is a local_file install now
@@ -152,6 +138,21 @@ def install_repository_specs_loop(galaxy_context,
 
         requirements_list.append(req)
 
+    return requirements_list
+
+
+# FIXME: probably pass the point where passing around all the data to methods makes sense
+#        so probably needs a stateful class here
+def install_repository_specs_loop(galaxy_context,
+                                  requirements,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
+
+    requirements_list = requirements
+
     log.debug('requirements_list: %s', requirements_list)
     for req in requirements_list:
         display_callback('Installing %s' % req.requirement_spec.label, level='info')
@@ -163,8 +164,6 @@ def install_repository_specs_loop(galaxy_context,
         just_installed_repositories = \
             install_repositories_matching_repository_specs(galaxy_context,
                                                            requirements_list,
-                                                           editable=editable,
-                                                           namespace_override=namespace_override,
                                                            display_callback=display_callback,
                                                            ignore_errors=ignore_errors,
                                                            no_deps=no_deps,
