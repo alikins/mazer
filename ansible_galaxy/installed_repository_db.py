@@ -59,8 +59,9 @@ def installed_repository_iterator(galaxy_context,
                                                    name=repository_path,
                                                    installed=True)
 
-            # log.debug('candidate installed repo (pre filter): %s', repository_)
-
+            log.debug('candidate installed repo (pre filter): %s', repository_)
+            log.debug('c_spec:   %r', repository_.repository_spec)
+            log.debug('r_spec_m: %r', repository_spec_match_filter.repository_specs[0])
             if repository_spec_match_filter(repository_):
                 log.debug('Found repository "%s" (%s) in namespace "%s"', repository_path, str(repository), namespace.namespace)
 

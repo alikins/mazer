@@ -162,12 +162,13 @@ def install(galaxy_context,
     # rm any temp files created when getting the content archive
     # TODO: use some sort of callback?
     fetcher.cleanup()
+    log.debug('just_installed_specs_and_results:\n%s', pprint.pformat(just_installed_spec_and_results))
 
     # We know the repo specs for the repos we asked to install, and the installation results,
     # so now use that info to find the just installed repos on disk and load them and return them.
     just_installed_repository_specs = [x[0] for x in just_installed_spec_and_results]
 
-    # log.debug('just_installed_repository_specs: %s', just_installed_repository_specs)
+    log.debug('just_installed_repository_specs:\n%s', pprint.pformat(just_installed_repository_specs))
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 

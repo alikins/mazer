@@ -381,6 +381,7 @@ def install_repository(galaxy_context,
                                                                       requirement_spec_to_install)
 
     log.debug('found_repository_spec: %s', found_repository_spec)
+    log.debug('found_repository_spec r: %r', found_repository_spec)
 
     repository_spec_to_install = found_repository_spec
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
