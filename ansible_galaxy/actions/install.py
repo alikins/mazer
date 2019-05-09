@@ -47,13 +47,13 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
 
 
 # pass a list of repository_spec objects
-def install_repositories_matching_repository_specs(galaxy_context,
-                                                   requirements_list,
-                                                   display_callback=None,
-                                                   # TODO: error handling callback ?
-                                                   ignore_errors=False,
-                                                   no_deps=False,
-                                                   force_overwrite=False):
+def install_requirements(galaxy_context,
+                         requirements_list,
+                         display_callback=None,
+                         # TODO: error handling callback ?
+                         ignore_errors=False,
+                         no_deps=False,
+                         force_overwrite=False):
     '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
     log.debug('requirements_list: %s', requirements_list)
@@ -154,20 +154,22 @@ def install_repository_specs_loop(galaxy_context,
     requirements_list = requirements
 
     log.debug('requirements_list: %s', requirements_list)
+
     for req in requirements_list:
         display_callback('Installing %s' % req.requirement_spec.label, level='info')
 
+    # Loop until there are no unresolved deps or we break
     while True:
         if not requirements_list:
             break
 
         just_installed_repositories = \
-            install_repositories_matching_repository_specs(galaxy_context,
-                                                           requirements_list,
-                                                           display_callback=display_callback,
-                                                           ignore_errors=ignore_errors,
-                                                           no_deps=no_deps,
-                                                           force_overwrite=force_overwrite)
+            install_requirements(galaxy_context,
+                                 requirements_list,
+                                 display_callback=display_callback,
+                                 ignore_errors=ignore_errors,
+                                 no_deps=no_deps,
+                                 force_overwrite=force_overwrite)
 
         # set the repository_specs to search for to whatever the install reported as being needed yet
         # requirements_list = new_requirements_list
