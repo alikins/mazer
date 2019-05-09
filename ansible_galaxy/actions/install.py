@@ -53,8 +53,6 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
 # pass a list of repository_spec objects
 def install_repositories_matching_repository_specs(galaxy_context,
                                                    requirements_list,
-                                                   editable=False,
-                                                   namespace_override=None,
                                                    display_callback=None,
                                                    # TODO: error handling callback ?
                                                    ignore_errors=False,
@@ -62,7 +60,6 @@ def install_repositories_matching_repository_specs(galaxy_context,
                                                    force_overwrite=False):
     '''Install a set of repositories specified by repository_specs if they are not already installed'''
 
-    # log.debug('editable: %s', editable)
     log.debug('requirements_list: %s', requirements_list)
 
     _verify_requirements_repository_spec_have_namespaces(requirements_list)
@@ -129,6 +126,10 @@ def install_repository_specs_loop(galaxy_context,
                                   force_overwrite=False):
 
     requirements_list = requirements_list or []
+def requirements_from_strings(repository_spec_strings,
+                              namespace_override=None,
+                              editable=False):
+    requirements_list = []
 
     for repository_spec_string in repository_spec_strings:
         fetch_method = \
@@ -150,9 +151,8 @@ def install_repository_specs_loop(galaxy_context,
             log.debug('repository_spec_string: %s', repository_spec_string)
 
             tmp_downloaded_path = download.fetch_url(repository_spec_string,
-                                                     # Note: ignore_certs is meant for galaxy server,
-                                                     # overloaded to apply for arbitrary http[s] downloads here
-                                                     validate_certs=not galaxy_context.server['ignore_certs'])
+                                                     # This is for random remote_urls, so always validate_certs
+                                                     validate_certs=True)
             spec_data = collection_artifact.load_data_from_collection_artifact(tmp_downloaded_path)
 
             # pretend like this is a local_file install now
@@ -185,6 +185,22 @@ def install_repository_specs_loop(galaxy_context,
 
         requirements_list.extend(collections_lock.dependencies)
 
+    return requirements_list
+
+
+# FIXME: probably pass the point where passing around all the data to methods makes sense
+#        so probably needs a stateful class here
+def install_repository_specs_loop(galaxy_context,
+                                  requirements,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
+
+    requirements_list = requirements
+
+
     log.debug('requirements_list: %s', requirements_list)
 
     while True:
@@ -204,8 +220,6 @@ def install_repository_specs_loop(galaxy_context,
         just_installed_repositories = \
             install_repositories_matching_repository_specs(galaxy_context,
                                                            requirements_list,
-                                                           editable=editable,
-                                                           namespace_override=namespace_override,
                                                            display_callback=display_callback,
                                                            ignore_errors=ignore_errors,
                                                            no_deps=no_deps,
@@ -365,10 +379,34 @@ def install_repository(galaxy_context,
     # TODO: check if already installed and move to approriate state
 
     log.debug('About to find() requested requirement_spec_to_install: %s', requirement_spec_to_install)
-
     display_callback('', level='info')
     display_callback('Installing spec: %s' % requirement_spec_to_install.label, level='info')
 
+    # potential_repository_spec is a repo spec for the install candidate we potentially found.
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+    
+    
+    log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
+
+    already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
+    already_installed = sorted(list(already_installed_iter))
+
+    log.debug('already_installed: %s', already_installed)
+
+    if already_installed:
+        for already_installed_repository in already_installed:
+            display_callback('%s is already installed at %s' % (already_installed_repository.repository_spec.label,
+                                                                already_installed_repository.path),
+                             level='warning')
+        log.debug('Stuff %s was already installed. In %s', requirement_spec_to_install, already_installed)
+
+        return None
+
+    # TODO: The already installed check above verifies that nothing that matches the requirement spec is installed,
+    #       but just because the name+version required wasn't installed, that doesn't mean that name at a different
+    #       version isn't installed.
+    #       To catch that, also need to check if the irdb by name to see if anything with that name is installed.
+    #
     # We dont have anything that matches the RequirementSpec installed
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
@@ -411,33 +449,6 @@ def install_repository(galaxy_context,
                                                                       requirement_spec_to_install)
 
     log.debug('found_repository_spec: %s', found_repository_spec)
-
-    display_callback('  Found: %s (for spec %s)' % (found_repository_spec, requirement_spec_to_install.label))
-
-    # See if the found collection spec is already installed and either warn or 'force_overwrite'
-    # to remove existing first.
-
-    # cheap 'update' is to consider anything already installed that matches the request repo_spec
-    # as 'installed' and let force override that.
-
-    # potential_repository_spec is a repo spec for the install candidate we potentially found.
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    # log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
-    log.debug('Checking to see if a collection named %s is already installed', found_repository_spec.label)
-
-    repository_spec_match_filter = matchers.MatchRepositorySpecNamespaceName([found_repository_spec])
-
-    # already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
-    already_installed_iter = irdb.select(repository_spec_match_filter=repository_spec_match_filter)
-    already_installed = sorted(list(already_installed_iter))
-
-    log.debug('already_installed: %s', already_installed)
-
-    # TODO: The already installed check above verifies that nothing that matches the requirement spec is installed,
-    #       but just because the name+version required wasn't installed, that doesn't mean that name at a different
-    #       version isn't installed.
-    #       To catch that, also need to check if the irdb by name to see if anything with that name is installed.
-    #
 
     repository_spec_to_install = found_repository_spec
     log.debug('About to download collection requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)

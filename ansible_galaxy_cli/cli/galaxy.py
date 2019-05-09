@@ -295,12 +295,15 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
         requested_spec_strings = self.args
 
+        requirements = \
+            install.requirements_from_strings(repository_spec_strings=requested_spec_strings,
+                                              editable=self.options.editable_install,
+                                              namespace_override=self.options.namespace)
+
         # TODO: build requirement_specs from requested_collection_specs strings
         rc = install.install_repository_specs_loop(galaxy_context,
-                                                   editable=self.options.editable_install,
-                                                   repository_spec_strings=requested_spec_strings,
                                                    collections_lockfile_path=self.options.collections_lockfile,
-                                                   namespace_override=self.options.namespace,
+                                                   requirements,
                                                    display_callback=self.display,
                                                    ignore_errors=self.options.ignore_errors,
                                                    no_deps=self.options.no_deps,
