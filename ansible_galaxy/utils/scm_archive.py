@@ -59,7 +59,8 @@ def scm_archive_content(src, name, scm='git', version='HEAD'):
             archive_cmd.extend(['-r', version])
         archive_cmd.append(temp_file.name)
     if scm == 'git':
-        archive_cmd = ['git', 'archive', '--prefix=%s/' % name, '--output=%s' % temp_file.name]
+        # archive_cmd = ['git', 'archive', '--prefix=%s/' % name, '--output=%s' % temp_file.name]
+        archive_cmd = ['git', 'archive', '--output=%s' % temp_file.name]
         if version:
             archive_cmd.append(version)
         else:
