@@ -141,62 +141,7 @@ def requirements_from_strings(repository_spec_strings,
     return requirements_list
 
 
-# FIXME: probably pass the point where passing around all the data to methods makes sense
-#        so probably needs a stateful class here
-def install_repository_specs_loop(galaxy_context,
-                                  requirements,
-                                  display_callback=None,
-                                  # TODO: error handling callback ?
-                                  ignore_errors=False,
-                                  no_deps=False,
-                                  force_overwrite=False):
-
-    requirements_list = requirements
-
-    log.debug('requirements_list: %s', requirements_list)
-
-    for req in requirements_list:
-        display_callback('Installing %s' % req.requirement_spec.label, level='info')
-
-    # Loop until there are no unresolved deps or we break
-    while True:
-        if not requirements_list:
-            break
-
-        display_callback('Installing:', level='info')
-
-        for req in requirements_list:
-            if req.repository_spec:
-                msg = '  %s (required by %s)' % (req.requirement_spec.label, req.repository_spec)
-            else:
-                msg = '  %s' % req.requirement_spec.label
-            display_callback(msg, level='info')
-
-        just_installed_repositories = \
-            install_requirements(galaxy_context,
-                                 requirements_list,
-                                 display_callback=display_callback,
-                                 ignore_errors=ignore_errors,
-                                 no_deps=no_deps,
-                                 force_overwrite=force_overwrite)
-
-        display_callback('Installed:', level='info')
-
-        for just_installed_repo in just_installed_repositories:
-            display_callback('  %s to %s' % (just_installed_repo.repository_spec,
-                                             just_installed_repo.path),
-                             level='info')
-
-        # set the repository_specs to search for to whatever the install reported as being needed yet
-        # requirements_list = new_requirements_list
-        requirements_list = find_new_deps_from_installed(galaxy_context,
-                                                         just_installed_repositories,
-                                                         no_deps=no_deps)
-
-    # FIXME: what results to return?
-    return 0
-
-
+# NOTE: this is equiv to add deps to a transaction
 def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False):
     if no_deps:
         return []
@@ -251,6 +196,53 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
     log.debug('Found additional requirements: %s', pprint.pformat(unsolved_deps_reqs))
 
     return unsolved_deps_reqs
+
+
+# FIXME: probably pass the point where passing around all the data to methods makes sense
+#        so probably needs a stateful class here
+def install_repository_specs_loop(galaxy_context,
+                                  requirements,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
+
+    requirements_list = requirements
+
+    log.debug('requirements_list: %s', requirements_list)
+
+    for req in requirements_list:
+        display_callback('Installing %s' % req.requirement_spec.label, level='info')
+
+    # Loop until there are no unresolved deps or we break
+    while True:
+        if not requirements_list:
+            break
+
+        just_installed_repositories = \
+            install_requirements(galaxy_context,
+                                 requirements_list,
+                                 display_callback=display_callback,
+                                 ignore_errors=ignore_errors,
+                                 no_deps=no_deps,
+                                 force_overwrite=force_overwrite)
+
+        # set the repository_specs to search for to whatever the install reported as being needed yet
+        # requirements_list = new_requirements_list
+        requirements_list = find_new_deps_from_installed(galaxy_context,
+                                                         just_installed_repositories,
+                                                         no_deps=no_deps)
+
+        for req in requirements_list:
+            if req.repository_spec:
+                msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
+            else:
+                msg = 'Installing requirement %s' % req.requirement_spec.label
+            display_callback(msg, level='info')
+
+    # FIXME: what results to return?
+    return 0
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
