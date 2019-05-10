@@ -17,6 +17,55 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
+def test_requirements_from_strings():
+    res = install.requirements_from_strings(['alikins.some_collection',
+                                             'testuser.another'])
+
+    log.debug('res: %s', res)
+
+    assert isinstance(res, list)
+    reqs = [req for req in res]
+    for req in reqs:
+        assert isinstance(req, Requirement)
+
+    namespaces = [x.requirement_spec.namespace for x in res]
+    assert 'alikins' in namespaces
+    assert 'testuser' in namespaces
+
+
+def test_install_requirements(galaxy_context, mocker):
+    mock_irdb = mocker.patch('ansible_galaxy.actions.install.installed_repository_db.InstalledRepositoryDatabase',
+                             name='the_mock_irdb')
+    mock_irdb2 = mocker.patch('ansible_galaxy.installed_repository_db.InstalledRepositoryDatabase',
+                              name='the_mock_irdb2')
+
+    repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
+                               version='4.2.1')
+    repo = Repository(repository_spec=repo_spec, installed=True)
+
+    mock_irdb.select.return_value = [repo]
+    mock_irdb.by_requirement_spec.return_value = [repo]
+    mock_irdb2.select.return_value = [repo]
+    mock_irdb2.by_requirement_spec.return_value = [repo]
+
+    log.debug('mock_irdb %s', mock_irdb)
+    #              return_value=iter(['bar', 'baz']))
+
+    requirements = install.requirements_from_strings(['alikins.some_collection',
+                                                      'testuser.another'])
+
+    log.debug('requirements: %s', requirements)
+
+    res = install.install_requirements(galaxy_context,
+                                       requirements,
+                                       display_callback=None,
+                                       ignore_errors=False,
+                                       no_deps=False,
+                                       force_overwrite=True)
+
+    log.debug('res: %s', res)
+
+
 def test_install_repos_empty_requirements(galaxy_context):
     requirements_to_install = []
 
