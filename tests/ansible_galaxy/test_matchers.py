@@ -4,8 +4,16 @@ import pytest
 from ansible_galaxy import matchers
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.requirement_spec import RequirementSpec
 
 log = logging.getLogger(__name__)
+
+
+def RS(namespace=None, name=None, version_spec=None):
+    rs = RequirementSpec(namespace=namespace,
+                         name=name,
+                         version_spec=version_spec)
+    return rs
 
 
 def CR(namespace=None, name=None):
@@ -58,8 +66,15 @@ def CR(namespace=None, name=None):
     (matchers.MatchNamespacesOrLabels,
      (['ns2.name2'],),
      [CR(namespace='ns1', name='name1')],
-     False)
-
+     False),
+    (matchers.MatchRepositoryToRequirementSpec,
+     ([RS()],),
+     [CR(namespace='ns1', name='name1')],
+     False),
+    (matchers.MatchRepositoryToRequirementSpec,
+     ([RS(namespace='ns1', name='name1', version_spec='*')], ),
+     [CR(namespace='ns1', name='name1')],
+     True)
 ])
 def test_match_all(matcher_class, matcher_args, candidates, expected):
     log.debug('matcher_class=%s matcher_args=%s candidate=%s, expected=%s', matcher_class, matcher_args, candidates, expected)

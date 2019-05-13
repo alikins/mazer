@@ -144,6 +144,7 @@ def load_from_dir(content_dir, namespace_path, namespace, name, installed=True):
     # TODO: make existence of a galaxy.yml and a MANIFEST.json mutual exclude and raise an exception for that case
 
     col_info = None
+
     # MANIFEST.json is higher prec than galaxy.yml
     if galaxy_yml_data:
         col_info = galaxy_yml_data
