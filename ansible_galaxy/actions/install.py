@@ -52,6 +52,7 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
 
 # pass a list of repository_spec objects
 def install_requirements(galaxy_context,
+                         irdb,
                          requirements_list,
                          display_callback=None,
                          # TODO: error handling callback ?
@@ -66,11 +67,11 @@ def install_requirements(galaxy_context,
 
     # FIXME: mv mv this filtering to it's own method
     # match any of the content specs for stuff we want to install
+    # TODO: this is part of building the install transaction
     # ie, see if it is already installed
     requested_repository_specs = [x.requirement_spec for x in requirements_list]
     repository_spec_match_filter = matchers.MatchRepositorySpecNamespaceName(requested_repository_specs)
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
     already_installed_generator = irdb.select(repository_spec_match_filter=repository_spec_match_filter)
 
     # FIXME: if/when GalaxyContent and InstalledGalaxyContent are attr.ib based and frozen and hashable
@@ -87,9 +88,11 @@ def install_requirements(galaxy_context,
     else:
         requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set]
 
-    log.debug('repository_specs_to_install: %s', pprint.pformat(requirements_to_install))
+    log.debug('requirements_to_install: %s', pprint.pformat(requirements_to_install))
 
-    return install_repositories(galaxy_context, requirements_to_install,
+    return install_repositories(galaxy_context,
+                                irdb,
+                                requirements_to_install,
                                 display_callback=display_callback,
                                 ignore_errors=ignore_errors,
                                 no_deps=no_deps,
@@ -301,8 +304,60 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
     return unsolved_deps_reqs
 
 
+# FIXME: probably pass the point where passing around all the data to methods makes sense
+#        so probably needs a stateful class here
+def install_repository_specs_loop(galaxy_context,
+                                  requirements,
+                                  display_callback=None,
+                                  # TODO: error handling callback ?
+                                  ignore_errors=False,
+                                  no_deps=False,
+                                  force_overwrite=False):
+
+    requirements_list = requirements
+
+    log.debug('requirements_list: %s', requirements_list)
+
+    for req in requirements_list:
+        display_callback('Installing %s' % req.requirement_spec.label, level='info')
+
+    # TODO: rename installed_db? installed_collections_db? icdb?
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    # Loop until there are no unresolved deps or we break
+    while True:
+        if not requirements_list:
+            break
+
+        just_installed_repositories = \
+            install_requirements(galaxy_context,
+                                 irdb,
+                                 requirements_list,
+                                 display_callback=display_callback,
+                                 ignore_errors=ignore_errors,
+                                 no_deps=no_deps,
+                                 force_overwrite=force_overwrite)
+
+        # set the repository_specs to search for to whatever the install reported as being needed yet
+        # requirements_list = new_requirements_list
+        requirements_list = find_new_deps_from_installed(galaxy_context,
+                                                         just_installed_repositories,
+                                                         no_deps=no_deps)
+
+        for req in requirements_list:
+            if req.repository_spec:
+                msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
+            else:
+                msg = 'Installing requirement %s' % req.requirement_spec.label
+            display_callback(msg, level='info')
+
+    # FIXME: what results to return?
+    return 0
+
+
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def install_repositories(galaxy_context,
+                         irdb,
                          requirements_to_install,
                          display_callback=None,
                          # TODO: error handling callback ?
@@ -327,7 +382,9 @@ def install_repositories(galaxy_context,
     # TODO: if the default ordering of repository_specs isnt useful, may need to tweak it
     for requirement_to_install in sorted(requirements_to_install_uniq):
         log.debug('requirement_to_install: %s', requirement_to_install)
+
         installed_repositories = install_repository(galaxy_context,
+                                                    irdb,
                                                     requirement_to_install,
                                                     display_callback=display_callback,
                                                     ignore_errors=ignore_errors,
@@ -358,6 +415,7 @@ def install_repositories(galaxy_context,
 
 
 def install_repository(galaxy_context,
+                       irdb,
                        requirement_to_install,
                        display_callback=None,
                        # TODO: error handling callback ?
@@ -387,15 +445,12 @@ def install_repository(galaxy_context,
     display_callback('Installing spec: %s' % requirement_spec_to_install.label, level='info')
 
     # potential_repository_spec is a repo spec for the install candidate we potentially found.
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-    
-    
     log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
 
     already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
     already_installed = sorted(list(already_installed_iter))
 
-    log.debug('already_installed: %s', already_installed)
+    log.debug('req_spec: %s already_installed: %s', requirement_spec_to_install, already_installed)
 
     if already_installed:
         for already_installed_repository in already_installed:
@@ -431,6 +486,7 @@ def install_repository(galaxy_context,
         log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
         # FIXME: raise dep error exception?
         raise_without_ignore(ignore_errors, e)
+
         # continue
         return None
 

@@ -4,6 +4,7 @@ import mock
 import pytest
 
 from ansible_galaxy.actions import install
+from ansible_galaxy import installed_repository_db
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
@@ -20,8 +21,10 @@ def display_callback(msg, **kwargs):
 
 
 def test_requirements_from_strings():
+    # TODO: tests for local file, remote url, etc
     res = install.requirements_from_strings(['alikins.some_collection',
-                                             'testuser.another'])
+                                             'testuser.another',
+                                             ])
 
     log.debug('res: %s', res)
 
@@ -36,42 +39,59 @@ def test_requirements_from_strings():
 
 
 def test_install_requirements(galaxy_context, mocker):
-    mock_irdb = mocker.patch('ansible_galaxy.actions.install.installed_repository_db.InstalledRepositoryDatabase',
-                             name='the_mock_irdb')
-    mock_irdb2 = mocker.patch('ansible_galaxy.installed_repository_db.InstalledRepositoryDatabase',
-                              name='the_mock_irdb2')
-
     repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
                                version='4.2.1')
     repo = Repository(repository_spec=repo_spec, installed=True)
 
-    mock_irdb.select.return_value = [repo]
-    mock_irdb.by_requirement_spec.return_value = [repo]
-    mock_irdb2.select.return_value = [repo]
-    mock_irdb2.by_requirement_spec.return_value = [repo]
-
-    log.debug('mock_irdb %s', mock_irdb)
-    #              return_value=iter(['bar', 'baz']))
+    other_repo = Repository(repository_spec=RepositorySpec(namespace='xxxxxxxxxx',
+                                                           name='mmmmmmm',
+                                                           version='11.12.99'),
+                            installed=True)
 
     requirements = install.requirements_from_strings(['alikins.some_collection',
                                                       'testuser.another'])
 
     log.debug('requirements: %s', requirements)
 
+    mock_irdb2 = mocker.MagicMock(name='the_mock_irdb2')
+    mock_irdb2.select.return_value = [repo, other_repo]
+    # mock_irdb2.by_requirement_spec.return_value = [repo]
+    # irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    another_repo_spec = RepositorySpec(namespace='testuser', name='another',
+                                       version='11.12.99')
+    expected_installs = [Repository(repository_spec=another_repo_spec)]
+
+    mocker.patch('ansible_galaxy.actions.install.install_repositories',
+                 return_value=expected_installs)
+
     res = install.install_requirements(galaxy_context,
+                                       mock_irdb2,
                                        requirements,
                                        display_callback=None,
                                        ignore_errors=False,
                                        no_deps=False,
-                                       force_overwrite=True)
+                                       force_overwrite=False)
 
     log.debug('res: %s', res)
+    log.debug('mock_irdb2: %s', mock_irdb2)
+    log.debug('mock_irdb2.call_args_list: %s', mock_irdb2.call_args_list)
+
+    assert isinstance(res, list)
+    res_repo = res[0]
+    assert isinstance(res_repo, Repository)
+    assert isinstance(res_repo.repository_spec, RepositorySpec)
+    assert res_repo.repository_spec.namespace == 'testuser'
+    assert res_repo.repository_spec.name == 'another'
 
 
 def test_install_repos_empty_requirements(galaxy_context):
     requirements_to_install = []
 
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
     ret = install.install_repositories(galaxy_context,
+                                       irdb,
                                        requirements_to_install=requirements_to_install,
                                        display_callback=display_callback)
 
@@ -92,7 +112,10 @@ def test_install_repositories(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=expected_repos)
 
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
     ret = install.install_repositories(galaxy_context,
+                                       irdb,
                                        requirements_to_install=requirements_to_install,
                                        display_callback=display_callback)
 
@@ -172,7 +195,11 @@ def test_install_repositories_no_deps_required(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=[])
 
+    # ? Mock this instead? maybe a fixture?
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
     ret = install.install_repositories(galaxy_context,
+                                       irdb,
                                        requirements_to_install=repository_specs_to_install,
                                        display_callback=display_callback)
 
