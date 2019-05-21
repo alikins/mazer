@@ -12,22 +12,18 @@ def display_callback(msg, **kwargs):
 
 
 def test_publish(galaxy_context, mocker):
-    publish_api_key = "doesnt_matter_not_used"
-
     mocker.patch('ansible_galaxy.actions.publish.GalaxyAPI.publish_file',
                  return_value={"task": "/api/v2/collection-imports/123456789"})
-    res = publish.publish(galaxy_context, "/dev/null", publish_api_key, display_callback)
+    res = publish.publish(galaxy_context, "/dev/null", display_callback)
 
     log.debug('res: %s', res)
     assert res == 0
 
 
 def test__publish(galaxy_context, mocker):
-    publish_api_key = "doesnt_matter_not_used"
-
     mocker.patch('ansible_galaxy.actions.publish.GalaxyAPI.publish_file',
                  return_value={"task": "/api/v2/collection-imports/8675309"})
-    res = publish._publish(galaxy_context, "/dev/null", publish_api_key, display_callback)
+    res = publish._publish(galaxy_context, "/dev/null", display_callback)
 
     log.debug('res: %s', res)
     assert res['errors'] == []
@@ -36,8 +32,6 @@ def test__publish(galaxy_context, mocker):
 
 
 def test__publish_api_error(galaxy_context, mocker, requests_mock):
-    publish_api_key = "doesnt_matter_not_used"
-
     context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': 'http://notreal.invalid:8000',
                                     'ignore_certs': False})
@@ -53,7 +47,7 @@ def test__publish_api_error(galaxy_context, mocker, requests_mock):
                        reason='Conflict',
                        json=err_409_conflict_json)
 
-    res = publish._publish(context, "/dev/null", publish_api_key, display_callback)
+    res = publish._publish(context, "/dev/null", display_callback)
 
     log.debug('res: %s', res)
     assert res['errors'] == ['Error publishing null to http://notreal.invalid:8000/api/v2/collections/ '
@@ -70,8 +64,7 @@ def test_publish_api_errors(mocker):
     mock_display_callback = mocker.Mock()
 
     context = None
-    publish_api_key = None
-    res = publish.publish(context, "/dev/null", publish_api_key, mock_display_callback)
+    res = publish.publish(context, "/dev/null", mock_display_callback)
 
     log.debug('res: %s', res)
 
