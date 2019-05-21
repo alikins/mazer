@@ -186,8 +186,8 @@ class GalaxyCLI(cli.CLI):
             # use ignore certs from options if available, but fallback to configured ignore_certs
             server['ignore_certs'] = options.ignore_certs
 
-        if getattr(options, 'api_key', None):
-            server['api_key'] = options.api_key
+        if getattr(options, 'publish_api_key', None):
+            server['api_key'] = options.publish_api_key
 
         log.debug('server[api_key]: %s', server.get('api_key'))
         galaxy_context = GalaxyContext(server=server, collections_path=collections_path)
@@ -302,7 +302,6 @@ class GalaxyCLI(cli.CLI):
 
         return publish.publish(galaxy_context,
                                self.args[0],
-                               self.options.publish_api_key,
                                display_callback=self.display)
 
     def execute_remove(self):
