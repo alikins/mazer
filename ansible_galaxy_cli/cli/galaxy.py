@@ -177,7 +177,6 @@ class GalaxyCLI(cli.CLI):
         collections_path = os.path.abspath(os.path.expanduser(raw_collections_path))
 
         server = config.server.copy()
-        log.debug('server1: %s', server)
 
         if getattr(options, 'server_url', None):
             server['url'] = options.server_url
@@ -189,7 +188,6 @@ class GalaxyCLI(cli.CLI):
         if getattr(options, 'publish_api_key', None):
             server['api_key'] = options.publish_api_key
 
-        log.debug('server[api_key]: %s', server.get('api_key'))
         galaxy_context = GalaxyContext(server=server, collections_path=collections_path)
 
         return galaxy_context
@@ -202,7 +200,6 @@ class GalaxyCLI(cli.CLI):
 
         super(GalaxyCLI, self).run()
 
-        log.debug('config file: %s', self.config_file_path)
         self.config = config.load(self.config_file_path)
 
         log.debug('configuration: %s', json.dumps(self.config.as_dict(), indent=None))
