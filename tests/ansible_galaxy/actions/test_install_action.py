@@ -79,9 +79,9 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
     mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
                            side_effect=stub_install_repository)
 
-    res = install.install_repository_specs_loop(galaxy_context,
-                                                requirements_list,
-                                                display_callback=display_callback)
+    res = install.install_requirements_loop(galaxy_context,
+                                            requirements_list,
+                                            display_callback=display_callback)
 
     log.debug('res: %s', res)
     log.debug('mock_ir.call_args_list: %s', pprint.pformat(mock_ir.call_args_list))
