@@ -174,7 +174,10 @@ def test_install_repository_deprecated(galaxy_context, mocker):
 
     mock_display_callback = mocker.MagicMock(name='mock_display_callback')
 
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
     ret = install.install_repository(galaxy_context,
+                                     irdb,
                                      requirement_to_install=requirements_to_install[0],
                                      display_callback=mock_display_callback)
 
