@@ -284,12 +284,12 @@ def test_verify_repository_specs_have_namespace(galaxy_context):
 
 
 def test_find_new_deps_from_installed_no_deps(galaxy_context):
-    res = install.find_new_deps_from_installed(galaxy_context, [], no_deps=True)
+    res = install.find_new_requirements_from_installed(galaxy_context, [], no_deps=True)
     assert res == []
 
 
 def test_find_new_deps_from_installed_nothing_installed(galaxy_context):
-    res = install.find_new_deps_from_installed(galaxy_context, [])
+    res = install.find_new_requirements_from_installed(galaxy_context, [])
     assert res == []
 
 
@@ -307,7 +307,7 @@ def test_find_new_deps_from_installed(galaxy_context):
                                    requirement_spec=req_spec)
 
     installed_repo = Repository(repo_spec, requirements=[some_requirement, some_requirement])
-    res = install.find_new_deps_from_installed(galaxy_context, [installed_repo])
+    res = install.find_new_requirements_from_installed(galaxy_context, [installed_repo])
 
     log.debug('res: %s', res)
     assert isinstance(res, list)

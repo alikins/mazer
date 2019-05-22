@@ -458,8 +458,7 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
     if no_deps:
         return []
 
-    # FIXME: Just return the single item list installed_repositories here
-    deps_and_reqs_set = set()
+    total_reqs_set = set()
 
     log.debug('finding new deps for installed repos: %s',
               [str(x) for x in installed_repos])
@@ -471,43 +470,43 @@ def find_new_deps_from_installed(galaxy_context, installed_repos, no_deps=False)
     for installed_repository in installed_repos:
         # log.debug('just_installed_repository: %s', installed_repository)
 
-        # convert deps/reqs to sets. Losing any ordering, but avoids dupes
+        # convert reqs to sets. Losing any ordering, but avoids dupes
         reqs_set = set(installed_repository.requirements)
 
-        deps_and_reqs_set.update(reqs_set)
+        total_reqs_set.update(reqs_set)
 
-        # for dep_req in sorted(deps_and_reqs_set):
-        #    log.debug('deps_and_reqs_set_item: %s', dep_req)
+    # TODO: This does not grow nicely as the size
+    #       of the list of requirements of everything installed grows
+    all_requirements = sorted(list(total_reqs_set))
 
-    deps_and_reqs_list = sorted(list(deps_and_reqs_set))
+    # log.debug('reqs_list: %s', pf(reqs_list))
 
-    # log.debug('deps_and_reqs_list: %s', pf(deps_and_reqs_list))
+    unsolved_requirements = []
 
-    unsolved_deps_reqs = []
-    for dep_req in deps_and_reqs_list:
-        log.debug('Checking if %s is provided by something installed', str(dep_req))
+    for requirement in all_requirements:
+        log.debug('Checking if %s is provided by something installed', str(requirement))
 
         # Search for an exact ns_n_v match
         irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-        already_installed_iter = irdb.by_requirement(dep_req)
+        already_installed_iter = irdb.by_requirement(requirement)
         already_installed = list(already_installed_iter)
 
         log.debug('already_installed: %s', already_installed)
 
         solved = False
         for provider in already_installed:
-            log.debug('The dep_req %s is already provided by %s', dep_req, provider)
+            log.debug('The requirement %s is already provided by %s', requirement, provider)
             solved = solved or True
 
         if solved:
-            log.debug('skipping dep_req %s', dep_req)
+            log.debug('skipping requirement %s', requirement)
             continue
 
-        unsolved_deps_reqs.append(dep_req)
+        unsolved_requirements.append(requirement)
 
-    log.debug('Found additional requirements: %s', pprint.pformat(unsolved_deps_reqs))
+    log.debug('Found additional requirements: %s', pprint.pformat(unsolved_requirements))
 
-    return unsolved_deps_reqs
+    return unsolved_requirements
 
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
@@ -546,9 +545,9 @@ def install_repository_specs_loop(galaxy_context,
 
         # set the repository_specs to search for to whatever the install reported as being needed yet
         # requirements_list = new_requirements_list
-        requirements_list = find_new_deps_from_installed(galaxy_context,
-                                                         just_installed_repositories,
-                                                         no_deps=no_deps)
+        requirements_list = find_new_requirements_from_installed(galaxy_context,
+                                                                 just_installed_repositories,
+                                                                 no_deps=no_deps)
 
         for req in requirements_list:
             if req.repository_spec:
