@@ -83,6 +83,12 @@ class GalaxyCLI(cli.CLI):
                                    help='The path in which the collection is located. The default is the current working directory.')
             self.parser.add_option('--output-path', dest='output_path', default=None,
                                    help='The path in which the collection artifact will be created. The default is ./releases/.')
+        elif self.action == "download":
+            self.parser.set_usage("usage: %prog download [options] [collection_name(s)[,version]]")
+            self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False,
+                                   help='Don\'t download collections listed as dependencies')
+            self.parser.add_option('--dest-path', dest='dest_path', default=None,
+                                   help='The path in which the collection artifact will be download. The default is the current directory.')
         if self.action == "publish":
             self.parser.set_usage("usage: %prog publish [options] archive_path")
             # TODO: Instead of hardcode galaxy.ansible.com, show url for configured server url
@@ -262,6 +268,28 @@ class GalaxyCLI(cli.CLI):
         return build.build(galaxy_context,
                            build_context,
                            display_callback=self.display)
+
+    def execute_download(self):
+        """
+        Download a collection artifact.
+        """
+
+        self.log.debug('self.options: %s', self.options)
+
+        galaxy_context = self._get_galaxy_context(self.options, self.config)
+        requested_spec_strings = self.args
+
+        # TODO: build requirement_specs from requested_collection_specs strings
+        rc = install.install_repository_specs_loop(galaxy_context,
+                                                   editable=self.options.editable_install,
+                                                   repository_spec_strings=requested_spec_strings,
+                                                   namespace_override=self.options.namespace,
+                                                   display_callback=self.display,
+                                                   ignore_errors=self.options.ignore_errors,
+                                                   no_deps=self.options.no_deps,
+                                                   force_overwrite=self.options.force)
+
+        return rc
 
     def execute_info(self):
         """
