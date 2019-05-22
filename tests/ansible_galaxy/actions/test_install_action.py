@@ -20,24 +20,6 @@ def display_callback(msg, **kwargs):
     log.debug(msg)
 
 
-def test_requirements_from_strings():
-    # TODO: tests for local file, remote url, etc
-    res = install.requirements_from_strings(['alikins.some_collection',
-                                             'testuser.another',
-                                             ])
-
-    log.debug('res: %s', res)
-
-    assert isinstance(res, list)
-    reqs = [req for req in res]
-    for req in reqs:
-        assert isinstance(req, Requirement)
-
-    namespaces = [x.requirement_spec.namespace for x in res]
-    assert 'alikins' in namespaces
-    assert 'testuser' in namespaces
-
-
 def test_install_repository_specs_loop(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
                                version='4.2.1')
@@ -71,18 +53,14 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
                              requirements=[],
                              )
 
-    requested_spec_strings = install.requirements_from_strings(['alikins.some_collection',
+    requirements_list = requirements.requirements_from_strings(['alikins.some_collection',
                                                                 'testuser.another'])
 
-    log.debug('req_spec_strings: %s', requested_spec_strings)
-    requirements_list = requested_spec_strings
-    #     install.requirements_from_strings(repository_spec_strings=requested_spec_strings,
-    #                                       editable=False,
-    #                                       namespace_override=None)
+    log.debug('requirements_list: %s', requirements_list)
 
     import pprint
 
-    def mock_install_repository(*args, **kwargs):
+    def stub_install_repository(*args, **kwargs):
         log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
         req = args[2]
 
@@ -94,10 +72,12 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
         repos = {'some_collection': [repo],
                  'another': [other_repo],
                  'some_required_name': [needed_repo]}
+
         return repos[req.requirement_spec.name]
 
+    # mock out the install_repository to avoid the network requests, etc
     mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
-                           side_effect=mock_install_repository)
+                           side_effect=stub_install_repository)
 
     res = install.install_repository_specs_loop(galaxy_context,
                                                 requirements_list,
@@ -122,10 +102,10 @@ def test_install_requirements(galaxy_context, mocker):
                                                            version='11.12.99'),
                             installed=True)
 
-    requirements = install.requirements_from_strings(['alikins.some_collection',
-                                                      'testuser.another'])
+    requirements_list = requirements.requirements_from_strings(['alikins.some_collection',
+                                                                'testuser.another'])
 
-    log.debug('requirements: %s', requirements)
+    log.debug('requirements_list: %s', requirements_list)
 
     mock_irdb2 = mocker.MagicMock(name='the_mock_irdb2')
     mock_irdb2.select.return_value = [repo, other_repo]
@@ -141,7 +121,7 @@ def test_install_requirements(galaxy_context, mocker):
 
     res = install.install_requirements(galaxy_context,
                                        mock_irdb2,
-                                       requirements,
+                                       requirements_list,
                                        display_callback=None,
                                        ignore_errors=False,
                                        no_deps=False,

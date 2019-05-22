@@ -39,6 +39,7 @@ from ansible_galaxy.config import defaults
 from ansible_galaxy.config import config
 
 from ansible_galaxy import matchers
+from ansible_galaxy import requirements
 from ansible_galaxy import rest_api
 from ansible_galaxy import mazer_version
 
@@ -295,15 +296,15 @@ class GalaxyCLI(cli.CLI):
         galaxy_context = self._get_galaxy_context(self.options, self.config)
         requested_spec_strings = self.args
 
-        requirements = \
-            install.requirements_from_strings(repository_spec_strings=requested_spec_strings,
-                                              editable=self.options.editable_install,
-                                              namespace_override=self.options.namespace)
+        requirements_list = \
+            requirements.requirements_from_strings(repository_spec_strings=requested_spec_strings,
+                                                   editable=self.options.editable_install,
+                                                   namespace_override=self.options.namespace)
 
         # TODO: build requirement_specs from requested_collection_specs strings
         rc = install.install_repository_specs_loop(galaxy_context,
                                                    collections_lockfile_path=self.options.collections_lockfile,
-                                                   requirements,
+                                                   requirements_list,
                                                    display_callback=self.display,
                                                    ignore_errors=self.options.ignore_errors,
                                                    no_deps=self.options.no_deps,
