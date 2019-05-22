@@ -282,12 +282,12 @@ class GalaxyCLI(cli.CLI):
                                                    namespace_override=self.options.namespace)
 
         # TODO: build requirement_specs from requested_collection_specs strings
-        rc = install.install_repository_specs_loop(galaxy_context,
-                                                   requirements_list,
-                                                   display_callback=self.display,
-                                                   ignore_errors=self.options.ignore_errors,
-                                                   no_deps=self.options.no_deps,
-                                                   force_overwrite=self.options.force)
+        rc = install.install_requirements_loop(galaxy_context,
+                                               requirements_list,
+                                               display_callback=self.display,
+                                               ignore_errors=self.options.ignore_errors,
+                                               no_deps=self.options.no_deps,
+                                               force_overwrite=self.options.force)
 
         return rc
 

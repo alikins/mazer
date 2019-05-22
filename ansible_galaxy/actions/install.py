@@ -347,13 +347,13 @@ def find_new_requirements_from_installed(galaxy_context, installed_repos, no_dep
 
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
-def install_repository_specs_loop(galaxy_context,
-                                  requirements,
-                                  display_callback=None,
-                                  # TODO: error handling callback ?
-                                  ignore_errors=False,
-                                  no_deps=False,
-                                  force_overwrite=False):
+def install_requirements_loop(galaxy_context,
+                              requirements,
+                              display_callback=None,
+                              # TODO: error handling callback ?
+                              ignore_errors=False,
+                              no_deps=False,
+                              force_overwrite=False):
 
     requirements_list = requirements
 
