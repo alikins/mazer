@@ -252,7 +252,7 @@ def install_requirements(galaxy_context,
                          ignore_errors=False,
                          no_deps=False,
                          force_overwrite=False):
-    '''Install a set of repositories specified by requirements_list if they are not already installed
+    '''Install a set of Collections specified by requirements_list if they are not already installed
 
     requirements_list is a list of Requirement() instances.
     '''
@@ -261,8 +261,6 @@ def install_requirements(galaxy_context,
 
     _verify_requirements_repository_spec_have_namespaces(requirements_list)
 
-    # FIXME: mv mv this filtering to it's own method
-    # match any of the content specs for stuff we want to install
     # TODO: this is part of building the install transaction
     # ie, see if it is already installed
     requested_repository_specs = [x.requirement_spec for x in requirements_list]
@@ -274,12 +272,14 @@ def install_requirements(galaxy_context,
     #        we can simplify this filter with set ops
 
     already_installed_repository_spec_set = set([installed.repository_spec for installed in already_installed_generator])
+
     log.debug('already_installed_repository_spec_set: %s', already_installed_repository_spec_set)
 
-    log.debug('force_overwrite: %s', force_overwrite)
-    # This filters out already installed repositories unless --force. Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
+    # This filters out already installed repositories unless --force.
+    # Aside from the warning, 'mazer install alikins.something_installed_already' is ok.
     if force_overwrite:
         log.debug('--force/force_overwrite=True, so [re]installing everything in %s', requirements_list)
+
         requirements_to_install = requirements_list
     else:
         requirements_to_install = [y for y in requirements_list if y.requirement_spec not in already_installed_repository_spec_set]
@@ -305,14 +305,10 @@ def find_new_requirements_from_installed(galaxy_context, installed_repos, no_dep
     log.debug('finding new deps for installed repos: %s',
               [str(x) for x in installed_repos])
 
-    # Remove dupes. Note, can/will change ordering.
-    # installed_repos = list(set(installed_repos))
-
-    # install requirements ("dependcies" in collection info), if we want them
+    # install requirements ("dependencies" in collection info), if we want them
     for installed_repository in installed_repos:
-        # log.debug('just_installed_repository: %s', installed_repository)
 
-        # convert reqs to sets. Losing any ordering, but avoids dupes
+        # convert reqs list to sets, Losing any ordering, but avoids dupes of requirements
         reqs_set = set(installed_repository.requirements)
 
         total_reqs_set.update(reqs_set)
@@ -320,8 +316,6 @@ def find_new_requirements_from_installed(galaxy_context, installed_repos, no_dep
     # TODO: This does not grow nicely as the size
     #       of the list of requirements of everything installed grows
     all_requirements = sorted(list(total_reqs_set))
-
-    # log.debug('reqs_list: %s', pf(reqs_list))
 
     unsolved_requirements = []
 
