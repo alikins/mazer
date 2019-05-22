@@ -36,6 +36,80 @@ def test_requirements_from_strings():
     assert 'testuser' in namespaces
 
 
+def test_install_repository_specs_loop(galaxy_context, mocker):
+    repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
+                               version='4.2.1')
+    repo = Repository(repository_spec=repo_spec, installed=True)
+
+    # needy_repo_spec = RepositorySpec(namespace='needy',
+    #                                  name='allie',
+    #                                  version='9.1.1'),
+
+    other_repo_spec = RepositorySpec(namespace='testuser',
+                                     name='another',
+                                     version='11.12.99')
+
+    needy_req_spec = RequirementSpec(namespace='some_required_namespace',
+                                     name='some_required_name',
+                                     version_spec='==1.0.0')
+
+    needy_requirement = Requirement(repository_spec=other_repo_spec,
+                                    op=RequirementOps.EQ,
+                                    requirement_spec=needy_req_spec)
+
+    other_repo = Repository(repository_spec=other_repo_spec,
+                            requirements=[needy_requirement],
+                            installed=True)
+
+    needed_repo_spec = RepositorySpec(namespace='some_required_namespace',
+                                      name='some_required_name',
+                                      version='1.0.0')
+
+    needed_repo = Repository(repository_spec=needed_repo_spec,
+                             requirements=[],
+                             )
+
+    requested_spec_strings = install.requirements_from_strings(['alikins.some_collection',
+                                                                'testuser.another'])
+
+    log.debug('req_spec_strings: %s', requested_spec_strings)
+    requirements_list = requested_spec_strings
+    #     install.requirements_from_strings(repository_spec_strings=requested_spec_strings,
+    #                                       editable=False,
+    #                                       namespace_override=None)
+
+    import pprint
+
+    def mock_install_repository(*args, **kwargs):
+        log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
+        req = args[2]
+
+        log.debug('install_repo req: %s', req)
+        log.debug('install_repo reqlabel: %s', req.requirement_spec.label)
+
+        # TODO: fix .label / add .label equilv sans version
+
+        repos = {'some_collection': [repo],
+                 'another': [other_repo],
+                 'some_required_name': [needed_repo]}
+        return repos[req.requirement_spec.name]
+
+    mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+                           side_effect=mock_install_repository)
+
+    res = install.install_repository_specs_loop(galaxy_context,
+                                                requirements_list,
+                                                display_callback=display_callback)
+
+    log.debug('res: %s', res)
+    log.debug('mock_ir.call_args_list: %s', pprint.pformat(mock_ir.call_args_list))
+
+    for call in mock_ir.call_args_list:
+        log.debug('call: %s', pprint.pformat(list(call)))
+
+    assert res == 0  # duh, it's hardcoded
+
+
 def test_install_requirements(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
                                version='4.2.1')
