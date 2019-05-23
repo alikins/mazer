@@ -72,4 +72,3 @@ def test_requirements_from_strings():
     assert res[2].requirement_spec.namespace == 'alikins'
     assert res[2].requirement_spec.name == 'picky'
     assert res[2].requirement_spec.version_spec == Spec('==3.4.5')
-
