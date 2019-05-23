@@ -92,7 +92,9 @@ def install_repository(galaxy_context,
     # TODO: revisit, issue with calling display from here is it doesn't know if it was
     #       is being called because of a dep or not
     display_callback('Preparing to install %s' % requirement_spec_to_install.label, level='info')
-    # We dont have anything that matches the RequirementSpec installed
+
+    # We dont have anything that matches the RequirementSpec installed, so setup
+    # fetcher to try to find and get something.
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
 
