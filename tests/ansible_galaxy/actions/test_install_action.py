@@ -158,7 +158,9 @@ def test_install_requirements(galaxy_context, mocker):
                                        version='11.12.99')
     expected_installs = [Repository(repository_spec=another_repo_spec)]
 
-    mocker.patch('ansible_galaxy.actions.install.install_repositories',
+    # mocker.patch('ansible_galaxy.actions.install.install_repositories',
+    #              return_value=expected_installs)
+    mocker.patch('ansible_galaxy.actions.install.install_repository',
                  return_value=expected_installs)
 
     res = install.install_requirements(galaxy_context,
@@ -181,12 +183,12 @@ def test_install_requirements(galaxy_context, mocker):
     assert res_repo.repository_spec.name == 'another'
 
 
-def test_install_repos_empty_requirements(galaxy_context):
+def test_install_requirements_empty_requirements(galaxy_context):
     requirements_to_install = []
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_repositories(galaxy_context,
+    ret = install.install_requirements(galaxy_context,
                                        irdb,
                                        requirements_to_install=requirements_to_install,
                                        display_callback=display_callback)
@@ -369,7 +371,7 @@ def test_install_repository_install_empty_results(galaxy_context, mocker):
     log.debug('exc_info: %s %r', exc_info, exc_info)
 
 
-def test_install_repositories(galaxy_context, mocker):
+def test_install_requirements_repo(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
                                version='9.4.5')
     expected_repos = [Repository(repository_spec=repo_spec)]
@@ -382,7 +384,7 @@ def test_install_repositories(galaxy_context, mocker):
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_repositories(galaxy_context,
+    ret = install.install_requirements(galaxy_context,
                                        irdb,
                                        requirements_to_install=requirements_to_install,
                                        display_callback=display_callback)
@@ -393,11 +395,11 @@ def test_install_repositories(galaxy_context, mocker):
     assert ret == expected_repos
 
 
-def test_install_repositories_no_deps_required(galaxy_context, mocker):
+def test_install_requirements_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
-    repository_specs_to_install = \
-        [repository_spec.repository_spec_from_string('some_namespace.this_requires_nothing')]
+    requirements_to_install = \
+        requirements.requirements_from_strings(['some_namespace.this_requires_nothing'])
 
     # mock out install_repository
     mocker.patch('ansible_galaxy.actions.install.install_repository',
@@ -406,9 +408,9 @@ def test_install_repositories_no_deps_required(galaxy_context, mocker):
     # ? Mock this instead? maybe a fixture?
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_repositories(galaxy_context,
+    ret = install.install_requirements(galaxy_context,
                                        irdb,
-                                       requirements_to_install=repository_specs_to_install,
+                                       requirements_to_install=requirements_to_install,
                                        display_callback=display_callback)
 
     log.debug('ret: %s', ret)
@@ -424,9 +426,9 @@ def test_verify_repository_specs_have_namespace_empty(galaxy_context):
 
 # even though 'blrp' isnt a valid spec, _build_content_set return something for now
 def test_verify_repository_specs_have_namespace(galaxy_context):
-    repository_spec = mock.Mock(requirement_spec=mock.Mock(namespace=None))
+    req_spec = mock.Mock(requirement_spec=mock.Mock(namespace=None))
     try:
-        install._verify_requirements_repository_spec_have_namespaces([repository_spec])
+        install._verify_requirements_repository_spec_have_namespaces([req_spec])
     except exceptions.GalaxyError as e:
         log.exception(e)
         return

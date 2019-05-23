@@ -120,7 +120,7 @@ def run(galaxy_context,
 
     if requirement_spec_strings:
         requirements_list += \
-            requirements.requirements_from_strings(repository_spec_strings=requirement_spec_strings)
+            requirements.requirements_from_strings(requirement_spec_strings=requirement_spec_strings)
 
     if requirement_specs_file:
         # TODO: implement req file
