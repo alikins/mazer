@@ -68,7 +68,7 @@ def get_config_path_from_env():
 
 class GalaxyCLI(cli.CLI):
     SKIP_INFO_KEYS = ("name", "description", "readme_html", "related", "summary_fields", "average_aw_composite", "average_aw_score", "url")
-    VALID_ACTIONS = ("build", "info", "install", "list", "migrate_role", "publish", "remove", "version")
+    VALID_ACTIONS = ("build", "download", "info", "install", "list", "migrate_role", "publish", "remove", "version")
     VALID_ACTION_ALIASES = {'content-install': 'install'}
 
     def __init__(self, args):
@@ -88,7 +88,7 @@ class GalaxyCLI(cli.CLI):
             self.parser.set_usage("usage: %prog download [options] [collection_name(s)[,version]]")
             self.parser.add_option('-n', '--no-deps', dest='no_deps', action='store_true', default=False,
                                    help='Don\'t download collections listed as dependencies')
-            self.parser.add_option('--dest-path', dest='dest_path', default=None,
+            self.parser.add_option('--dest-path', dest='download_dest_path', default=None,
                                    help='The path in which the collection artifact will be download. The default is the current directory.')
         if self.action == "publish":
             self.parser.set_usage("usage: %prog publish [options] archive_path")
@@ -282,7 +282,8 @@ class GalaxyCLI(cli.CLI):
 
         rc = download.run(galaxy_context,
                           requirement_spec_strings=requirement_spec_strings,
-                          display_callback=self.display_callback)
+                          destination_path=self.options.download_dest_path,
+                          display_callback=self.display)
 
         return rc
 
