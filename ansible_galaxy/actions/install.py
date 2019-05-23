@@ -108,7 +108,7 @@ def install_repository(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = install.find(fetcher)
+        find_results = fetcher.find()
     except exceptions.GalaxyError as e:
         log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
         log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
@@ -146,19 +146,25 @@ def install_repository(galaxy_context,
                          level='warning')
 
     # FETCH state
+    # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
+
     try:
-        fetch_results = install.fetch(fetcher,
-                                      repository_spec=repository_spec_to_install,
-                                      find_results=find_results)
+        fetch_results = fetcher.fetch(find_results=find_results)
+
         log.debug('fetch_results: %s', fetch_results)
+
         # fetch_results will include a 'archive_path' pointing to where the artifact
         # was saved to locally.
     except exceptions.GalaxyError as e:
         # fetch error probably should just go to a FAILED state, at least until
         # we have to implement retries
-        log.warning('Unable to fetch %s: %s', repository_spec_to_install.name, e)
+
+        log.warning('Unable to fetch %s: %s',
+                    repository_spec_to_install.name,
+                    e)
+
         raise_without_ignore(ignore_errors, e)
-        # continue
+
         # FIXME: raise ?
         return None
 

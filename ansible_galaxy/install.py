@@ -18,47 +18,6 @@ log = logging.getLogger(__name__)
 # See actions.install.install_collection for a sketch of the states
 
 
-def find(fetcher):
-    """find/discover info about the content"""
-
-    find_results = fetcher.find()
-
-    return find_results
-
-
-# def fetch(fetcher, collection):
-#    pass
-
-def fetch(fetcher, repository_spec, find_results):
-    """download the archive and side effect set self._archive_path to where it was downloaded to.
-
-    MUST be called after self.find()."""
-
-    log.debug('Fetching repository_spec=%s', repository_spec)
-
-    try:
-        # FIXME: note that ignore_certs for the galaxy
-        # server(galaxy_context.server['ignore_certs'])
-        # does not really imply that the repo archive download should ignore certs as well
-        # (galaxy api server vs cdn) but for now, we use the value for both
-        fetch_results = fetcher.fetch(find_results=find_results)
-    except exceptions.GalaxyDownloadError as e:
-        log.exception(e)
-
-        # TODO: having to keep fetcher state for tracking fetcher.remote_resource and/or cleanup
-        #       is kind of annoying.These methods may need to be in a class. Or maybe
-        #       the GalaxyDownloadError shoud/could have any info.
-        blurb = 'Failed to fetch the content archive "%s": %s'
-        log.error(blurb, fetcher.remote_resource, e)
-
-        # reraise, currently handled in main
-        # TODO: if we support more than one archive per invocation, will need to accumulate errors
-        #       if we want to skip some of them
-        raise
-
-    return fetch_results
-
-
 def repository_spec_from_find_results(find_results,
                                       requirement_spec):
     '''Create a new RepositorySpec with updated info from fetch_results.
