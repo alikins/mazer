@@ -1,5 +1,6 @@
 import logging
 import mock
+import os
 
 import pytest
 
@@ -8,7 +9,6 @@ from ansible_galaxy import installed_repository_db
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
-from ansible_galaxy.fetch.base import BaseFetch
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
@@ -18,7 +18,44 @@ log = logging.getLogger(__name__)
 
 
 def display_callback(msg, **kwargs):
-    log.debug(msg)
+    log.debug('%s: kwargs: %r', msg, kwargs)
+
+
+def test_run(galaxy_context, mocker):
+    mock_results = {'success': True,
+                    'errors': []}
+    mocker.patch('ansible_galaxy.actions.install.install_requirements_loop',
+                 return_value=mock_results)
+    res = install.run(galaxy_context,
+                      requirement_spec_strings=['some_namespace.some_name'],
+                      display_callback=display_callback)
+
+    log.debug('res: %s', res)
+    assert res == os.EX_OK  # 0
+
+
+def test_run_errors(galaxy_context, mocker):
+    mock_results = {'success': False,
+                    'errors': ['The first thing that failed was everything.',
+                               'Then the rest failed']}
+    mocker.patch('ansible_galaxy.actions.install.install_requirements_loop',
+                 return_value=mock_results)
+
+    mock_display_callback = mocker.MagicMock(name='mock_display_callback',
+                                             wraps=display_callback)
+
+    res = install.run(galaxy_context,
+                      requirement_spec_strings=['some_namespace.some_name'],
+                      display_callback=mock_display_callback)
+
+    log.debug('res: %s', res)
+    assert res == os.EX_SOFTWARE  # 70
+
+    expected_display_calls = [mocker.call('The first thing that failed was everything.'),
+                              mocker.call('Then the rest failed')]
+
+    log.debug('mdc.call_args_list: %s', mock_display_callback.call_args_list)
+    assert expected_display_calls in mock_display_callback.call_args_list
 
 
 def test_install_repository_specs_loop(galaxy_context, mocker):
@@ -236,11 +273,10 @@ def test_install_repository_find_error(galaxy_context, mocker):
     requirements_to_install = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
 
-    mock_fetcher = mocker.MagicMock(name='MockFetch')
-    mock_fetcher.find.side_effect = exceptions.GalaxyError('Faux exception during find')
-
     def faux_get(galaxy_context, requirement_spec):
         log.debug('faux get %s', requirement_spec)
+        mock_fetcher = mocker.MagicMock(name='MockFetch')
+        mock_fetcher.find.side_effect = exceptions.GalaxyError('Faux exception during find')
         return mock_fetcher
 
     mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
@@ -306,17 +342,11 @@ def test_install_repository_deprecated(galaxy_context, mocker):
                                },
                     }
 
-    # def faux_get(galaxy_context, requirement_spec):
-    #     log.debug('faux get %s', requirement_spec)
-    #     return FauxFetch(galaxy_context, requirement_spec,
-    #                      find_results=find_results)
-
-    mock_fetcher = mocker.MagicMock(name='MockFetch')
-    mock_fetcher.find.return_value = find_results
-    mock_fetcher.fetch.return_value = {}
-
     def faux_get(galaxy_context, requirement_spec):
         log.debug('faux get %s', requirement_spec)
+        mock_fetcher = mocker.MagicMock(name='MockFetch')
+        mock_fetcher.find.return_value = find_results
+        mock_fetcher.fetch.return_value = {}
         return mock_fetcher
 
     mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
@@ -401,12 +431,38 @@ def test_install_repository_install_empty_results(galaxy_context, mocker):
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_repository(galaxy_context,
-                                     irdb,
-                                     requirement_to_install=requirements_to_install[0],
-                                     display_callback=display_callback)
+    with pytest.raises(exceptions.GalaxyError,
+                       match='.*some_namespace.this_requires_some_name was NOT installed successfully.*') as exc_info:
+        install.install_repository(galaxy_context,
+                                   irdb,
+                                   requirement_to_install=requirements_to_install[0],
+                                   display_callback=display_callback)
+
+    log.debug('exc_info: %s %r', exc_info, exc_info)
+
+
+def test_install_repositories(galaxy_context, mocker):
+    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
+                               version='9.4.5')
+    expected_repos = [Repository(repository_spec=repo_spec)]
+
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    mocker.patch('ansible_galaxy.actions.install.install_repository',
+                 return_value=expected_repos)
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    ret = install.install_repositories(galaxy_context,
+                                       irdb,
+                                       requirements_to_install=requirements_to_install,
+                                       display_callback=display_callback)
 
     log.debug('ret: %s', ret)
+
+    assert isinstance(ret, list)
+    assert ret == expected_repos
 
 
 def test_install_repositories_no_deps_required(galaxy_context, mocker):
