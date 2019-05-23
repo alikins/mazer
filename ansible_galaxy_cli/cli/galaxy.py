@@ -28,6 +28,7 @@ import os
 import sys
 
 from ansible_galaxy.actions import build
+from ansible_galaxy.actions import download
 from ansible_galaxy.actions import info
 from ansible_galaxy.actions import install
 from ansible_galaxy.actions import list as list_action
@@ -257,17 +258,11 @@ class GalaxyCLI(cli.CLI):
         self.log.debug('self.options: %s', self.options)
 
         galaxy_context = self._get_galaxy_context(self.options, self.config)
-        requested_spec_strings = self.args
+        requirement_spec_strings = self.args
 
-        # TODO: build requirement_specs from requested_collection_specs strings
-        rc = install.install_repository_specs_loop(galaxy_context,
-                                                   editable=self.options.editable_install,
-                                                   repository_spec_strings=requested_spec_strings,
-                                                   namespace_override=self.options.namespace,
-                                                   display_callback=self.display,
-                                                   ignore_errors=self.options.ignore_errors,
-                                                   no_deps=self.options.no_deps,
-                                                   force_overwrite=self.options.force)
+        rc = download.run(galaxy_context,
+                          requirement_spec_strings=requirement_spec_strings,
+                          display_callback=self.display_callback)
 
         return rc
 
