@@ -8,6 +8,7 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
 from ansible_galaxy import requirements
+from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)
@@ -127,8 +128,8 @@ def install_repository(galaxy_context,
     # TODO: build a new repository_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
-    found_repository_spec = install.repository_spec_from_find_results(find_results,
-                                                                      requirement_spec_to_install)
+    found_repository_spec = repository_spec.repository_spec_from_find_results(find_results,
+                                                                              requirement_spec_to_install)
 
     log.debug('found_repository_spec: %s', found_repository_spec)
 
