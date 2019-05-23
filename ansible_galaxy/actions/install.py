@@ -21,6 +21,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
     option --ignore-errors was specified
     """
     ignore_error_blurb = '- you can use --ignore-errors to skip failed collections and finish processing the list.'
+    # TODO: error if ignore_errors, warn otherwise?
     if not ignore_errors:
         # Note: msg may actually be an exception instance or a text string
 
@@ -179,6 +180,7 @@ def install_repository(galaxy_context,
                                                  force_overwrite=force_overwrite,
                                                  display_callback=display_callback)
     except exceptions.GalaxyError as e:
+        # TODO: make the display an error here? depending on ignore_error?
         msg = "- %s was NOT installed successfully: %s "
         display_callback(msg % (found_repository_spec.label, e), level='warning')
         log.warning(msg, found_repository_spec.label, str(e))
@@ -186,8 +188,10 @@ def install_repository(galaxy_context,
         return []
 
     if not installed_repositories:
-        log.warning("- %s was NOT installed successfully.", found_repository_spec.label)
-        raise_without_ignore(ignore_errors)
+        msg_tmpl = "- %s was NOT installed successfully:"
+        log.warning(msg_tmpl, found_repository_spec.label)
+        msg = msg_tmpl % found_repository_spec.label
+        raise_without_ignore(ignore_errors, msg)
 
     return installed_repositories
 
