@@ -1,4 +1,5 @@
 import logging
+import os
 import pprint
 
 from ansible_galaxy import display
@@ -6,6 +7,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import matchers
+from ansible_galaxy import requirements
 from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)
@@ -345,6 +347,7 @@ def find_new_requirements_from_installed(galaxy_context, installed_repos, no_dep
     return unsolved_requirements
 
 
+# TODO: rename 'install' once we rename ansible_galaxy.install to ansible_galaxy.install_collection
 # FIXME: probably pass the point where passing around all the data to methods makes sense
 #        so probably needs a stateful class here
 def install_requirements_loop(galaxy_context,
@@ -354,6 +357,11 @@ def install_requirements_loop(galaxy_context,
                               ignore_errors=False,
                               no_deps=False,
                               force_overwrite=False):
+
+    results = {
+        'errors': [],
+        'success': True
+    }
 
     requirements_list = requirements
 
@@ -392,5 +400,49 @@ def install_requirements_loop(galaxy_context,
                 msg = 'Installing requirement %s' % req.requirement_spec.label
             display_callback(msg, level='info')
 
-    # FIXME: what results to return?
-    return 0
+    return results
+
+
+def run(galaxy_context,
+        requirement_spec_strings=None,
+        requirement_specs_file=None,
+        editable=False,
+        namespace_override=False,
+        ignore_errors=False,
+        no_deps=False,
+        force_overwrite=False,
+        display_callback=None):
+
+    requirements_list = []
+
+    if requirement_spec_strings:
+        requirements_list += \
+            requirements.requirements_from_strings(repository_spec_strings=requirement_spec_strings,
+                                                   editable=editable,
+                                                   namespace_override=namespace_override)
+
+    if requirement_specs_file:
+        # yaml load the file
+        # requirements_list += \
+        #     requirements.requirements_from_dict()
+        pass
+
+    results = install_requirements_loop(galaxy_context,
+                                        requirements_list,
+                                        display_callback=display_callback,
+                                        ignore_errors=ignore_errors,
+                                        no_deps=no_deps,
+                                        force_overwrite=force_overwrite)
+
+    log.debug('install results: %s', results)
+
+    if results['errors']:
+        for error in results['errors']:
+            display_callback(error)
+
+    if results['success']:
+        return os.EX_OK  # 0
+
+    # TODO: finer grained return codes
+
+    return os.EX_SOFTWARE  # 70

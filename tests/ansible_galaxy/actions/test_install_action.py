@@ -87,7 +87,11 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
     for call in mock_ir.call_args_list:
         log.debug('call: %s', pprint.pformat(list(call)))
 
-    assert res == 0  # duh, it's hardcoded
+    assert isinstance(res, dict)
+    assert isinstance(res['errors'], list)
+    assert isinstance(res['success'], bool)
+
+    assert res['success'] is True
 
 
 def test_install_requirements(galaxy_context, mocker):
