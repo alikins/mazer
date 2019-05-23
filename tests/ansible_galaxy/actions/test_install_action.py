@@ -1,11 +1,14 @@
 import logging
 import mock
 
+import pytest
+
 from ansible_galaxy.actions import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
+from ansible_galaxy.fetch.base import BaseFetch
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
@@ -181,6 +184,86 @@ def test_install_repositories(galaxy_context, mocker):
     assert ret == expected_repos
 
 
+class FauxFetch(BaseFetch):
+    def __init__(self, galaxy_context, requirement_spec,
+                 find_results=None, fetch_results=None):
+        super(BaseFetch, self).__init__()
+        self.requirement_spec = requirement_spec
+
+        self.find_results = find_results or {}
+        self.fetch_results = fetch_results or {}
+        log.debug('init FauxFetch')
+
+    def find(self):
+        log.debug('fauxfetch.find')
+        return self.find_results
+
+    def fetch(self, find_results):
+        log.debug('fauxfetch.fetch find_results=%s', find_results)
+        return self.fetch_results
+
+
+def test_install_repository_find_error(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    mock_fetcher = mocker.MagicMock(name='MockFetch')
+    mock_fetcher.find.side_effect = exceptions.GalaxyError('Faux exception during find')
+
+    def faux_get(galaxy_context, requirement_spec):
+        log.debug('faux get %s', requirement_spec)
+        return mock_fetcher
+
+    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+                 new=faux_get)
+    mocker.patch('ansible_galaxy.actions.install.install.install')
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    with pytest.raises(exceptions.GalaxyError, match='.*Faux exception during find.*') as exc_info:
+        install.install_repository(galaxy_context,
+                                   irdb,
+                                   requirement_to_install=requirements_to_install[0],
+                                   display_callback=display_callback)
+
+    log.debug('exc_info: %s %r', exc_info, exc_info)
+
+
+def test_install_repository_fetch_error(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
+                               'repoversion': {'version': '9.3.245'},
+                               },
+                    }
+
+    def faux_get(galaxy_context, requirement_spec):
+        log.debug('faux get %s', requirement_spec)
+        mock_fetcher = mocker.MagicMock(name='MockFetch')
+        mock_fetcher.find.return_value = find_results
+        mock_fetcher.fetch.side_effect = exceptions.GalaxyDownloadError(url='http://foo.invalid/stuff/blip.tar.gz')
+        return mock_fetcher
+
+    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+                 new=faux_get)
+    mocker.patch('ansible_galaxy.actions.install.install.install')
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    with pytest.raises(exceptions.GalaxyError,
+                       match='.*Error downloading .*http://foo.invalid/stuff/blip.tar.gz.*') as exc_info:
+        install.install_repository(galaxy_context,
+                                   irdb,
+                                   requirement_to_install=requirements_to_install[0],
+                                   display_callback=display_callback)
+
+    log.debug('exc_info: %s %r', exc_info, exc_info)
+
+
 def test_install_repository_deprecated(galaxy_context, mocker):
     requirements_to_install = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
@@ -194,9 +277,21 @@ def test_install_repository_deprecated(galaxy_context, mocker):
                                },
                     }
 
-    mocker.patch('ansible_galaxy.actions.install.install.find',
-                 return_value=find_results)
-    mocker.patch('ansible_galaxy.actions.install.install.fetch')
+    # def faux_get(galaxy_context, requirement_spec):
+    #     log.debug('faux get %s', requirement_spec)
+    #     return FauxFetch(galaxy_context, requirement_spec,
+    #                      find_results=find_results)
+
+    mock_fetcher = mocker.MagicMock(name='MockFetch')
+    mock_fetcher.find.return_value = find_results
+    mock_fetcher.fetch.return_value = {}
+
+    def faux_get(galaxy_context, requirement_spec):
+        log.debug('faux get %s', requirement_spec)
+        return mock_fetcher
+
+    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+                 new=faux_get)
     mocker.patch('ansible_galaxy.actions.install.install.install')
 
     mock_display_callback = mocker.MagicMock(name='mock_display_callback')
@@ -213,6 +308,76 @@ def test_install_repository_deprecated(galaxy_context, mocker):
     log.debug('ret: %s', ret)
 
     assert expected_display_calls in mock_display_callback.call_args_list
+
+
+def test_install_repository_install_error(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
+                               'repoversion': {'version': '9.3.245'},
+                               },
+                    }
+
+    def faux_get(galaxy_context, requirement_spec):
+        log.debug('faux get %s', requirement_spec)
+        mock_fetcher = mocker.MagicMock(name='MockFetch')
+        mock_fetcher.find.return_value = find_results
+        mock_fetcher.fetch.return_value = {'stuff': 'whatever'}
+        return mock_fetcher
+
+    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+                 new=faux_get)
+    mocker.patch('ansible_galaxy.actions.install.install.install',
+                 side_effect=exceptions.GalaxyClientError('Faux galaxy client error from test'))
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    with pytest.raises(exceptions.GalaxyError,
+                       match='.*Faux galaxy client error from test.*') as exc_info:
+        install.install_repository(galaxy_context,
+                                   irdb,
+                                   requirement_to_install=requirements_to_install[0],
+                                   display_callback=display_callback)
+
+    log.debug('exc_info: %s %r', exc_info, exc_info)
+
+
+def test_install_repository_install_empty_results(galaxy_context, mocker):
+    requirements_to_install = \
+        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    find_results = {'content': {'galaxy_namespace': 'some_namespace',
+                                'repo_name': 'some_name'},
+                    'custom': {'repo_data': {},
+                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
+                               'repoversion': {'version': '9.3.245'},
+                               },
+                    }
+
+    def faux_get(galaxy_context, requirement_spec):
+        log.debug('faux get %s', requirement_spec)
+        mock_fetcher = mocker.MagicMock(name='MockFetch')
+        mock_fetcher.find.return_value = find_results
+        mock_fetcher.fetch.return_value = {'stuff': 'whatever'}
+        return mock_fetcher
+
+    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+                 new=faux_get)
+    mocker.patch('ansible_galaxy.actions.install.install.install',
+                 return_value=[])
+
+    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    ret = install.install_repository(galaxy_context,
+                                     irdb,
+                                     requirement_to_install=requirements_to_install[0],
+                                     display_callback=display_callback)
+
+    log.debug('ret: %s', ret)
 
 
 def test_install_repositories_no_deps_required(galaxy_context, mocker):
