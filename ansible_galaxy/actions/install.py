@@ -138,16 +138,13 @@ def install_repository(galaxy_context,
     # TODO: build a new repository_spec based on what we actually fetched to feed to
     #       install etc. The fetcher.fetch() could return a datastructure needed to build
     #       the new one instead of doing it in verify()
-    found_repository_spec = repository_spec.repository_spec_from_find_results(find_results,
-                                                                              requirement_spec_to_install)
+    repository_spec_to_install = repository_spec.repository_spec_from_find_results(find_results,
+                                                                                   requirement_spec_to_install)
 
-    log.debug('found_repository_spec: %s', found_repository_spec)
-
-    repository_spec_to_install = found_repository_spec
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
     if find_results['custom'].get('collection_is_deprecated', False):
-        display_callback("The collection '%s' is deprecated." % (found_repository_spec.label),
+        display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
                          level='warning')
 
     # FETCH state
@@ -187,21 +184,21 @@ def install_repository(galaxy_context,
         installed_repositories = install.install(galaxy_context,
                                                  fetcher,
                                                  fetch_results,
-                                                 repository_spec=found_repository_spec,
+                                                 repository_spec=repository_spec_to_install,
                                                  force_overwrite=force_overwrite,
                                                  display_callback=display_callback)
     except exceptions.GalaxyError as e:
         # TODO: make the display an error here? depending on ignore_error?
         msg = "- %s was NOT installed successfully: %s "
-        display_callback(msg % (found_repository_spec.label, e), level='warning')
-        log.warning(msg, found_repository_spec.label, str(e))
+        display_callback(msg % (repository_spec_to_install.label, e), level='warning')
+        log.warning(msg, repository_spec_to_install.label, str(e))
         raise_without_ignore(ignore_errors, e)
         return []
 
     if not installed_repositories:
         msg_tmpl = "- %s was NOT installed successfully:"
-        log.warning(msg_tmpl, found_repository_spec.label)
-        msg = msg_tmpl % found_repository_spec.label
+        log.warning(msg_tmpl, repository_spec_to_install.label)
+        msg = msg_tmpl % repository_spec_to_install.label
         raise_without_ignore(ignore_errors, msg)
 
     return installed_repositories
