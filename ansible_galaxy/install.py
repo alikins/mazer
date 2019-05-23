@@ -10,47 +10,12 @@ from ansible_galaxy import repository_archive
 from ansible_galaxy import exceptions
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy.models.install_destination import InstallDestinationInfo
-from ansible_galaxy.models.repository_spec import FetchMethods, RepositorySpec
+from ansible_galaxy.models.repository_spec import FetchMethods
 
 log = logging.getLogger(__name__)
 
 # This should probably be a state machine for stepping through the install states
 # See actions.install.install_collection for a sketch of the states
-
-
-def repository_spec_from_find_results(find_results,
-                                      requirement_spec):
-    '''Create a new RepositorySpec with updated info from fetch_results.
-
-    Evolves repository_spec to match fetch results.'''
-
-    # TODO: do we still need to check the fetched version against the spec version?
-    #       We do, since the unspecific version is None, so fetched versions wont match
-    #       so we need a new repository_spec for install.
-    # TODO: this is more or less a verify/validate step or state transition
-    content_data = find_results.get('content', {})
-    resolved_version = content_data.get('version')
-
-    log.debug('version_spec "%s" for %s was requested and was resolved to version "%s"',
-              requirement_spec.version_spec, requirement_spec.label,
-              resolved_version)
-
-    # In theory, a fetch can return a different namespace/name than the one request. This
-    # is for things like server side aliases.
-    resolved_name = content_data.get('fetched_name', requirement_spec.name)
-    resolved_namespace = content_data.get('content_namespace', requirement_spec.namespace)
-
-    # Build a RepositorySpec based on RequirementSpec and the extra info resolved in find()
-    spec_data = attr.asdict(requirement_spec)
-
-    del spec_data['version_spec']
-
-    spec_data['version'] = resolved_version
-    spec_data['namespace'] = resolved_namespace
-    spec_data['name'] = resolved_name
-
-    repository_spec = RepositorySpec.from_dict(spec_data)
-    return repository_spec
 
 
 def install(galaxy_context,
