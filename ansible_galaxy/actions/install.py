@@ -109,7 +109,6 @@ def requirement_needs_installed(irdb,
     return True
 
 
-# WATCHOUT aliases to install_repository()
 def find_requirement(galaxy_context,
                      irdb,
                      requirement_to_install,
@@ -158,10 +157,6 @@ def find_requirement(galaxy_context,
 
     # FIXME: make this a real object not just a tuple
     return repository_spec_to_install, find_results
-
-
-# WARNING: alias install_repository to find_requirement
-install_repository = find_requirement
 
 
 def fetch_repo(collection_to_install,
