@@ -53,16 +53,14 @@ def _log_installed(installed_repositories, requirement_to_install):
                  required_by_blurb)
 
 
-def _verify_requirements_repository_spec_have_namespaces(requirements_dict):
-    for req_key, version_spec in requirements_dict.items():
-        # req_spec = requirement_to_install.requirement_spec
+def _verify_requirements_repository_spec_have_namespaces(requirements_list):
+    for requirement_to_install in requirements_list:
+        req_spec = requirement_to_install.requirement_spec
         # log.debug('repo install repository_spec: %s', req_spec)
-        log.debug('req_key: %r', req_key)
 
-        if not req_key[0]:
+        if not req_spec.namespace:
             raise exceptions.GalaxyRepositorySpecError(
-                'The repository spec "%s.%s %s" requires a namespace (either "namespace.name" or via --namespace)' %
-                (req_key[0], req_key[1], version_spec),
+                'The repository spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % (req_spec),
                 repository_spec=None)
 
 
@@ -241,12 +239,11 @@ def find_required_collections(galaxy_context,
 
     display_callback = display_callback or display.display_callback
 
-    # FIXME: reenable
-    # _verify_requirements_repository_spec_have_namespaces(requirements_dict)
-
     collections_to_install = {}
 
     requirements_list = uniq(_requirements_list)
+
+    _verify_requirements_repository_spec_have_namespaces(requirements_list)
 
     for requirement_to_install in requirements_list:
         log.debug('requirement_to_install: %s', requirement_to_install)
