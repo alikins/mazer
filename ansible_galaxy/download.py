@@ -11,7 +11,8 @@ from ansible_galaxy import user_agent
 log = logging.getLogger(__name__)
 
 
-def fetch_url(archive_url, validate_certs=True, filename=None, dest_dir=None, chunk_size=None):
+# FIXME: let the archive_url be passed in
+def fetch_url(archive_url, validate_certs=True, filename=None, destination_dir=None):
     """
     Downloads the archived content from github to a temp location
     """

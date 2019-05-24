@@ -7,8 +7,9 @@ from six.moves.urllib.parse import quote as urlquote
 from ansible_galaxy import collection_artifact
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
+from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import base
-# from ansible_galaxy.models.repository_spec import RepositorySpec
+from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.rest_api import GalaxyAPI
 
 log = logging.getLogger(__name__)
@@ -43,18 +44,18 @@ def select_repository_version(repoversions, version):
 class GalaxyUrlFetch(base.BaseFetch):
     fetch_method = 'galaxy_url'
 
-    def __init__(self, galaxy_context, requirement_spec):
+    def __init__(self, galaxy_context):
         super(GalaxyUrlFetch, self).__init__()
 
-        self.requirement_spec = requirement_spec
+        # self.requirement_spec = requirement_spec
         self.galaxy_context = galaxy_context
 
         self.validate_certs = not self.galaxy_context.server['ignore_certs']
 
-        log.debug('requirement_spec: %s', requirement_spec)
+        # log.debug('requirement_spec: %s', requirement_spec)
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
-    def find(self):
+    def find(self, requirement_spec):
         '''Find a collection
 
         This method does 3 things:
@@ -69,8 +70,8 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         api = GalaxyAPI(self.galaxy_context)
 
-        namespace = self.requirement_spec.namespace
-        collection_name = self.requirement_spec.name
+        namespace = requirement_spec.namespace
+        collection_name = requirement_spec.name
 
         log.debug('Querying %s for namespace=%s, name=%s', self.galaxy_context.server['url'], namespace, collection_name)
 
@@ -86,7 +87,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         collection_detail_data = api.get_object(href=collection_detail_url)
 
         if not collection_detail_data:
-            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (self.requirement_spec.label,
+            raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." % (requirement_spec.label,
                                                                                      api.api_server))
 
         versions_list_url = collection_detail_data.get('versions_url', None)
@@ -113,7 +114,7 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         if not collection_version_list_data:
             raise exceptions.GalaxyClientError("- sorry, %s was not found on %s." %
-                                               (self.requirement_spec.label,
+                                               (requirement_spec.label,
                                                 api.api_server))
 
         collection_version_strings = [a.get('version') for a in collection_version_list_data if a.get('version', None)]
@@ -122,7 +123,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         collection_versions_versions = [semantic_version.Version(ver) for ver in collection_version_strings]
 
         # No match returns None
-        best_version = self.requirement_spec.version_spec.select(collection_versions_versions)
+        best_version = requirement_spec.version_spec.select(collection_versions_versions)
 
         # Find the rest of the info for the collectionversion that is the best version
         # linear search
@@ -137,11 +138,11 @@ class GalaxyUrlFetch(base.BaseFetch):
         # We did not find a collection that meets this spec
         if not best_collectionversion:
             log.debug('Unable to find a collection that matches the spec: %s from available versions: %s',
-                      self.requirement_spec,
+                      requirement_spec,
                       [ver['version'] for ver in collection_version_list_data])
             raise exceptions.GalaxyCouldNotFindAnswerForRequirement('Unable to find a collection that matches the spec: %s' %
-                                                                    self.requirement_spec.label,
-                                                                    requirement_spec=self.requirement_spec)
+                                                                    requirement_spec.label,
+                                                                    requirement_spec=requirement_spec)
 
         best_collectionversion_detail_data = api.get_object(href=best_collectionversion.get('href', None))
 
@@ -150,7 +151,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('download_url for %s.%s: %s', namespace, collection_name, download_url)
 
         if not download_url:
-            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % self.requirement_spec.label)
+            raise exceptions.GalaxyError('no external_url info on the Repository object from %s' % requirement_spec.label)
 
         artifact_detail = best_collectionversion_detail_data.get('artifact', {})
         log.debug('artifact_detail: %s', artifact_detail)
@@ -160,9 +161,18 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         # TODO: raise exceptions if API requests are empty
 
-        results = {'content': {'galaxy_namespace': namespace,
-                               'repo_name': collection_name,
-                               'version': best_version},
+        # 'resolved_namespace' and 'resolved_name' included here if different
+        repo_spec_germ = {'galaxy_namespace': namespace,
+                          'repo_name': collection_name,
+                          'version': best_version}
+
+        repo_spec_data = \
+            repository_spec.repository_spec_data_from_find_results({'content': repo_spec_germ},
+                                                                   requirement_spec)
+
+        repository_spec_to_install = RepositorySpec.from_dict(repo_spec_data)
+        results = {'content': repo_spec_germ,
+                   'repository_spec_to_install': repository_spec_to_install,
                    'artifact': {'sha256': artifact_detail['sha256'],
                                 'filename': artifact_detail['filename'],
                                 'size': artifact_detail['size']},
@@ -172,7 +182,7 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         return results
 
-    def fetch(self, find_results=None):
+    def fetch(self, repository_spec_to_install, find_results=None):
         find_results = find_results or {}
 
         results = {}
@@ -211,6 +221,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         #       Ie, more of a RepositoryRepository (aiee) (RepositorySource? RepositoryChannel? RepositoryProvider?)
         #       that is a remote 'channel' with info and content itself.
         results = {'archive_path': repository_archive_path,
+                   'cleanup_helper': self.cleanup,
                    'fetch_method': self.fetch_method}
 
         # So fetch_results has the download url, if we follow redirects
