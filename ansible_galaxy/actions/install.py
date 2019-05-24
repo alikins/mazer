@@ -86,8 +86,6 @@ def requirement_needs_installed(irdb,
     # TODO: check if already installed and move to approriate state
 
     log.debug('About to filter requested requirement_spec_to_install: %s', requirement_spec_to_install)
-
-    # potential_repository_spec is a repo spec for the install candidate we potentially found.
     log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
 
     already_installed_iter = irdb.by_requirement_spec(requirement_spec_to_install)
@@ -116,15 +114,13 @@ def find_requirement(galaxy_context,
                      ignore_errors=False,
                      no_deps=False,
                      force_overwrite=False):
-    '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
-
-    display_callback = display_callback or display.display_callback
+    '''Lookup metadata about requirement_to_install (ie, from Galaxy API)'''
 
     requirement_spec_to_install = requirement_to_install.requirement_spec
 
     # TODO: revisit, issue with calling display from here is it doesn't know if it was
     #       is being called because of a dep or not
-    display_callback('Preparing to install %s' % requirement_spec_to_install.label, level='info')
+    display_callback('Finding %s' % requirement_spec_to_install.label, level='info')
 
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
@@ -138,10 +134,11 @@ def find_requirement(galaxy_context,
     try:
         find_results = fetcher.find(requirement_spec=requirement_spec_to_install)
     except exceptions.GalaxyError as e:
-        log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
-        log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
+        # log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
+        msg = 'Unable to find metadata for %s: %s' % (requirement_spec_to_install.label, e)
+        log.warning(msg)
         # FIXME: raise dep error exception?
-        raise_without_ignore(ignore_errors, e)
+        raise_without_ignore(ignore_errors, msg=msg)
 
         # continue
         return None
@@ -154,7 +151,7 @@ def find_requirement(galaxy_context,
                          level='warning')
 
     # FIXME: make this a real object not just a tuple
-    return repository_spec_to_install, find_results
+    return find_results
 
 
 def fetch_repo(collection_to_install,
@@ -163,6 +160,7 @@ def fetch_repo(collection_to_install,
                display_callback=None):
 
     log.debug('collection_to_install: %s', collection_to_install)
+
     fetcher = collection_to_install['fetcher']
     repository_spec_to_install = collection_to_install['repo_spec']
     find_results = collection_to_install['find_results']
@@ -266,26 +264,29 @@ def find_required_collections(galaxy_context,
                                     requirement_spec=requirement_to_install.requirement_spec)
 
         # FIND
-        repo_spec_to_install, find_results = \
-            find_requirement(galaxy_context,
-                             irdb,
-                             requirement_to_install,
-                             fetcher,
-                             display_callback=display_callback,
-                             ignore_errors=ignore_errors,
-                             no_deps=no_deps,
-                             force_overwrite=force_overwrite)
+        find_results = find_requirement(galaxy_context,
+                                        irdb,
+                                        requirement_to_install,
+                                        fetcher,
+                                        display_callback=display_callback,
+                                        ignore_errors=ignore_errors,
+                                        no_deps=no_deps,
+                                        force_overwrite=force_overwrite)
 
         # TODO: state transition, if find_results -> INSTALL
         #       if not, then FIND_FAILED
-        if not repo_spec_to_install:
+        if not find_results:
             log.debug('find_requirement() returned None for requirement_to_install: %s', requirement_to_install)
+            continue
+
+        repo_spec_to_install = find_results.get('repo_spec_to_install')
+        if not repo_spec_to_install:
+            log.debug('find_requirement() was not able to find a solution for requirement_to_install: %s', requirement_to_install)
             continue
 
         collections_to_install[repo_spec_to_install.label] = \
             {'find_results': find_results,
              'requirement_to_install': requirement_to_install,
-             'req_key': 'req_key',
              'fetcher': fetcher,
              'repo_spec': repo_spec_to_install,
              }
@@ -440,19 +441,17 @@ def install_requirements_loop(galaxy_context,
         # validate_dependencies(collections_to_install)
 
         log.debug('FINDUNSOLVEDEPS')
+
         new_requirements = find_unsolved_deps(galaxy_context,
                                               new_required_collections,
                                               display_callback=display_callback)
 
-        # # set the repository_specs to search for to whatever the install reported as being needed yet
-        # # requirements_list = new_requirements_list
-        # requirements_list = find_new_requirements_from_installed(galaxy_context,
-        #                                                          just_installed_repositories,
-        #                                                          no_deps=no_deps)
-
         log.debug('new_requirements: %s', new_requirements)
 
+        # Note that requirements_list is used for the main conditional in the while loop
+        # Reset requirements_list
         requirements_list = new_requirements
+
         for req in requirements_list:
             if req.repository_spec:
                 msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
