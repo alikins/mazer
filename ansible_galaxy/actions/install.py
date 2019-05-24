@@ -272,7 +272,8 @@ def find_required_collections(galaxy_context,
             log.debug('find_requirement() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
-        repo_spec_to_install = find_results.get('repo_spec_to_install')
+        # log.debug('find_results: %s', pprint.pformat(find_results))
+        repo_spec_to_install = find_results.get('repository_spec_to_install')
         if not repo_spec_to_install:
             log.debug('find_requirement() was not able to find a solution for requirement_to_install: %s', requirement_to_install)
             continue
