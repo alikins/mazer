@@ -69,6 +69,10 @@ class Requirement(object):
 
     scope = attr.ib(default=RequirementScopes.INSTALL)
 
+    @property
+    def req_label(self):
+        return '%s.%s' % (self.requirement_spec.namespace, self.requirement_spec.name)
+
     def __str__(self):
         return '{repo_spec}->{req_spec_label}{op}{req_spec_version}'.format(repo_spec=str(self.repository_spec),
                                                                             req_spec_label=str(self.requirement_spec.label),

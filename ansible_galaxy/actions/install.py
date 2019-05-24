@@ -6,7 +6,6 @@ from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
-# from ansible_galaxy import matchers
 from ansible_galaxy import requirements
 from ansible_galaxy.fetch import fetch_factory
 
@@ -35,8 +34,9 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
 def _log_installed(installed_repositories, requirement_to_install):
     for installed_repo in installed_repositories:
         required_by_blurb = ''
-        if requirement_to_install.repository_spec:
-            required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
+        # FIXME
+        # if requirement_to_install.repository_spec:
+        #    required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
 
         log.info('Installed: %s %s to %s%s',
                  installed_repo.label,
@@ -45,15 +45,17 @@ def _log_installed(installed_repositories, requirement_to_install):
                  required_by_blurb)
 
 
-def _verify_requirements_repository_spec_have_namespaces(requirements_list):
-    for requirement_to_install in requirements_list:
-        req_spec = requirement_to_install.requirement_spec
-        log.debug('repo install repository_spec: %s', req_spec)
+def _verify_requirements_repository_spec_have_namespaces(requirements_dict):
+    for req_key, version_spec in requirements_dict.items():
+        # req_spec = requirement_to_install.requirement_spec
+        # log.debug('repo install repository_spec: %s', req_spec)
+        log.debug('req_key: %r', req_key)
 
-        if not req_spec.namespace:
+        if not req_key[0]:
             raise exceptions.GalaxyRepositorySpecError(
-                'The repository spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % req_spec.spec_string,
-                repository_spec=req_spec)
+                'The repository spec "%s.%s %s" requires a namespace (either "namespace.name" or via --namespace)' %
+                (req_key[0], req_key[1], version_spec),
+                repository_spec=None)
 
 
 def requirement_needs_installed(irdb,
@@ -154,12 +156,15 @@ def find_requirement(galaxy_context,
 install_repository = find_requirement
 
 
-def fetch_repo(repository_spec_to_install,
-               fetcher,
-               find_results=None,
+def fetch_repo(collection_to_install,
                ignore_errors=False,
                force_overwrite=False,
                display_callback=None):
+
+    log.debug('collection_to_install: %s', collection_to_install)
+    fetcher = collection_to_install['fetcher']
+    repository_spec_to_install = collection_to_install['repo_spec']
+    find_results = collection_to_install['find_results']
 
     try:
         fetch_results = fetcher.fetch(repository_spec_to_install,
@@ -187,29 +192,20 @@ def fetch_repo(repository_spec_to_install,
 
 
 def install_repo(galaxy_context,
-                 repository_spec_to_install,
-                 fetcher,
-                 find_results=None,
-                 fetch_results=None,
+                 collection_to_install,
                  ignore_errors=False,
                  force_overwrite=False,
                  display_callback=None):
-    # FETCH state
-    # FIXME: seems like we want to resolve deps before trying install
-    #        We need the role (or other content) deps from meta before installing
-    #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
-    #        the file, which we dont do until somewhere in the begin of content.install (fetch).
-    #        We can get that from the galaxy API though.
-    #
+
     # FIXME: exc handling
 
     installed_repositories = []
 
+    repository_spec_to_install = collection_to_install['repo_spec']
+
     try:
         installed_repositories = install.install(galaxy_context,
-                                                 fetcher,
-                                                 fetch_results,
-                                                 repository_spec=repository_spec_to_install,
+                                                 collection_to_install,
                                                  force_overwrite=force_overwrite,
                                                  display_callback=display_callback)
     except exceptions.GalaxyError as e:
@@ -230,32 +226,38 @@ def install_repo(galaxy_context,
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
-def install_requirements(galaxy_context,
-                         irdb,
-                         requirements_to_install,
-                         display_callback=None,
-                         # TODO: error handling callback ?
-                         ignore_errors=False,
-                         no_deps=False,
-                         force_overwrite=False):
+def find_required_collections(galaxy_context,
+                              irdb,
+                              requirements_list,
+                              display_callback=None,
+                              # TODO: error handling callback ?
+                              ignore_errors=False,
+                              no_deps=False,
+                              force_overwrite=False):
+    '''Return collections_to_install'''
 
     display_callback = display_callback or display.display_callback
-    log.debug('requirements_to_install: %s', requirements_to_install)
-
-    most_installed_repositories = []
-
-    # TODO: this should be adding the content/self.args/content_left to
-    #       a list of needed deps
+    log.debug('requirements_list: %s', requirements_list)
 
     # Remove any dupe repository_specs
-    requirements_to_install_uniq = set(requirements_to_install)
+    # replace with dict
+    # requirements_to_install_uniq = set(requirements_to_install)
 
-    _verify_requirements_repository_spec_have_namespaces(requirements_to_install_uniq)
+    # FIXME: reenable
+    # _verify_requirements_repository_spec_have_namespaces(requirements_dict)
 
-    for requirement_to_install in sorted(requirements_to_install_uniq):
+    collections_to_install = {}
+
+    for requirement_to_install in requirements_list:
         log.debug('requirement_to_install: %s', requirement_to_install)
+        # log.debug('version_spec: %s', version_spec)
 
         # INITIAL state
+
+        # RESOLVE REQUIREMENT  # ie, if http://example.com/foo.tar.gz, download, extract, get ns,n,v
+
+        log.debug('requirement_to_install: %s', requirement_to_install)
+        log.debug('requirement_to_install: %r', requirement_to_install)
 
         # FILTER
         if not requirement_needs_installed(irdb, requirement_to_install,
@@ -284,29 +286,58 @@ def install_requirements(galaxy_context,
             log.debug('find_requirement() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
+        collections_to_install[repo_spec_to_install.label] = \
+            {'find_results': find_results,
+             'requirement_to_install': requirement_to_install,
+             'req_key': 'req_key',
+             'fetcher': fetcher,
+             'repo_spec': repo_spec_to_install,
+             }
+
         log.debug('About to FETCH repository requested by %s: %s',
                   requirement_to_install, repo_spec_to_install)
 
+        log.debug('collections_to_install: %s', pprint.pformat(collections_to_install))
+
+    return collections_to_install
+
+
+def fetch_repos(collections_to_install):
+    log.debug('collections_to_install: %s', collections_to_install)
+    for col_key, collection_to_install in collections_to_install.items():
+
         # FETCH
-        fetch_results = fetch_repo(repo_spec_to_install, fetcher, find_results)
+        fetch_results = fetch_repo(collection_to_install)
+
+        # side effect, modifying value in dict in place
+        collection_to_install['fetch_results'] = fetch_results
+        # collections_to_install[repo_spec_to_install.label]['fetch_results'] = fetch_results
+
+    log.debug('collections_to_install2: %s', collections_to_install)
+    return collections_to_install
+
+
+def install_collections(galaxy_context, collections_to_install, display_callback=None):
+    all_installed_repos = []
+
+    for col_key, collection_to_install in collections_to_install.items():
+        fetcher = collection_to_install['fetcher']
 
         # INSTALL
         installed_repositories = install_repo(galaxy_context,
-                                              repo_spec_to_install,
-                                              fetcher,
-                                              find_results=find_results,
-                                              fetch_results=fetch_results)
+                                              collection_to_install,
+                                              display_callback=display_callback)
 
         # CLEANUP
         fetcher.cleanup()
 
         # ANNOUNCE
-        _log_installed(installed_repositories, requirement_to_install)
+        _log_installed(installed_repositories, requirement_to_install=None)
 
         # ACCUMULATE
-        most_installed_repositories.extend(installed_repositories)
+        all_installed_repos.extend(installed_repositories)
 
-    return most_installed_repositories
+    return all_installed_repos
 
 
 # NOTE: this is equiv to add deps to a transaction
@@ -359,13 +390,69 @@ def find_new_requirements_from_installed(galaxy_context, installed_repos, no_dep
     return unsolved_requirements
 
 
-# TODO: rename 'install' once we rename ansible_galaxy.install to ansible_galaxy.install_collection
-# FIXME: probably pass the point where passing around all the data to methods makes sense
-#        so probably needs a stateful class here
+def find_unsolved_deps(galaxy_context,
+                       collections_to_install,
+                       display_callback=None):
+
+    log.debug('find_unsolved_deps len(collections)=%s',
+              len(collections_to_install))
+
+    all_deps = []
+    dupe_deps = []
+
+    for collection_to_install in collections_to_install:
+        col_data = collections_to_install[collection_to_install]
+
+        deps = col_data['find_results'].get('requirements', {})
+
+        log.debug('deps from %s:\n%s', collection_to_install, pprint.pformat(deps))
+
+        for dep in deps:
+            if dep in all_deps:
+                dupe_deps.append(dep)
+                log.warning('WARN duplicate deps, first is %s, second is %s from %s',
+                            all_deps[dep], dep, collection_to_install)
+                continue
+
+            all_deps.append(dep)
+
+    log.debug('dupe_deps: %s', dupe_deps)
+    log.debug('all_deps\n:%s', pprint.pformat(all_deps))
+
+    # unsolved_requirements = requirements.from_dependencies_dict(all_deps)
+
+    unsolved_requirements = []
+
+    for requirement in all_deps:
+        log.debug('Checking if %s is provided by something installed', str(requirement))
+
+        # Search for an exact ns_n_v match
+        irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+        already_installed_iter = irdb.by_requirement(requirement)
+        already_installed = list(already_installed_iter)
+
+        log.debug('already_installed: %s', already_installed)
+
+        solved = False
+        for provider in already_installed:
+            log.debug('The requirement %s is already provided by %s', requirement, provider)
+            solved = solved or True
+
+        if solved:
+            log.debug('skipping requirement %s', requirement)
+            continue
+
+        unsolved_requirements.append(requirement)
+
+    log.debug('unsolved_requirements: %s', unsolved_requirements)
+
+    return unsolved_requirements
+
+
 def install_requirements_loop(galaxy_context,
-                              requirements,
+                              requirements_list,
                               display_callback=None,
-                              # TODO: error handling callback ?
                               ignore_errors=False,
                               no_deps=False,
                               force_overwrite=False):
@@ -375,42 +462,78 @@ def install_requirements_loop(galaxy_context,
         'success': True
     }
 
-    requirements_list = requirements
-
     log.debug('requirements_list: %s', requirements_list)
-
-    # for req in requirements_list:
-    #    display_callback('Installing %s' % req.requirement_spec.label, level='info')
 
     # TODO: rename installed_db? installed_collections_db? icdb?
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+
+    collections_to_install = {}
+
+    log.debug('DEPSOLVE')
 
     # Loop until there are no unresolved deps or we break
     while True:
         if not requirements_list:
             break
 
-        just_installed_repositories = \
-            install_requirements(galaxy_context,
-                                 irdb,
-                                 requirements_list,
-                                 display_callback=display_callback,
-                                 ignore_errors=ignore_errors,
-                                 no_deps=no_deps,
-                                 force_overwrite=force_overwrite)
+        # RESOLVE lazy requirements? (ie, http/file) ?
 
-        # set the repository_specs to search for to whatever the install reported as being needed yet
-        # requirements_list = new_requirements_list
-        requirements_list = find_new_requirements_from_installed(galaxy_context,
-                                                                 just_installed_repositories,
-                                                                 no_deps=no_deps)
+        new_required_collections = \
+            find_required_collections(galaxy_context,
+                                      irdb,
+                                      requirements_list,
+                                      display_callback=display_callback,
+                                      ignore_errors=ignore_errors,
+                                      no_deps=no_deps,
+                                      force_overwrite=force_overwrite)
 
+        collections_to_install.update(new_required_collections)
+
+        # VALIDATE_DEPS  # validate that all of the deps, when combined, don't contradict etc
+        # raise Dependency conflicts? Or possible accumalte all problems then raise dep exceptions
+        # validate_dependencies(collections_to_install)
+
+        log.debug('FINDUNSOLVEDEPS')
+        new_requirements = find_unsolved_deps(galaxy_context,
+                                              new_required_collections,
+                                              display_callback=display_callback)
+
+        # # set the repository_specs to search for to whatever the install reported as being needed yet
+        # # requirements_list = new_requirements_list
+        # requirements_list = find_new_requirements_from_installed(galaxy_context,
+        #                                                          just_installed_repositories,
+        #                                                          no_deps=no_deps)
+
+        log.debug('new_requirements: %s', new_requirements)
+
+        requirements_list = new_requirements
         for req in requirements_list:
             if req.repository_spec:
                 msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
             else:
                 msg = 'Installing requirement %s' % req.requirement_spec.label
             display_callback(msg, level='info')
+
+    # DEPS SOLVED
+    # FETCH
+    log.debug('FETCH')
+
+    collections_to_install = fetch_repos(collections_to_install)
+
+    log.debug('collections_to_install: %s', pprint.pformat(collections_to_install))
+
+    # VERIFY
+    log.debug('VERIFY')
+    # verify downloaded artifacts
+
+    # INSTALL
+    #   TODO: EXTRACT
+    #   TODO: REPLACE_INSTALLED
+    installed_collections = install_collections(galaxy_context,
+                                                collections_to_install,
+                                                display_callback=display_callback)
+
+    log.debug('installed_collections: %s', installed_collections)
 
     return results
 
@@ -438,6 +561,8 @@ def run(galaxy_context,
         # requirements_list += \
         #     requirements.requirements_from_dict()
         pass
+
+    log.debug('requirements_list: %s', requirements_list)
 
     results = install_requirements_loop(galaxy_context,
                                         requirements_list,
