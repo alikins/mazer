@@ -57,6 +57,10 @@ def requirement_needs_installed(irdb,
 
     This include requirements met my already installed collections.'''
 
+    # TODO: if we want client side content whitelist/blacklist, or pinned versions,
+    #       or rules to only update within some semver range (ie, only 'patch' level),
+    #       we could hook rule validation stuff here.
+
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
     log.debug('Processing/filtering %r', requirement_to_install)
@@ -129,22 +133,8 @@ def find_requirement(galaxy_context,
         # continue
         return None
 
-    # TODO: make sure repository_spec version is correct and set
-
-    # TODO: state transition, if find_results -> INSTALL
-    #       if not, then FIND_FAILED
-
-    # TODO/FIXME: We give find() a RequirementSpec, but find_results should have enough
-    #             info to create a concrete RepositorySpec
-
-    # TODO: if we want client side content whitelist/blacklist, or pinned versions,
-    #       or rules to only update within some semver range (ie, only 'patch' level),
-    #       we could hook rule validation stuff here.
-
     # find() builds a RepoSpec from a ReqSpec
     repository_spec_to_install = find_results.get('repository_spec_to_install', None)
-
-    log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
     if find_results['custom'].get('collection_is_deprecated', False):
         display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
@@ -186,6 +176,7 @@ def fetch_repo(repository_spec_to_install,
         # FIXME: raise ?
         return None
 
+    log.debug('FETCHED: %s', repository_spec_to_install)
     return fetch_results
 
 
@@ -244,10 +235,7 @@ def install_requirements(galaxy_context,
 
     display_callback = display_callback or display.display_callback
     log.debug('requirements_to_install: %s', requirements_to_install)
-    # log.debug('no_deps: %s', no_deps)
-    # log.debug('force_overwrite: %s', force_overwrite)
 
-    # dep_requirements = []
     most_installed_repositories = []
 
     # TODO: this should be adding the content/self.args/content_left to
@@ -257,7 +245,7 @@ def install_requirements(galaxy_context,
     requirements_to_install_uniq = set(requirements_to_install)
 
     _verify_requirements_repository_spec_have_namespaces(requirements_to_install_uniq)
-    # TODO: if the default ordering of repository_specs isnt useful, may need to tweak it
+
     for requirement_to_install in sorted(requirements_to_install_uniq):
         log.debug('requirement_to_install: %s', requirement_to_install)
 
@@ -283,17 +271,18 @@ def install_requirements(galaxy_context,
                              ignore_errors=ignore_errors,
                              no_deps=no_deps,
                              force_overwrite=force_overwrite)
-        # installed_repositories = install_repository(galaxy_context,
 
-        # log.debug('dep_requirement_repository_specs1: %s', dep_requirements)
-
+        # TODO: state transition, if find_results -> INSTALL
+        #       if not, then FIND_FAILED
         if not repo_spec_to_install:
             log.debug('find_requirementy() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
+        log.debug('About to FETCH repository requested by %s: %s',
+                  requirement_to_install, repo_spec_to_install)
+
         # FETCH
         fetch_results = fetch_repo(repo_spec_to_install, fetcher, find_results)
-        log.debug('FETCHED: %s', repo_spec_to_install)
 
         # INSTALL
         installed_repositories = install_repo(galaxy_context,
@@ -305,6 +294,7 @@ def install_requirements(galaxy_context,
         # CLEANUP
         fetcher.cleanup()
 
+        # ANNOUNCE
         for installed_repo in installed_repositories:
             required_by_blurb = ''
             if requirement_to_install.repository_spec:
@@ -317,7 +307,6 @@ def install_requirements(galaxy_context,
                      required_by_blurb)
 
         most_installed_repositories.extend(installed_repositories)
-        # dep_requirements.extend(new_dep_requirements)
 
     return most_installed_repositories
 
