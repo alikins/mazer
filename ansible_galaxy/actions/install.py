@@ -8,6 +8,7 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import requirements
 from ansible_galaxy.fetch import fetch_factory
+from ansible_galaxy.utils.misc import uniq
 
 log = logging.getLogger(__name__)
 
@@ -228,7 +229,7 @@ def install_repo(galaxy_context,
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def find_required_collections(galaxy_context,
                               irdb,
-                              requirements_list,
+                              _requirements_list,
                               display_callback=None,
                               # TODO: error handling callback ?
                               ignore_errors=False,
@@ -237,16 +238,13 @@ def find_required_collections(galaxy_context,
     '''Return collections_to_install'''
 
     display_callback = display_callback or display.display_callback
-    log.debug('requirements_list: %s', requirements_list)
-
-    # Remove any dupe repository_specs
-    # replace with dict
-    # requirements_to_install_uniq = set(requirements_to_install)
 
     # FIXME: reenable
     # _verify_requirements_repository_spec_have_namespaces(requirements_dict)
 
     collections_to_install = {}
+
+    requirements_list = uniq(_requirements_list)
 
     for requirement_to_install in requirements_list:
         log.debug('requirement_to_install: %s', requirement_to_install)
@@ -262,7 +260,7 @@ def find_required_collections(galaxy_context,
         # FILTER
         if not requirement_needs_installed(irdb, requirement_to_install,
                                            display_callback=display_callback):
-            log.debug('FILTERED out', requirement_to_install)
+            log.debug('FILTERED out: %s', requirement_to_install)
             continue
 
         # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
