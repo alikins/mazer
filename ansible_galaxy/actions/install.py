@@ -32,6 +32,19 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
+def _log_installed(installed_repositories, requirement_to_install):
+    for installed_repo in installed_repositories:
+        required_by_blurb = ''
+        if requirement_to_install.repository_spec:
+            required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
+
+        log.info('Installed: %s %s to %s%s',
+                 installed_repo.label,
+                 installed_repo.repository_spec.version,
+                 installed_repo.path,
+                 required_by_blurb)
+
+
 def _verify_requirements_repository_spec_have_namespaces(requirements_list):
     for requirement_to_install in requirements_list:
         req_spec = requirement_to_install.requirement_spec
@@ -268,7 +281,7 @@ def install_requirements(galaxy_context,
         # TODO: state transition, if find_results -> INSTALL
         #       if not, then FIND_FAILED
         if not repo_spec_to_install:
-            log.debug('find_requirementy() returned None for requirement_to_install: %s', requirement_to_install)
+            log.debug('find_requirement() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
         log.debug('About to FETCH repository requested by %s: %s',
@@ -288,17 +301,9 @@ def install_requirements(galaxy_context,
         fetcher.cleanup()
 
         # ANNOUNCE
-        for installed_repo in installed_repositories:
-            required_by_blurb = ''
-            if requirement_to_install.repository_spec:
-                required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
+        _log_installed(installed_repositories, requirement_to_install)
 
-            log.info('Installed: %s %s to %s%s',
-                     installed_repo.label,
-                     installed_repo.repository_spec.version,
-                     installed_repo.path,
-                     required_by_blurb)
-
+        # ACCUMULATE
         most_installed_repositories.extend(installed_repositories)
 
     return most_installed_repositories
