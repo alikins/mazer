@@ -19,18 +19,23 @@ log = logging.getLogger(__name__)
 
 
 def install(galaxy_context,
-            fetcher,
-            fetch_results,
-            repository_spec,
+            collection_to_install,
             force_overwrite=False,
             display_callback=None):
     """extract the archive to the filesystem and write out install metadata.
 
     MUST be called after self.fetch()."""
 
+    just_installed_spec_and_results = []
+
+    repository_spec = collection_to_install['repo_spec']
+    fetcher = collection_to_install['fetcher']
+
+    # find_results = collection_to_install['find_results']
+    fetch_results = collection_to_install['fetch_results']
+
     log.debug('install: repository_spec=%s, force_overwrite=%s',
               repository_spec, force_overwrite)
-    just_installed_spec_and_results = []
 
     # FIXME: really need to move the fetch step elsewhere and do it before,
     #        install should get pass a content_archive (or something more abstract)
@@ -38,27 +43,28 @@ def install(galaxy_context,
 
     archive_path = fetch_results.get('archive_path', None)
 
+    # VALIDATE
+    #   VALIDATE DOWNLOADS
     # TODO: this could be pulled up a layer, after getting fetch_results but before install()
     if not archive_path:
         raise exceptions.GalaxyClientError('No valid content data found for...')
 
     log.debug("installing from %s", archive_path)
 
+    #   VALIDATE artifact archives
     repo_archive_ = repository_archive.load_archive(archive_path, repository_spec)
 
     log.debug('repo_archive_: %s', repo_archive_)
     log.debug('repo_archive_.info: %s', repo_archive_.info)
 
-    # we strip off any higher-level directories for all of the files contained within
-    # the tar file here. The default is 'github_repo-target'. Gerrit instances, on the other
-    # hand, does not have a parent directory at all.
-
+    # TODO: move to install action, before EXTRACT
     # preparation for archive extraction
     if not os.path.isdir(galaxy_context.collections_path):
         log.debug('No content path (%s) found so creating it', galaxy_context.collections_path)
 
         os.makedirs(galaxy_context.collections_path)
 
+    # ALLOCATE
     # Build up all the info about where the repository will be installed to
     namespaced_repository_path = '%s/%s' % (repository_spec.namespace,
                                             repository_spec.name)
@@ -71,6 +77,7 @@ def install(galaxy_context,
                                               force_overwrite=force_overwrite,
                                               editable=editable)
 
+    # EXTRACT
     # A list of InstallationResults
     res = repository_archive.install(repo_archive_,
                                      repository_spec=repository_spec,
@@ -79,10 +86,14 @@ def install(galaxy_context,
 
     just_installed_spec_and_results.append((repository_spec, res))
 
+    # CLEANUP
     # rm any temp files created when getting the content archive
     # TODO: use some sort of callback?
     fetcher.cleanup()
 
+    # Could probably skip this step at some point to speed things up
+    # VERIFY  reload the repos from disk to verify they are isntalled properly
+    #
     # We know the repo specs for the repos we asked to install, and the installation results,
     # so now use that info to find the just installed repos on disk and load them and return them.
     just_installed_repository_specs = [x[0] for x in just_installed_spec_and_results]

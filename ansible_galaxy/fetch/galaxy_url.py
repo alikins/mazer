@@ -1,4 +1,5 @@
 import logging
+import json
 
 import semantic_version
 from six.moves.urllib.parse import quote as urlquote
@@ -8,6 +9,7 @@ from ansible_galaxy import collection_artifact
 from ansible_galaxy import exceptions
 from ansible_galaxy import download
 from ansible_galaxy import repository_spec
+from ansible_galaxy import requirements
 from ansible_galaxy.fetch import base
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.rest_api import GalaxyAPI
@@ -157,9 +159,12 @@ class GalaxyUrlFetch(base.BaseFetch):
         log.debug('artifact_detail: %s', artifact_detail)
 
         # collectionversion_metadata = best_collectionversion_detail_data.get('metadata', None)
+        collectionversion_metadata = best_collectionversion_detail_data.get('metadata', None)
         # log.debug('collectionversion_metadata: %s', collectionversion_metadata)
 
         # TODO: raise exceptions if API requests are empty
+        log.debug('best galaxy collection api detail:\n%s',
+                  json.dumps(best_collectionversion_detail_data, indent=4))
 
         # 'resolved_namespace' and 'resolved_name' included here if different
         repo_spec_germ = {'galaxy_namespace': namespace,
@@ -171,13 +176,26 @@ class GalaxyUrlFetch(base.BaseFetch):
                                                                    requirement_spec)
 
         repository_spec_to_install = RepositorySpec.from_dict(repo_spec_data)
+
+        dependencies_dict = collectionversion_metadata['dependencies']
+        requirements_list = \
+            requirements.from_dependencies_dict(dependencies_dict,
+                                                repository_spec=repository_spec_to_install)
+
+        log.debug('reqs_list: %s', requirements_list)
+
         results = {'content': repo_spec_germ,
                    'repository_spec_to_install': repository_spec_to_install,
                    'artifact': {'sha256': artifact_detail['sha256'],
                                 'filename': artifact_detail['filename'],
                                 'size': artifact_detail['size']},
+                   'requirement_spec': requirement_spec,
+                   # 'dependencies': collectionversion_metadata['dependencies'],
+                   'requirements': requirements_list,
+                   'requirement_spec': requirement_spec,
                    'custom': {'download_url': download_url,
-                              'collection_is_deprecated': collection_is_deprecated},
+                              'collection_is_deprecated': collection_is_deprecated,
+                              },
                    }
 
         return results
