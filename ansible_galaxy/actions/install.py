@@ -263,7 +263,6 @@ def find_required_collections(galaxy_context,
             log.debug('FILTERED out: %s', requirement_to_install)
             continue
 
-        # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
         fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                     requirement_spec=requirement_to_install.requirement_spec)
 
@@ -336,56 +335,6 @@ def install_collections(galaxy_context, collections_to_install, display_callback
         all_installed_repos.extend(installed_repositories)
 
     return all_installed_repos
-
-
-# NOTE: this is equiv to add deps to a transaction
-def find_new_requirements_from_installed(galaxy_context, installed_repos, no_deps=False):
-    if no_deps:
-        return []
-
-    total_reqs_set = set()
-
-    log.debug('finding new deps for installed repos: %s',
-              [str(x) for x in installed_repos])
-
-    # install requirements ("dependencies" in collection info), if we want them
-    for installed_repository in installed_repos:
-
-        # convert reqs list to sets, Losing any ordering, but avoids dupes of requirements
-        reqs_set = set(installed_repository.requirements)
-
-        total_reqs_set.update(reqs_set)
-
-    # TODO: This does not grow nicely as the size
-    #       of the list of requirements of everything installed grows
-    all_requirements = sorted(list(total_reqs_set))
-
-    unsolved_requirements = []
-
-    for requirement in all_requirements:
-        log.debug('Checking if %s is provided by something installed', str(requirement))
-
-        # Search for an exact ns_n_v match
-        irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-        already_installed_iter = irdb.by_requirement(requirement)
-        already_installed = list(already_installed_iter)
-
-        log.debug('already_installed: %s', already_installed)
-
-        solved = False
-        for provider in already_installed:
-            log.debug('The requirement %s is already provided by %s', requirement, provider)
-            solved = solved or True
-
-        if solved:
-            log.debug('skipping requirement %s', requirement)
-            continue
-
-        unsolved_requirements.append(requirement)
-
-    log.debug('Found additional requirements: %s', pprint.pformat(unsolved_requirements))
-
-    return unsolved_requirements
 
 
 def find_unsolved_deps(galaxy_context,
