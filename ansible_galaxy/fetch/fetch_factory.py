@@ -34,8 +34,7 @@ def get(galaxy_context, requirement_spec):
         fetcher = remote_url.RemoteUrlFetch(requirement_spec=requirement_spec,
                                             validate_certs=not galaxy_context.server['ignore_certs'])
     elif requirement_spec.fetch_method == FetchMethods.GALAXY_URL:
-        fetcher = galaxy_url.GalaxyUrlFetch(requirement_spec=requirement_spec,
-                                            galaxy_context=galaxy_context)
+        fetcher = galaxy_url.GalaxyUrlFetch(galaxy_context=galaxy_context)
     else:
         raise exceptions.GalaxyError('No approriate content fetcher found for %s %s',
                                      requirement_spec.scm, requirement_spec.src)

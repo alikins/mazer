@@ -24,8 +24,8 @@ def repository_spec_from_string(repository_spec_string, namespace_override=None,
                           src=spec_data.get('src'))
 
 
-def repository_spec_from_find_results(find_results,
-                                      requirement_spec):
+def repository_spec_data_from_find_results(find_results,
+                                           requirement_spec):
     '''Create a new RepositorySpec with updated info from fetch_results.
 
     Evolves repository_spec to match fetch results.'''
@@ -43,8 +43,8 @@ def repository_spec_from_find_results(find_results,
 
     # In theory, a fetch can return a different namespace/name than the one request. This
     # is for things like server side aliases.
-    resolved_name = content_data.get('fetched_name', requirement_spec.name)
-    resolved_namespace = content_data.get('content_namespace', requirement_spec.namespace)
+    resolved_name = content_data.get('resolved_name', requirement_spec.name)
+    resolved_namespace = content_data.get('resolved_namespace', requirement_spec.namespace)
 
     # Build a RepositorySpec based on RequirementSpec and the extra info resolved in find()
     spec_data = attr.asdict(requirement_spec)
@@ -54,6 +54,17 @@ def repository_spec_from_find_results(find_results,
     spec_data['version'] = resolved_version
     spec_data['namespace'] = resolved_namespace
     spec_data['name'] = resolved_name
+
+    return spec_data
+
+
+def repository_spec_from_find_results(find_results,
+                                      requirement_spec):
+    '''Create a new RepositorySpec with updated info from fetch_results.
+
+    Evolves repository_spec to match fetch results.'''
+
+    spec_data = repository_spec_data_from_find_results(find_results, requirement_spec)
 
     repository_spec = RepositorySpec.from_dict(spec_data)
     return repository_spec

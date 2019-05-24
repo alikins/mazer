@@ -8,7 +8,6 @@ from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 # from ansible_galaxy import matchers
 from ansible_galaxy import requirements
-from ansible_galaxy import repository_spec
 from ansible_galaxy.fetch import fetch_factory
 
 log = logging.getLogger(__name__)
@@ -44,33 +43,24 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
                 repository_spec=req_spec)
 
 
-def install_repository(galaxy_context,
-                       irdb,
-                       requirement_to_install,
-                       display_callback=None,
-                       # TODO: error handling callback ?
-                       ignore_errors=False,
-                       no_deps=False,
-                       force_overwrite=False):
-    '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
+def requirement_needs_installed(irdb,
+                                requirement_to_install,
+                                display_callback=None):
+    '''Filter out requirements that should not actually be installed
 
-    display_callback = display_callback or display.display_callback
-
-    # INITIAL state
-    # dep_requirements = []
+    This include requirements met my already installed collections.'''
 
     # TODO: we could do all the downloads first, then install them. Likely
     #       less error prone mid 'transaction'
-    log.debug('Processing %r', requirement_to_install)
+    log.debug('Processing/filtering %r', requirement_to_install)
 
-    repository_spec_to_install = requirement_to_install.requirement_spec
     requirement_spec_to_install = requirement_to_install.requirement_spec
 
     # else trans to ... FIND_FETCHER?
 
     # TODO: check if already installed and move to approriate state
 
-    log.debug('About to find() requested requirement_spec_to_install: %s', requirement_spec_to_install)
+    log.debug('About to filter requested requirement_spec_to_install: %s', requirement_spec_to_install)
 
     # potential_repository_spec is a repo spec for the install candidate we potentially found.
     log.debug('Checking to see if %s is already installed', requirement_spec_to_install)
@@ -87,16 +77,38 @@ def install_repository(galaxy_context,
                              level='warning')
         log.debug('Stuff %s was already installed. In %s', requirement_spec_to_install, already_installed)
 
+        return False
+
+    return True
+
+
+# WATCHOUT aliases to install_repository()
+def find_requirement(galaxy_context,
+                     irdb,
+                     requirement_to_install,
+                     fetcher,
+                     display_callback=None,
+                     # TODO: error handling callback ?
+                     ignore_errors=False,
+                     no_deps=False,
+                     force_overwrite=False):
+    '''This installs a single package by finding it, fetching it, verifying it and installing it.'''
+
+    display_callback = display_callback or display.display_callback
+
+    # INITIAL state
+    # dep_requirements = []
+
+    if not requirement_needs_installed(irdb, requirement_to_install,
+                                       display_callback=display_callback):
+        log.debug('FILTERED out', requirement_to_install)
         return None
+
+    requirement_spec_to_install = requirement_to_install.requirement_spec
 
     # TODO: revisit, issue with calling display from here is it doesn't know if it was
     #       is being called because of a dep or not
     display_callback('Preparing to install %s' % requirement_spec_to_install.label, level='info')
-
-    # We dont have anything that matches the RequirementSpec installed, so setup
-    # fetcher to try to find and get something.
-    fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                requirement_spec=requirement_spec_to_install)
 
     # if we fail to get a fetcher here, then to... FIND_FETCHER_FAILURE ?
     # could also move some of the logic in fetcher_factory to be driven from here
@@ -108,7 +120,7 @@ def install_repository(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = fetcher.find()
+        find_results = fetcher.find(requirement_spec=requirement_spec_to_install)
     except exceptions.GalaxyError as e:
         log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
         log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
@@ -130,11 +142,8 @@ def install_repository(galaxy_context,
     #       or rules to only update within some semver range (ie, only 'patch' level),
     #       we could hook rule validation stuff here.
 
-    # TODO: build a new repository_spec based on what we actually fetched to feed to
-    #       install etc. The fetcher.fetch() could return a datastructure needed to build
-    #       the new one instead of doing it in verify()
-    repository_spec_to_install = repository_spec.repository_spec_from_find_results(find_results,
-                                                                                   requirement_spec_to_install)
+    # find() builds a RepoSpec from a ReqSpec
+    repository_spec_to_install = find_results.get('repository_spec_to_install', None)
 
     log.debug('About to download repository requested by %s: %s', requirement_spec_to_install, repository_spec_to_install)
 
@@ -142,11 +151,24 @@ def install_repository(galaxy_context,
         display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
                          level='warning')
 
-    # FETCH state
-    # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
+    # FIXME: make this a real object not just a tuple
+    return repository_spec_to_install, find_results
+
+
+# WARNING: alias install_repository to find_requirement
+install_repository = find_requirement
+
+
+def fetch_repo(repository_spec_to_install,
+               fetcher,
+               find_results=None,
+               ignore_errors=False,
+               force_overwrite=False,
+               display_callback=None):
 
     try:
-        fetch_results = fetcher.fetch(find_results=find_results)
+        fetch_results = fetcher.fetch(repository_spec_to_install,
+                                      find_results=find_results)
 
         log.debug('fetch_results: %s', fetch_results)
 
@@ -165,6 +187,18 @@ def install_repository(galaxy_context,
         # FIXME: raise ?
         return None
 
+    return fetch_results
+
+
+def install_repo(galaxy_context,
+                 repository_spec_to_install,
+                 fetcher,
+                 find_results=None,
+                 fetch_results=None,
+                 ignore_errors=False,
+                 force_overwrite=False,
+                 display_callback=None):
+    # FETCH state
     # FIXME: seems like we want to resolve deps before trying install
     #        We need the role (or other content) deps from meta before installing
     #        though, and sometimes (for galaxy case) we dont know that until we've downloaded
@@ -228,19 +262,37 @@ def install_requirements(galaxy_context,
     for requirement_to_install in sorted(requirements_to_install_uniq):
         log.debug('requirement_to_install: %s', requirement_to_install)
 
-        installed_repositories = install_repository(galaxy_context,
-                                                    irdb,
-                                                    requirement_to_install,
-                                                    display_callback=display_callback,
-                                                    ignore_errors=ignore_errors,
-                                                    no_deps=no_deps,
-                                                    force_overwrite=force_overwrite)
+        # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
+        fetcher = fetch_factory.get(galaxy_context=galaxy_context,
+                                    requirement_spec=requirement_to_install.requirement_spec)
+
+        repo_spec_to_install, find_results = \
+            find_requirement(galaxy_context,
+                             irdb,
+                             requirement_to_install,
+                             fetcher,
+                             display_callback=display_callback,
+                             ignore_errors=ignore_errors,
+                             no_deps=no_deps,
+                             force_overwrite=force_overwrite)
+        # installed_repositories = install_repository(galaxy_context,
 
         # log.debug('dep_requirement_repository_specs1: %s', dep_requirements)
 
-        if not installed_repositories:
-            log.debug('install_repository() returned None for requirement_to_install: %s', requirement_to_install)
+        if not repo_spec_to_install:
+            log.debug('find_requirementy() returned None for requirement_to_install: %s', requirement_to_install)
             continue
+
+        fetch_results = fetch_repo(repo_spec_to_install, fetcher, find_results)
+        log.debug('FETCHED: %s', repo_spec_to_install)
+
+        installed_repositories = install_repo(galaxy_context,
+                                              repo_spec_to_install,
+                                              fetcher,
+                                              find_results=find_results,
+                                              fetch_results=fetch_results)
+
+        fetcher.cleanup()
 
         for installed_repo in installed_repositories:
             required_by_blurb = ''
