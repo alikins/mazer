@@ -103,14 +103,6 @@ def find_requirement(galaxy_context,
 
     display_callback = display_callback or display.display_callback
 
-    # INITIAL state
-    # dep_requirements = []
-
-    if not requirement_needs_installed(irdb, requirement_to_install,
-                                       display_callback=display_callback):
-        log.debug('FILTERED out', requirement_to_install)
-        return None
-
     requirement_spec_to_install = requirement_to_install.requirement_spec
 
     # TODO: revisit, issue with calling display from here is it doesn't know if it was
@@ -269,10 +261,19 @@ def install_requirements(galaxy_context,
     for requirement_to_install in sorted(requirements_to_install_uniq):
         log.debug('requirement_to_install: %s', requirement_to_install)
 
+        # INITIAL state
+
+        # FILTER
+        if not requirement_needs_installed(irdb, requirement_to_install,
+                                           display_callback=display_callback):
+            log.debug('FILTERED out', requirement_to_install)
+            continue
+
         # Note: fetcher.fetch() as a side effect sets fetcher._archive_path to where it was downloaded to.
         fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                     requirement_spec=requirement_to_install.requirement_spec)
 
+        # FIND
         repo_spec_to_install, find_results = \
             find_requirement(galaxy_context,
                              irdb,
@@ -290,15 +291,18 @@ def install_requirements(galaxy_context,
             log.debug('find_requirementy() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
+        # FETCH
         fetch_results = fetch_repo(repo_spec_to_install, fetcher, find_results)
         log.debug('FETCHED: %s', repo_spec_to_install)
 
+        # INSTALL
         installed_repositories = install_repo(galaxy_context,
                                               repo_spec_to_install,
                                               fetcher,
                                               find_results=find_results,
                                               fetch_results=fetch_results)
 
+        # CLEANUP
         fetcher.cleanup()
 
         for installed_repo in installed_repositories:
