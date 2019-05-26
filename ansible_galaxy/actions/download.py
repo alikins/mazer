@@ -27,6 +27,7 @@ def download_requirement(galaxy_context,
 
     requirement_spec_to_install = requirement_to_install.requirement_spec
 
+    # TODO: replace with RESOlVE
     fetcher = fetch_factory.get(galaxy_context=galaxy_context,
                                 requirement_spec=requirement_spec_to_install)
 
@@ -34,7 +35,7 @@ def download_requirement(galaxy_context,
     # can do aliases and substitutions
     try:
         # Note: This can mutate fetch.requirement_spec as a side effect
-        find_results = fetcher.find()
+        find_results = fetcher.find(requirement_spec=requirement_spec_to_install)
     except exceptions.GalaxyError as e:
         log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
         log.warning('Unable to find metadata for %s: %s', requirement_spec_to_install.label, e)
@@ -54,7 +55,8 @@ def download_requirement(galaxy_context,
     log.debug('artifact_basename: %s', artifact_basename)
 
     try:
-        fetch_results = fetcher.fetch(find_results=find_results)
+        fetch_results = fetcher.fetch(repository_spec_to_install=repository_spec_to_install,
+                                      find_results=find_results)
 
         log.debug('fetch_results: %s', fetch_results)
 
