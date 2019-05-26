@@ -62,10 +62,10 @@ def test_local_file_fetch(mocker):
                  return_value=mocker.Mock(name='mockRepoArchive'))
     mocker.patch('ansible_galaxy.fetch.local_file.LocalFileFetch._load_repository',
                  return_value=mocker.Mock(name='mockRepo'))
-    local_fetch = local_file.LocalFileFetch(requirement_spec_)
+    local_fetch = local_file.LocalFileFetch()
 
-    find_results = local_fetch.find()
-    results = local_fetch.fetch(find_results=find_results)
+    find_results = local_fetch.find(requirement_spec=requirement_spec_)
+    results = local_fetch.fetch(repository_spec_to_install=None, find_results=find_results)
 
     log.debug('results: %s', results)
     local_fetch.cleanup()
