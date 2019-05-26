@@ -34,7 +34,8 @@ def test__publish(galaxy_context, mock_get_api, requests_mock):
     context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': 'http://notreal.invalid:8000',
                                     'ignore_certs': False,
-                                    'api_key': faux_api_key})
+                                    'api_key': faux_api_key,
+                                    })
     log.debug('galaxy_context: %s', context)
 
     response_body_202 = {"task": "/api/v2/collection-imports/8675309"}
@@ -70,12 +71,14 @@ def test__publish_api_key_is_none(galaxy_context, mock_get_api, requests_mock):
     assert 'Authorization' not in post_mock.last_request.headers
 
 
-def test__publish_api_error(galaxy_context, mock_get_api, requests_mock):
+def test__publish_api_error(galaxy_context, mock_get_api, requests_mock, mocker):
     faux_api_key = 'da39a3ee5e6b4b0d3255bfef95601890afd80709'
     context = GalaxyContext(collections_path=galaxy_context.collections_path,
                             server={'url': 'http://notreal.invalid:8000',
                                     'ignore_certs': False,
-                                    'api_key': faux_api_key})
+                                    'api_key': faux_api_key,
+                                    # 'requests_session': mocker.MagicMock(name='mock_request_session')
+                                    })
     log.debug('galaxy_context: %s', context)
 
     err_409_conflict_json = {'code': 'conflict.collection_exists', 'message': 'Collection "testing-ansible_testing_content-4.0.4" already exists.'}
