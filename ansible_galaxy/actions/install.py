@@ -4,10 +4,12 @@ import pprint
 
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
+from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import requirements
-from ansible_galaxy.fetch import fetch_factory
+from ansible_galaxy.models.fetchable_requirement import FetchableRequirement
+# from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy.utils.misc import uniq
 
 log = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ def raise_without_ignore(ignore_errors, msg=None, rc=1):
         raise exceptions.GalaxyError(message)
 
 
-def _log_installed(installed_repositories, requirement_to_install):
+def _log_installed(installed_repositories, requirement_to_install, display_callback):
     for installed_repo in installed_repositories:
         required_by_blurb = ''
         # FIXME
@@ -100,8 +102,8 @@ def requirement_needs_installed(irdb,
 
 def find_requirement(galaxy_context,
                      irdb,
-                     requirement_to_install,
-                     fetcher,
+                     fetchable_requirement,
+                     # fetcher,
                      display_callback=None,
                      # TODO: error handling callback ?
                      ignore_errors=False,
@@ -109,7 +111,7 @@ def find_requirement(galaxy_context,
                      force_overwrite=False):
     '''Lookup metadata about requirement_to_install (ie, from Galaxy API)'''
 
-    requirement_spec_to_install = requirement_to_install.requirement_spec
+    requirement_spec_to_install = fetchable_requirement.requirement.requirement_spec
 
     # TODO: revisit, issue with calling display from here is it doesn't know if it was
     #       is being called because of a dep or not
@@ -125,7 +127,7 @@ def find_requirement(galaxy_context,
     # See if we can find metadata and/or download the archive before we try to
     # remove an installed version...
     try:
-        find_results = fetcher.find(requirement_spec=requirement_spec_to_install)
+        find_results = fetchable_requirement.fetcher.find(requirement_spec=requirement_spec_to_install)
     except exceptions.GalaxyError as e:
         # log.debug('requirement_to_install %s failed to be met: %s', requirement_to_install, e)
         msg = 'Unable to find metadata for %s: %s' % (requirement_spec_to_install.label, e)
@@ -139,9 +141,10 @@ def find_requirement(galaxy_context,
     # find() builds a RepoSpec from a ReqSpec
     repository_spec_to_install = find_results.get('repository_spec_to_install', None)
 
-    if find_results['custom'].get('collection_is_deprecated', False):
-        display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
-                         level='warning')
+    if find_results.get('custom'):
+        if find_results['custom'].get('collection_is_deprecated', False):
+            display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
+                             level='warning')
 
     # FIXME: make this a real object not just a tuple
     return find_results
@@ -220,7 +223,7 @@ def install_repo(galaxy_context,
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
 def find_required_collections(galaxy_context,
                               irdb,
-                              _requirements_list,
+                              _fetchable_requirements_list,
                               display_callback=None,
                               # TODO: error handling callback ?
                               ignore_errors=False,
@@ -232,12 +235,14 @@ def find_required_collections(galaxy_context,
 
     collections_to_install = {}
 
-    requirements_list = uniq(_requirements_list)
+    fetchable_requirements_list = uniq(_fetchable_requirements_list)
 
-    _verify_requirements_repository_spec_have_namespaces(requirements_list)
+    # _verify_requirements_repository_spec_have_namespaces(requirements_list)
 
-    for requirement_to_install in requirements_list:
-        log.debug('requirement_to_install: %s', requirement_to_install)
+    for fetchable_requirement_to_install in fetchable_requirements_list:
+        requirement_to_install = fetchable_requirement_to_install.requirement
+
+        log.debug('requirement_to_install: %s', fetchable_requirement_to_install)
         # log.debug('version_spec: %s', version_spec)
 
         # INITIAL state
@@ -253,14 +258,14 @@ def find_required_collections(galaxy_context,
             log.debug('FILTERED out: %s', requirement_to_install)
             continue
 
-        fetcher = fetch_factory.get(galaxy_context=galaxy_context,
-                                    requirement_spec=requirement_to_install.requirement_spec)
+        # fetcher = fetch_factory.get(galaxy_context=galaxy_context,
+        #                            requirement_spec=requirement_to_install.requirement_spec)
 
         # FIND
         find_results = find_requirement(galaxy_context,
                                         irdb,
-                                        requirement_to_install,
-                                        fetcher,
+                                        fetchable_requirement_to_install,
+                                        # fetcher,
                                         display_callback=display_callback,
                                         ignore_errors=ignore_errors,
                                         no_deps=no_deps,
@@ -281,7 +286,7 @@ def find_required_collections(galaxy_context,
         collections_to_install[repo_spec_to_install.label] = \
             {'find_results': find_results,
              'requirement_to_install': requirement_to_install,
-             'fetcher': fetcher,
+             'fetcher': fetchable_requirement_to_install.fetcher,
              'repo_spec': repo_spec_to_install,
              }
 
@@ -323,7 +328,8 @@ def install_collections(galaxy_context, collections_to_install, display_callback
         fetcher.cleanup()
 
         # ANNOUNCE
-        _log_installed(installed_repositories, requirement_to_install=None)
+        _log_installed(installed_repositories, requirement_to_install=None,
+                       display_callback=display_callback)
 
         # ACCUMULATE
         all_installed_repos.extend(installed_repositories)
@@ -391,6 +397,30 @@ def find_unsolved_deps(galaxy_context,
     return unsolved_requirements
 
 
+def fetcher_for_requirement(requirement, galaxy_context):
+    '''Figure out the fetcher for this requirement, create it, return it'''
+
+    fetcher = fetch_factory.get(galaxy_context=galaxy_context,
+                                requirement_spec=requirement.requirement_spec)
+    log.debug('fetcher: %s', fetcher)
+
+    return fetcher
+
+
+def associate_fetchable_requirements(requirements_list,
+                                     galaxy_context):
+    fetchable_requirements = []
+
+    for requirement in requirements_list:
+        fetcher = fetcher_for_requirement(requirement, galaxy_context)
+
+        fetchable_req = FetchableRequirement(requirement, fetcher)
+
+        fetchable_requirements.append(fetchable_req)
+
+    return fetchable_requirements
+
+
 def install_requirements_loop(galaxy_context,
                               requirements_list,
                               display_callback=None,
@@ -418,11 +448,14 @@ def install_requirements_loop(galaxy_context,
             break
 
         # RESOLVE lazy requirements? (ie, http/file) ?
+        # transaction_item = resolve_requ
+        fetchable_requirements_list = associate_fetchable_requirements(requirements_list,
+                                                                       galaxy_context)
 
         new_required_collections = \
             find_required_collections(galaxy_context,
                                       irdb,
-                                      requirements_list,
+                                      fetchable_requirements_list,
                                       display_callback=display_callback,
                                       ignore_errors=ignore_errors,
                                       no_deps=no_deps,
