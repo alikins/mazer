@@ -58,7 +58,7 @@ class GalaxyUrlFetch(base.BaseFetch):
         # log.debug('Validate TLS certificates: %s', self.validate_certs)
 
     def find(self, requirement_spec):
-        '''Find a collection
+        '''Find the solution (a collection) to a requirement
 
         This method does 3 things:
 
@@ -96,17 +96,6 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         collection_is_deprecated = collection_detail_data.get('deprecated', False)
 
-        # TODO: if versions ends up with a 'related' we could follow it instead of specific
-        #       get_collection_version_list()
-        # example results
-        # [{
-        #   "version": "2.4.5",
-        #   "href": "/api/v2/collections/ansible/k8s/versions/2.4.5/",
-        #  },
-        #  {
-        #   "version": "1.2.3",
-        #   "href": "/api/v2/collections/ansible/k8s/versions/1.2.3/",
-        #  }]
         log.debug('Getting collectionversions for %s.%s from %s',
                   namespace, collection_name, versions_list_url)
 
@@ -190,7 +179,6 @@ class GalaxyUrlFetch(base.BaseFetch):
                                 'filename': artifact_detail['filename'],
                                 'size': artifact_detail['size']},
                    'requirement_spec': requirement_spec,
-                   # 'dependencies': collectionversion_metadata['dependencies'],
                    'requirements': requirements_list,
                    'requirement_spec': requirement_spec,
                    'custom': {'download_url': download_url,
@@ -206,8 +194,6 @@ class GalaxyUrlFetch(base.BaseFetch):
         results = {}
 
         download_url = find_results['custom']['download_url']
-
-        # download_url = _build_download_url(external_url=external_url, version=_content_version)
         # TODO: error handling if there is no download_url
 
         expected_filename = find_results.get('artifact', {}).get('filename', None)

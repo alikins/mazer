@@ -82,4 +82,4 @@ class Requirement(object):
 
     # FIXME: just for debugging
     def __repr__(self):
-        return str(self)
+        return '%s (fetcher=%s)' % (str(self), self.fetcher)

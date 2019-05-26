@@ -5,22 +5,22 @@ import os
 from ansible_galaxy import collection_artifact
 from ansible_galaxy import repository
 from ansible_galaxy import repository_archive
+from ansible_galaxy.fetch import base
 
 log = logging.getLogger(__name__)
 
 
-class LocalFileFetch(object):
+class LocalFileFetch(base.BaseFetch):
     fetch_method = 'local_file'
 
-    def __init__(self, requirement_spec):
-        self.requirement_spec = requirement_spec
-        self.local_path = self.requirement_spec.src
+    def find(self, requirement_spec):
+        vspec = requirement_spec.version_spec.specs[0].spec
 
-    def find(self):
-        vspec = self.requirement_spec.version_spec.specs[0].spec
+        # update local_path to point to the artifact
+        self.local_path = requirement_spec.src
 
-        results = {'content': {'galaxy_namespace': self.requirement_spec.namespace,
-                               'repo_name': self.requirement_spec.name,
+        results = {'content': {'galaxy_namespace': requirement_spec.namespace,
+                               'repo_name': requirement_spec.name,
                                # For a local file, we created the version_spec to match
                                # exactly the version from the file, so dig into the version_spec
                                # a bit to pull that out.
@@ -30,9 +30,10 @@ class LocalFileFetch(object):
                                 'size': os.path.getsize(self.local_path)},
                    'custom': {},
                    }
+
         return results
 
-    def fetch(self, find_results=None):
+    def fetch(self, repository_spec_to_install, find_results=None):
         find_results = find_results or {}
 
         repository_archive_path = self.local_path
