@@ -81,7 +81,7 @@ class RestClient(object):
         log.debug('User Agent: %s', self.user_agent)
 
         # self.session = requests.Session()
-        self.session = self.http_context['server']['requests_session']
+        self.session = self.http_context['server'].get('requests_session', requests.Session())
         self.session.headers.update({'User-Agent': self.user_agent})
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
