@@ -41,11 +41,13 @@ def _log_installed(installed_repositories, requirement_to_install, display_callb
         # if requirement_to_install.repository_spec:
         #    required_by_blurb = ' (required by %s)' % requirement_to_install.repository_spec.label
 
-        log.info('Installed: %s %s to %s%s',
-                 installed_repo.label,
-                 installed_repo.repository_spec.version,
-                 installed_repo.path,
-                 required_by_blurb)
+        msg = 'Installed: %s %s to %s%s' % (installed_repo.label,
+                                            installed_repo.repository_spec.version,
+                                            installed_repo.path,
+                                            required_by_blurb)
+
+        log.info(msg)
+        display_callback(msg)
 
 
 def _verify_requirements_repository_spec_have_namespaces(requirements_list):
