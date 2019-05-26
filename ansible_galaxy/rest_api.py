@@ -80,7 +80,8 @@ class RestClient(object):
 
         log.debug('User Agent: %s', self.user_agent)
 
-        self.session = requests.Session()
+        # self.session = requests.Session()
+        self.session = self.http_context['server']['requests_session']
         self.session.headers.update({'User-Agent': self.user_agent})
 
         self.log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
@@ -119,7 +120,6 @@ class RestClient(object):
         # request_log.debug('%s headers=%s', pre_request_slug, request_headers)
 
         try:
-
             # Make the actual request
             resp = self.session.request(http_method, url, data=args, headers=request_headers,
                                         verify=self.validate_certs)

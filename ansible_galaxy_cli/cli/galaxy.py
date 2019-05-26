@@ -27,6 +27,8 @@ import logging
 import os
 import sys
 
+import requests
+
 from ansible_galaxy.actions import build
 from ansible_galaxy.actions import download
 from ansible_galaxy.actions import info
@@ -170,6 +172,9 @@ class GalaxyCLI(cli.CLI):
         if self.action == 'install' and getattr(self.options, 'collections_path') and getattr(self.options, 'global_install'):
             raise cli_exceptions.CliOptionsError('--content-path and --global are mutually exclusive')
 
+    def _get_requests_session(self):
+        return requests.Session()
+
     def _get_galaxy_context(self, options, config):
         # use collections_path from options if availble but fallback to configured collections_path
         options_collections_path = None
@@ -194,6 +199,11 @@ class GalaxyCLI(cli.CLI):
 
         if getattr(options, 'publish_api_key', None):
             server['api_key'] = options.publish_api_key
+
+        # Create a requests session that will be reused for REST API requests to
+        # the 'server' url
+        requests_session = self._get_requests_session()
+        server['requests_session'] = requests_session
 
         galaxy_context = GalaxyContext(server=server, collections_path=collections_path)
 

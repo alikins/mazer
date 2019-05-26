@@ -34,7 +34,8 @@ class GalaxyContext(object):
     def __init__(self, collections_path=None, server=None):
         self.server = server or {'url': None,
                                  'ignore_certs': False,
-                                 'api_key': None}
+                                 'api_key': None,
+                                 'requests_session': None}
         self.collections_path = collections_path
 
     def __repr__(self):
