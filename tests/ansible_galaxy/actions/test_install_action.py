@@ -160,7 +160,7 @@ def test_install_requirements(galaxy_context, mocker):
 
     # mocker.patch('ansible_galaxy.actions.install.install_repositories',
     #              return_value=expected_installs)
-    mocker.patch('ansible_galaxy.actions.install.install_repository',
+    mocker.patch('ansible_galaxy.actions.install.install_collections',
                  return_value=expected_installs)
 
     res = install.install_requirements(galaxy_context,
@@ -379,7 +379,7 @@ def test_install_requirements_repo(galaxy_context, mocker):
     requirements_to_install = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
 
-    mocker.patch('ansible_galaxy.actions.install.install_repository',
+    mocker.patch('ansible_galaxy.actions.install.install_collection',
                  return_value=expected_repos)
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
@@ -441,7 +441,7 @@ def test_find_unsolved_deps_nothing_installed(galaxy_context):
     assert res == []
 
 
-def test_find_unsolved_deps(galaxy_context):
+def test_find_unsolved_deps(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='some_namespace',
                                name='some_name',
                                version='4.3.2')
@@ -455,7 +455,19 @@ def test_find_unsolved_deps(galaxy_context):
                                    requirement_spec=req_spec)
 
     installed_repo = Repository(repo_spec, requirements=[some_requirement, some_requirement])
-    res = install.find_unsolved_deps(galaxy_context, [installed_repo])
+    # collections_to_install = {'some_namespace.some_name': installed_repo}
+
+    find_results = {}
+
+    collections_to_install = {}
+    collections_to_install[repo_spec.label] = \
+        {'find_results': find_results,
+         'requirement_to_install': some_requirement,
+         'fetcher': mocker.MagicMock(name='mock_fetcher'),
+         'repo_spec': repo_spec,
+         }
+
+    res = install.find_unsolved_deps(galaxy_context, collections_to_install)
 
     log.debug('res: %s', res)
     assert isinstance(res, list)
