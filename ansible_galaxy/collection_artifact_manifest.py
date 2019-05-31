@@ -17,14 +17,18 @@ pf = pprint.pformat
 COLLECTION_MANIFEST_FILENAME = 'MANIFEST.json'
 
 
+def file_object_name(file_object):
+    name = getattr(file_object, 'name', 'not-a-file')
+    return name
+
+
 # TODO: replace with a generic version for cases
 #       where SomeClass(**dict_from_yaml) works
 def load(data_or_file_object):
 
     # FIXME: This file is json now, so could use the regular json.load()
     #        (this works as well since json is subset of yaml...)
-    log.debug('loading collection info from %s',
-              pf(data_or_file_object))
+    log.debug('loading collection info from %s', file_object_name(data_or_file_object))
 
     data_dict = yaml.safe_load(data_or_file_object)
 
@@ -40,8 +44,6 @@ def load(data_or_file_object):
     instance = CollectionArtifactManifest(collection_info=col_info,
                                           file_manifest_file=file_manifest_file)
 
-    log.debug('%s instance from_kwargs', type(instance))
-
-    log.debug('collection_artifact_manifest: %r', instance)
+    log.debug('Loaded collection_artifact_manifest for %s', instance.collection_info.label)
 
     return instance
