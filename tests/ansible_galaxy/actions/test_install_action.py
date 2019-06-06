@@ -9,6 +9,7 @@ from ansible_galaxy import installed_repository_db
 from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
+from ansible_galaxy.fetch.base import BaseFetch
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
