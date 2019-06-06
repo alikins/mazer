@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 # FIXME: let the archive_url be passed in
-def fetch_url(archive_url, validate_certs=True, filename=None, destination_dir=None):
+def fetch_url(archive_url, validate_certs=True, filename=None, destination_dir=None, chunk_size=None):
     """
     Downloads the archived content from github to a temp location
     """
