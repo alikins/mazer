@@ -520,6 +520,7 @@ def install_requirements_loop(galaxy_context,
 
 
 def run(galaxy_context,
+        collections_lockfile_path=None,
         requirement_spec_strings=None,
         requirement_specs_file=None,
         editable=False,
