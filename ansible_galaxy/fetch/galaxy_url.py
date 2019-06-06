@@ -198,7 +198,7 @@ class GalaxyUrlFetch(base.BaseFetch):
 
         expected_filename = find_results.get('artifact', {}).get('filename', None)
 
-        log.debug('repository_spec=%s', self.requirement_spec)
+        log.debug('repository_spec_to_install=%s', repository_spec_to_install)
         log.debug('download_url=%s', download_url)
         log.debug('expected_filename=%s', expected_filename)
 
