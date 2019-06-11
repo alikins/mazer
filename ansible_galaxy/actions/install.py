@@ -2,12 +2,14 @@ import logging
 import os
 import pprint
 
+from ansible_galaxy import collections_lockfile
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import requirements
+from ansible_galaxy.models.collections_lock import CollectionsLock
 from ansible_galaxy.models.fetchable_requirement import FetchableRequirement
 from ansible_galaxy.utils.misc import uniq
 
@@ -58,6 +60,21 @@ def _verify_requirements_repository_spec_have_namespaces(requirements_list):
             raise exceptions.GalaxyRepositorySpecError(
                 'The repository spec "%s" requires a namespace (either "namespace.name" or via --namespace)' % (req_spec),
                 repository_spec=None)
+
+
+def load_collections_lockfile(lockfile_path):
+    try:
+        log.debug('Opening the collections lockfile %s', lockfile_path)
+        with open(lockfile_path, 'r') as lffd:
+            return collections_lockfile.load(lffd)
+
+    except EnvironmentError as exc:
+        log.exception(exc)
+
+        msg = 'Error opening the collections lockfile "%s": %s' % (lockfile_path, exc)
+        log.error(msg)
+
+        raise exceptions.GalaxyClientError(msg)
 
 
 def requirement_needs_installed(irdb,
@@ -314,10 +331,10 @@ def fetch_collections(collections_to_install):
     return collections_to_install
 
 
-def install_collections(galaxy_context, collections_to_install, display_callback=None):
+def install_collections(galaxy_context, collections_to_install_data, display_callback=None):
     all_installed_repos = []
 
-    for col_key, collection_to_install in collections_to_install.items():
+    for col_key, collection_to_install in collections_to_install_data.items():
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
@@ -493,9 +510,9 @@ def install_requirements_loop(galaxy_context,
     # FETCH
     log.debug('FETCH')
 
-    collections_to_install = fetch_collections(collections_to_install)
+    collections_to_install_data = fetch_collections(collections_to_install)
 
-    log.debug('collections_to_install: %s', pprint.pformat(collections_to_install))
+    log.debug('collections_to_install_data: %s', pprint.pformat(collections_to_install_data))
 
     # VERIFY
     log.debug('VERIFY')
@@ -505,7 +522,7 @@ def install_requirements_loop(galaxy_context,
     #   TODO: EXTRACT
     #   TODO: REPLACE_INSTALLED
     installed_collections = install_collections(galaxy_context,
-                                                collections_to_install,
+                                                collections_to_install_data,
                                                 display_callback=display_callback)
 
     log.debug('installed_collections: %s', installed_collections)
@@ -531,12 +548,18 @@ def run(galaxy_context,
             requirements.requirements_from_strings(requirement_spec_strings=requirement_spec_strings,
                                                    editable=editable,
                                                    namespace_override=namespace_override)
+    if collections_lockfile_path:
+        # load collections lockfile as if the 'dependencies' dict from a collection_info
+        collections_lockfile = load_collections_lockfile(collections_lockfile_path)
 
-    if requirement_specs_file:
-        # yaml load the file
-        # requirements_list += \
-        #     requirements.requirements_from_dict()
-        pass
+        dependencies_list = requirements.from_dependencies_dict(collections_lockfile.dependencies)
+
+        # Create the CollectionsLock for the validators
+        collections_lock = CollectionsLock(dependencies=dependencies_list)
+
+        requirements_list.extend(collections_lock.dependencies)
+
+    log.debug('requirements_list: %s', requirements_list)
 
     log.debug('requirements_list: %s', requirements_list)
 
