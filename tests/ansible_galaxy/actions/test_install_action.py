@@ -11,6 +11,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy import repository_spec
 from ansible_galaxy import requirements
 from ansible_galaxy.fetch.base import BaseFetch
+from ansible_galaxy.models.fetchable_requirement import FetchableRequirement
 from ansible_galaxy.models.repository import Repository
 from ansible_galaxy.models.repository_spec import RepositorySpec
 from ansible_galaxy.models.requirement import Requirement, RequirementOps
@@ -296,27 +297,23 @@ def test_fetch_collection_validate_artifacts_exception(galaxy_context, mocker):
     log.debug('exc_info: %s', exc_info)
 
 
-def test_install_repository_find_error(galaxy_context, mocker):
-    requirements_to_install = \
+def test_find_collection_data_for_requirement_error(galaxy_context, mocker):
+    requirements_list = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
 
-    def faux_get(galaxy_context, requirement_spec):
-        log.debug('faux get %s', requirement_spec)
-        mock_fetcher = mocker.MagicMock(name='MockFetch')
-        mock_fetcher.find.side_effect = exceptions.GalaxyError('Faux exception during find')
-        return mock_fetcher
-
-    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
-                 new=faux_get)
     mocker.patch('ansible_galaxy.actions.install.install.install')
 
+    mock_fetcher = mocker.MagicMock(name='MockFetcher', spec=BaseFetch)
+    mock_fetcher.find.side_effect = exceptions.GalaxyError('Faux exception during find')
+
+    fetchable_req = FetchableRequirement(requirements_list[0], mock_fetcher)
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     with pytest.raises(exceptions.GalaxyError, match='.*Faux exception during find.*') as exc_info:
-        install.install_collection(galaxy_context,
-                                   irdb,
-                                   requirement_to_install=requirements_to_install[0],
-                                   display_callback=display_callback)
+        install.find_collection_data_for_requirement(galaxy_context,
+                                                     irdb,
+                                                     fetchable_req,
+                                                     display_callback=display_callback)
 
     log.debug('exc_info: %s %r', exc_info, exc_info)
 
