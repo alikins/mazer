@@ -522,7 +522,7 @@ def test_find_unsolved_deps_nothing_installed(galaxy_context):
     assert res == []
 
 
-def test_find_unsolved_deps(galaxy_context, mocker):
+def test_find_unsolved_deps_not_installed(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='some_namespace',
                                name='some_name',
                                version='4.3.2')
@@ -534,27 +534,22 @@ def test_find_unsolved_deps(galaxy_context, mocker):
     some_requirement = Requirement(repository_spec=repo_spec,
                                    op=RequirementOps.EQ,
                                    requirement_spec=req_spec)
+    # repo_to_install = Repository(repo_spec, requirements=[some_requirement, some_requirement])
 
-    installed_repo = Repository(repo_spec, requirements=[some_requirement, some_requirement])
+    installed_repo_spec = RepositorySpec(namespace='some_installed_namespace',
+                                         name='some_installed_name',
+                                         version='4.3.2')
+    installed_repo = Repository(installed_repo_spec, requirements=[some_requirement, some_requirement])
     # collections_to_install = {'some_namespace.some_name': installed_repo}
 
     import pprint
 
-    def stub_install_repository(*args, **kwargs):
-        log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
-        req = args[2]
-
-        log.debug('install_repo req: %s', req)
-        log.debug('install_repo reqlabel: %s', req.requirement_spec.label)
-
-        # TODO: fix .label / add .label equilv sans version
-
-        repos = {'some_collection': [installed_repo]}
-        return repos[req.requirement_spec.name]
-
     # mock out the install_repository to avoid the network requests, etc
-    mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
-                           side_effect=stub_install_repository)
+    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+    #                       side_effect=stub_install_repository)
+
+    mock_irdb = mocker.MagicMock(name='the_mock_irdb')
+    mock_irdb.by_requirement.return_value = []
 
     find_results = {'requirements': [some_requirement, some_requirement]}
 
@@ -567,16 +562,70 @@ def test_find_unsolved_deps(galaxy_context, mocker):
          }
 
     res = install.find_unsolved_deps(galaxy_context,
-                                     mock_ir,
+                                     mock_irdb,
                                      collections_to_install,
                                      display_callback=display_callback)
 
     log.debug('res: %s', res)
-    log.debug('mock_ir.call_args_list: %s', pprint.pformat(mock_ir.call_args_list))
+    log.debug('mock_irdb.call_args_list: %s', pprint.pformat(mock_irdb.call_args_list))
 
-    for call in mock_ir.call_args_list:
+    for call in mock_irdb.call_args_list:
         log.debug('call: %s', pprint.pformat(list(call)))
 
     assert isinstance(res, list)
     assert isinstance(res[0], Requirement)
     assert res[0].requirement_spec == req_spec
+
+
+def test_find_unsolved_deps_req_already_installed(galaxy_context, mocker):
+    repo_spec = RepositorySpec(namespace='some_namespace',
+                               name='some_name',
+                               version='4.3.2')
+
+    req_spec = RequirementSpec(namespace='some_required_namespace',
+                               name='some_required_name',
+                               version_spec='==1.0.0')
+
+    some_requirement = Requirement(repository_spec=repo_spec,
+                                   op=RequirementOps.EQ,
+                                   requirement_spec=req_spec)
+    # repo_to_install = Repository(repo_spec, requirements=[some_requirement, some_requirement])
+
+    req_already_installed_repo_spec = RepositorySpec(namespace='some_required_namespace',
+                                                     name='some_required_name',
+                                                     version='1.0.0')
+    req_already_installed_repo = Repository(req_already_installed_repo_spec, requirements=[some_requirement, some_requirement])
+
+    import pprint
+
+    # mock out the install_repository to avoid the network requests, etc
+    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+    #                       side_effect=stub_install_repository)
+
+    mock_irdb = mocker.MagicMock(name='the_mock_irdb')
+    mock_irdb.by_requirement.return_value = [req_already_installed_repo]
+
+    find_results = {'requirements': [some_requirement, some_requirement]}
+
+    collections_to_install = {}
+    collections_to_install[repo_spec.label] = \
+        {'find_results': find_results,
+         'requirement_to_install': some_requirement,
+         'fetcher': mocker.MagicMock(name='mock_fetcher'),
+         'repo_spec': repo_spec,
+         }
+
+    res = install.find_unsolved_deps(galaxy_context,
+                                     mock_irdb,
+                                     collections_to_install,
+                                     display_callback=display_callback)
+
+    log.debug('res: %s', res)
+    log.debug('mock_irdb.call_args_list: %s', pprint.pformat(mock_irdb.call_args_list))
+
+    for call in mock_irdb.call_args_list:
+        log.debug('call: %s', pprint.pformat(list(call)))
+
+    assert isinstance(res, list)
+    # no unsolved deps
+    assert res == []
