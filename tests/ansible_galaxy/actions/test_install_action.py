@@ -120,6 +120,12 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
     mock_ir = mocker.patch('ansible_galaxy.actions.install.install_collection',
                            side_effect=stub_install_collection)
 
+    mocker.patch('ansible_galaxy.actions.install.find_required_collections',
+                 return_value={'alikins.some_collection':
+                               {'find_results':
+                                {'requirements': []},
+                                }
+                               })
     res = install.install_requirements_loop(galaxy_context,
                                             requirements_list,
                                             display_callback=display_callback)
@@ -375,10 +381,7 @@ def test_install_repository_deprecated(galaxy_context, mocker):
 
     mock_display_callback = mocker.MagicMock(name='mock_display_callback')
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
     ret = install.install_collection(galaxy_context,
-                                     irdb,
                                      requirement_to_install=requirements_to_install[0],
                                      display_callback=mock_display_callback)
 
