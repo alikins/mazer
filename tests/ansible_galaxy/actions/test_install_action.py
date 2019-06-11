@@ -115,8 +115,8 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
 
         return repos[req.requirement_spec.name]
 
-    # mock out the install_repository to avoid the network requests, etc
-    mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+    # mock out the install_collection to avoid the network requests, etc
+    mock_ir = mocker.patch('ansible_galaxy.actions.install.install_collection',
                            side_effect=stub_install_repository)
 
     res = install.install_requirements_loop(galaxy_context,
@@ -232,15 +232,15 @@ def test_find_required_collections(galaxy_context, mocker):
 
 
 # BOGUS?
-def test_install_requirements_empty_requirements(galaxy_context):
+def test_find_required_collections_empty_requirements(galaxy_context):
     requirements_to_install = []
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_requirements(galaxy_context,
-                                       irdb,
-                                       requirements_to_install=requirements_to_install,
-                                       display_callback=display_callback)
+    ret = install.find_required_collections(galaxy_context,
+                                            irdb,
+                                            requirements_list=requirements_to_install,
+                                            display_callback=display_callback)
 
     log.debug('ret: %s', ret)
 
@@ -257,7 +257,7 @@ def test_install_repositories(galaxy_context, mocker):
     requirements_to_install = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
 
-    mocker.patch('ansible_galaxy.actions.install.install_repository',
+    mocker.patch('ansible_galaxy.actions.install.install_collection',
                  return_value=expected_repos)
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
@@ -295,7 +295,7 @@ def test_install_repository_validate_artifacts_exception(galaxy_context, mocker)
 
     with pytest.raises(exceptions.GalaxyClientError,
                        match="While fetching some_namespace.*/dev/null/fake/path.*did not match.*FAKEEXPECTEDa948904f2f0f479") as exc_info:
-        install.install_repository(galaxy_context,
+        install.install_collection(galaxy_context,
                                    requirement_to_install=requirements_to_install[0],
                                    display_callback=display_callback)
 
@@ -338,7 +338,7 @@ def test_install_repository_find_error(galaxy_context, mocker):
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
     with pytest.raises(exceptions.GalaxyError, match='.*Faux exception during find.*') as exc_info:
-        install.install_repository(galaxy_context,
+        install.install_collection(galaxy_context,
                                    irdb,
                                    requirement_to_install=requirements_to_install[0],
                                    display_callback=display_callback)
@@ -373,7 +373,7 @@ def test_install_repository_fetch_error(galaxy_context, mocker):
 
     with pytest.raises(exceptions.GalaxyError,
                        match='.*Error downloading .*http://foo.invalid/stuff/blip.tar.gz.*') as exc_info:
-        install.install_repository(galaxy_context,
+        install.install_collection(galaxy_context,
                                    irdb,
                                    requirement_to_install=requirements_to_install[0],
                                    display_callback=display_callback)
@@ -409,7 +409,7 @@ def test_install_repository_deprecated(galaxy_context, mocker):
 
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_repository(galaxy_context,
+    ret = install.install_collection(galaxy_context,
                                      irdb,
                                      requirement_to_install=requirements_to_install[0],
                                      display_callback=mock_display_callback)
@@ -449,7 +449,7 @@ def test_install_repository_install_error(galaxy_context, mocker):
 
     with pytest.raises(exceptions.GalaxyError,
                        match='.*Faux galaxy client error from test.*') as exc_info:
-        install.install_repository(galaxy_context,
+        install.install_collection(galaxy_context,
                                    irdb,
                                    requirement_to_install=requirements_to_install[0],
                                    display_callback=display_callback)
@@ -460,6 +460,9 @@ def test_install_repository_install_error(galaxy_context, mocker):
 def test_install_repository_install_empty_results(galaxy_context, mocker):
     requirements_to_install = \
         requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+
+    fetchable_requirements_list = install.associate_fetchable_requirements(requirements_to_install,
+                                                                           galaxy_context)
 
     find_results = {'content': {'galaxy_namespace': 'some_namespace',
                                 'repo_name': 'some_name'},
@@ -481,40 +484,13 @@ def test_install_repository_install_empty_results(galaxy_context, mocker):
     mocker.patch('ansible_galaxy.actions.install.install.install',
                  return_value=[])
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
     with pytest.raises(exceptions.GalaxyError,
                        match='.*some_namespace.this_requires_some_name was NOT installed successfully.*') as exc_info:
-        install.install_repository(galaxy_context,
-                                   irdb,
-                                   requirement_to_install=requirements_to_install[0],
+        install.install_collection(galaxy_context,
+                                   fetchable_requirements_list[0],
                                    display_callback=display_callback)
 
     log.debug('exc_info: %s %r', exc_info, exc_info)
-
-
-def test_install_requirements_repo(galaxy_context, mocker):
-    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
-                               version='9.4.5')
-    expected_repos = [Repository(repository_spec=repo_spec)]
-
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
-
-    mocker.patch('ansible_galaxy.actions.install.install_collection',
-                 return_value=expected_repos)
-
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
-    ret = install.install_requirements(galaxy_context,
-                                       irdb,
-                                       requirements_to_install=requirements_to_install,
-                                       display_callback=display_callback)
-
-    log.debug('ret: %s', ret)
-
-    assert isinstance(ret, list)
-    assert ret == expected_repos
 
 
 def test_find_required_collections__no_deps_required(galaxy_context, mocker):
@@ -523,8 +499,8 @@ def test_find_required_collections__no_deps_required(galaxy_context, mocker):
     requirements_list = \
         requirements.requirements_from_strings(['some_namespace.this_requires_nothing'])
 
-    # mock out install_repository
-    mocker.patch('ansible_galaxy.actions.install.install_repository',
+    # mock out install_collection
+    mocker.patch('ansible_galaxy.actions.install.install_collection',
                  return_value=[])
 
     req_already_installed_repo_spec = RepositorySpec(namespace='some_required_namespace',
@@ -596,8 +572,8 @@ def test_find_unsolved_deps_not_installed(galaxy_context, mocker):
                                    requirement_spec=req_spec)
     # repo_to_install = Repository(repo_spec, requirements=[some_requirement, some_requirement])
 
-    # mock out the install_repository to avoid the network requests, etc
-    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+    # mock out the install_collection to avoid the network requests, etc
+    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_collection',
     #                       side_effect=stub_install_repository)
 
     mock_irdb = mocker.MagicMock(name='the_mock_irdb')
@@ -648,8 +624,8 @@ def test_find_unsolved_deps_req_already_installed(galaxy_context, mocker):
                                                      version='1.0.0')
     req_already_installed_repo = Repository(req_already_installed_repo_spec, requirements=[some_requirement, some_requirement])
 
-    # mock out the install_repository to avoid the network requests, etc
-    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+    # mock out the install_collection to avoid the network requests, etc
+    # mock_ir = mocker.patch('ansible_galaxy.actions.install.install_collection',
     #                       side_effect=stub_install_repository)
 
     mock_irdb = mocker.MagicMock(name='the_mock_irdb')

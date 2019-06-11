@@ -187,7 +187,7 @@ def fetch_repo(collection_to_install,
     return fetch_results
 
 
-def install_repository(galaxy_context,
+def install_collection(galaxy_context,
                        collection_to_install,
                        ignore_errors=False,
                        force_overwrite=False,
@@ -299,7 +299,7 @@ def find_required_collections(galaxy_context,
     return collections_to_install
 
 
-def fetch_repos(collections_to_install):
+def fetch_collections(collections_to_install):
     log.debug('collections_to_install: %s', collections_to_install)
     for col_key, collection_to_install in collections_to_install.items():
 
@@ -321,7 +321,7 @@ def install_collections(galaxy_context, collections_to_install, display_callback
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
-        installed_repositories = install_repository(galaxy_context,
+        installed_repositories = install_collection(galaxy_context,
                                                     collection_to_install,
                                                     display_callback=display_callback)
 
@@ -493,7 +493,7 @@ def install_requirements_loop(galaxy_context,
     # FETCH
     log.debug('FETCH')
 
-    collections_to_install = fetch_repos(collections_to_install)
+    collections_to_install = fetch_collections(collections_to_install)
 
     log.debug('collections_to_install: %s', pprint.pformat(collections_to_install))
 
