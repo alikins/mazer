@@ -118,15 +118,15 @@ def requirement_needs_installed(irdb,
     return True
 
 
-def find_requirement(galaxy_context,
-                     irdb,
-                     fetchable_requirement,
-                     # fetcher,
-                     display_callback=None,
-                     # TODO: error handling callback ?
-                     ignore_errors=False,
-                     no_deps=False,
-                     force_overwrite=False):
+def find_collection_data_for_requirement(galaxy_context,
+                                         irdb,
+                                         fetchable_requirement,
+                                         # fetcher,
+                                         display_callback=None,
+                                         # TODO: error handling callback ?
+                                         ignore_errors=False,
+                                         no_deps=False,
+                                         force_overwrite=False):
     '''Lookup metadata about requirement_to_install (ie, from Galaxy API)'''
 
     requirement_spec_to_install = fetchable_requirement.requirement.requirement_spec
@@ -168,10 +168,10 @@ def find_requirement(galaxy_context,
     return find_results
 
 
-def fetch_repo(collection_to_install,
-               ignore_errors=False,
-               force_overwrite=False,
-               display_callback=None):
+def fetch_collection(collection_to_install,
+                     ignore_errors=False,
+                     force_overwrite=False,
+                     display_callback=None):
 
     log.debug('collection_to_install: %s', collection_to_install)
 
@@ -225,13 +225,17 @@ def install_collection(galaxy_context,
         # TODO: make the display an error here? depending on ignore_error?
         msg = "- %s was NOT installed successfully: %s "
         display_callback(msg % (repository_spec_to_install.label, e), level='warning')
+
         log.warning(msg, repository_spec_to_install.label, str(e))
+
         raise_without_ignore(ignore_errors, e)
         return []
 
     if not installed_repositories:
         msg_tmpl = "- %s was NOT installed successfully:"
+
         log.warning(msg_tmpl, repository_spec_to_install.label)
+
         msg = msg_tmpl % repository_spec_to_install.label
         raise_without_ignore(ignore_errors, msg)
 
@@ -280,25 +284,25 @@ def find_required_collections(galaxy_context,
         #                            requirement_spec=requirement_to_install.requirement_spec)
 
         # FIND
-        find_results = find_requirement(galaxy_context,
-                                        irdb,
-                                        fetchable_requirement_to_install,
-                                        # fetcher,
-                                        display_callback=display_callback,
-                                        ignore_errors=ignore_errors,
-                                        no_deps=no_deps,
-                                        force_overwrite=force_overwrite)
+        find_results = find_collection_data_for_requirement(galaxy_context,
+                                                            irdb,
+                                                            fetchable_requirement_to_install,
+                                                            # fetcher,
+                                                            display_callback=display_callback,
+                                                            ignore_errors=ignore_errors,
+                                                            no_deps=no_deps,
+                                                            force_overwrite=force_overwrite)
 
         # TODO: state transition, if find_results -> INSTALL
         #       if not, then FIND_FAILED
         if not find_results:
-            log.debug('find_requirement() returned None for requirement_to_install: %s', requirement_to_install)
+            log.debug('find_collection_data_for_requirement() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
         # log.debug('find_results: %s', pprint.pformat(find_results))
         repo_spec_to_install = find_results.get('repository_spec_to_install')
         if not repo_spec_to_install:
-            log.debug('find_requirement() was not able to find a solution for requirement_to_install: %s', requirement_to_install)
+            log.debug('find_collection_data_for_requirement() was not able to find a solution for requirement_to_install: %s', requirement_to_install)
             continue
 
         collections_to_install[repo_spec_to_install.label] = \
@@ -318,41 +322,44 @@ def find_required_collections(galaxy_context,
 
 def fetch_collections(collections_to_install):
     log.debug('collections_to_install: %s', collections_to_install)
+
     for col_key, collection_to_install in collections_to_install.items():
 
         # FETCH
-        fetch_results = fetch_repo(collection_to_install)
+        fetch_results = fetch_collection(collection_to_install)
 
         # side effect, modifying value in dict in place
         collection_to_install['fetch_results'] = fetch_results
-        # collections_to_install[repo_spec_to_install.label]['fetch_results'] = fetch_results
 
     log.debug('collections_to_install2: %s', collections_to_install)
+
     return collections_to_install
 
 
 def install_collections(galaxy_context, collections_to_install_data, display_callback=None):
-    all_installed_repos = []
+    '''Find, fetch, and install multiple collections described in collections_to_install_data'''
+
+    all_installed_collections = []
 
     for col_key, collection_to_install in collections_to_install_data.items():
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
-        installed_repositories = install_collection(galaxy_context,
-                                                    collection_to_install,
-                                                    display_callback=display_callback)
+        installed_collections = install_collection(galaxy_context,
+                                                   collection_to_install,
+                                                   display_callback=display_callback)
 
         # CLEANUP
         fetcher.cleanup()
 
         # ANNOUNCE
-        _log_installed(installed_repositories, requirement_to_install=None,
+        _log_installed(installed_collections, requirement_to_install=None,
                        display_callback=display_callback)
 
         # ACCUMULATE
-        all_installed_repos.extend(installed_repositories)
+        all_installed_collections.extend(installed_collections)
 
-    return all_installed_repos
+    return all_installed_collections
 
 
 def find_unsolved_deps(galaxy_context,
@@ -501,9 +508,9 @@ def install_requirements_loop(galaxy_context,
 
         for req in requirements_list:
             if req.repository_spec:
-                msg = 'Installing requirement %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
+                msg = 'Installing required collection %s (required by %s)' % (req.requirement_spec.label, req.repository_spec.label)
             else:
-                msg = 'Installing requirement %s' % req.requirement_spec.label
+                msg = 'Installing required collection %s' % req.requirement_spec.label
             display_callback(msg, level='info')
 
     # DEPS SOLVED

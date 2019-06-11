@@ -186,22 +186,8 @@ def test_find_required_collections(galaxy_context, mocker):
                                },
                     }
 
-#     blip = {'artifact': {'filename': 'alikins-collection_inspect-0.0.38.tar.gz',
-#                          'sha256': 'c6a69797cb04fa768acb74431ef7ea090e9c9d3e81044feeda65cdd020fbfffd',
-#                          'size': 13113},
-#             'content': {'galaxy_namespace': 'alikins',
-#                         'repo_name': 'collection_inspect',
-#                         'version': Version('0.0.38')},
-#             'custom': {'collection_is_deprecated': False,
-#                        'download_url': 'https://galaxy-dev.ansible.com/download/alikins-collection_inspect-0.0.38.tar.gz'},
-#             'repository_spec_to_install':
-#             RepositorySpec(namespace='alikins', name='collection_inspect', version=Version('0.0.38'), fetch_method='GALAXY_URL', scm=None, spec_string='alikins.collection_inspect', src='alikins.collection_inspect'),
-#             'requirement_spec':
-#             RequirementSpec(namespace='alikins', name='collection_inspect', version_spec=<Spec: (<SpecItem: * ''>,)>, version_aka=None, fetch_method='GALAXY_URL', src='alikins.collection_inspect', scm=None, spec_string='alikins.
-#                             }
-
-    mock_find_requirement = mocker.patch('ansible_galaxy.actions.install.find_requirement',
-                                         return_value=find_results)
+    mock_find_collection_data_for_requirement = mocker.patch('ansible_galaxy.actions.install.find_collection_data_for_requirement',
+                                                             return_value=find_results)
 
     fetchable_requirements_list = install.associate_fetchable_requirements(requirements_list,
                                                                            galaxy_context)
@@ -220,7 +206,7 @@ def test_find_required_collections(galaxy_context, mocker):
     log.debug('res:\n%s', pprint.pformat(res))
     log.debug('mock_irdb2: %s', mock_irdb2)
     log.debug('mock_irdb2.call_args_list: %s', mock_irdb2.call_args_list)
-    log.debug('mock_find_requirement.call_args_list: %s', mock_find_requirement.call_args_list)
+    log.debug('mock_find_collection_data_for_requirement.call_args_list: %s', mock_find_collection_data_for_requirement.call_args_list)
 
     assert isinstance(res, dict)
     res_find_result = res['testuser.another']
@@ -300,25 +286,6 @@ def test_install_repository_validate_artifacts_exception(galaxy_context, mocker)
                                    display_callback=display_callback)
 
     log.debug('exc_info: %s', exc_info)
-
-
-class FauxFetch(BaseFetch):
-    def __init__(self, galaxy_context, requirement_spec,
-                 find_results=None, fetch_results=None):
-        super(BaseFetch, self).__init__()
-        self.requirement_spec = requirement_spec
-
-        self.find_results = find_results or {}
-        self.fetch_results = fetch_results or {}
-        log.debug('init FauxFetch')
-
-    def find(self):
-        log.debug('fauxfetch.find')
-        return self.find_results
-
-    def fetch(self, find_results):
-        log.debug('fauxfetch.fetch find_results=%s', find_results)
-        return self.fetch_results
 
 
 def test_install_repository_find_error(galaxy_context, mocker):
@@ -471,12 +438,25 @@ def test_install_repository_install_empty_results(galaxy_context, mocker):
                                'repoversion': {'version': '9.3.245'},
                                },
                     }
+    fetch_results = {
+        'archive_path': '/tmp/al.tar.gz',
+        'cleanup_helper': print,
+        'fetch_method': 'galaxy_url',
+        'custom': {'download_url': 'https://galaxy-dev.ansible.com/download/alikins-collection_inspect-0.0.38.tar.gz',
+                   'collection_is_deprecated': False},
+        'content': {'galaxy_namespace': 'alikins',
+                    'repo_name': 'collection_inspect',
+                    'version': '0.0.38'},
+        'artifact': {'sha256': 'c6a69797cb04fa768acb74431ef7ea090e9c9d3e81044feeda65cdd020fbfffd',
+                     'filename': 'alikins-collection_inspect-0.0.38.tar.gz',
+                     'size': 13113}
+    }
 
     def faux_get(galaxy_context, requirement_spec):
         log.debug('faux get %s', requirement_spec)
         mock_fetcher = mocker.MagicMock(name='MockFetch')
         mock_fetcher.find.return_value = find_results
-        mock_fetcher.fetch.return_value = {'stuff': 'whatever'}
+        mock_fetcher.fetch.return_value = fetch_results
         return mock_fetcher
 
     mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
