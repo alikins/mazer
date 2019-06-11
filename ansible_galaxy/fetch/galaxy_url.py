@@ -186,6 +186,9 @@ class GalaxyUrlFetch(base.BaseFetch):
                               },
                    }
 
+        import pprint
+        log.debug('find results:\n:%s', pprint.pformat(results))
+
         return results
 
     def fetch(self, repository_spec_to_install, find_results=None):

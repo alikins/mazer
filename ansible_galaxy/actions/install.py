@@ -147,7 +147,7 @@ def find_requirement(galaxy_context,
             display_callback("The collection '%s' is deprecated." % (repository_spec_to_install.label),
                              level='warning')
 
-    # FIXME: make this a real object not just a tuple
+    # FIXME: make this a real object not just a dict
     return find_results
 
 
@@ -230,7 +230,7 @@ def find_required_collections(galaxy_context,
                               ignore_errors=False,
                               no_deps=False,
                               force_overwrite=False):
-    '''Return collections_to_install'''
+    '''Return collections_to_install, a dict of required collection spec label to find_results'''
 
     display_callback = display_callback or display.display_callback
 
