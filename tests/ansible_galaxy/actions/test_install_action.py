@@ -313,9 +313,9 @@ def test_install_repository_find_error(galaxy_context, mocker):
     log.debug('exc_info: %s %r', exc_info, exc_info)
 
 
-def test_install_repository_fetch_error(galaxy_context, mocker):
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+def test_fetch_collection_fetch_error(galaxy_context, mocker):
+    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
+                               version='9.3.245')
 
     find_results = {'content': {'galaxy_namespace': 'some_namespace',
                                 'repo_name': 'some_name'},
@@ -325,25 +325,21 @@ def test_install_repository_fetch_error(galaxy_context, mocker):
                                },
                     }
 
-    def faux_get(galaxy_context, requirement_spec):
-        log.debug('faux get %s', requirement_spec)
-        mock_fetcher = mocker.MagicMock(name='MockFetch')
-        mock_fetcher.find.return_value = find_results
-        mock_fetcher.fetch.side_effect = exceptions.GalaxyDownloadError(url='http://foo.invalid/stuff/blip.tar.gz')
-        return mock_fetcher
+    mock_fetcher = mocker.MagicMock(name='MockFetch')
+    mock_fetcher.find.return_value = find_results
+    mock_fetcher.fetch.side_effect = exceptions.GalaxyDownloadError(url='http://foo.invalid/stuff/blip.tar.gz')
 
-    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
-                 new=faux_get)
-    mocker.patch('ansible_galaxy.actions.install.install.install')
+    # mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+    #             new=faux_get)
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
+    collection_to_install = {'fetcher': mock_fetcher,
+                             'repo_spec': repo_spec,
+                             'find_results': find_results,
+                             }
     with pytest.raises(exceptions.GalaxyError,
                        match='.*Error downloading .*http://foo.invalid/stuff/blip.tar.gz.*') as exc_info:
-        install.install_collection(galaxy_context,
-                                   irdb,
-                                   requirement_to_install=requirements_to_install[0],
-                                   display_callback=display_callback)
+        install.fetch_collection(collection_to_install,
+                                 display_callback=display_callback)
 
     log.debug('exc_info: %s %r', exc_info, exc_info)
 

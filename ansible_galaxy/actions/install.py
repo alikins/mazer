@@ -212,15 +212,15 @@ def install_collection(galaxy_context,
 
     # FIXME: exc handling
 
-    installed_repositories = []
+    installed_collections = []
 
     repository_spec_to_install = collection_to_install['repo_spec']
 
     try:
-        installed_repositories = install.install(galaxy_context,
-                                                 collection_to_install,
-                                                 force_overwrite=force_overwrite,
-                                                 display_callback=display_callback)
+        installed_collections = install.install(galaxy_context,
+                                                collection_to_install,
+                                                force_overwrite=force_overwrite,
+                                                display_callback=display_callback)
     except exceptions.GalaxyError as e:
         # TODO: make the display an error here? depending on ignore_error?
         msg = "- %s was NOT installed successfully: %s "
@@ -231,7 +231,7 @@ def install_collection(galaxy_context,
         raise_without_ignore(ignore_errors, e)
         return []
 
-    if not installed_repositories:
+    if not installed_collections:
         msg_tmpl = "- %s was NOT installed successfully:"
 
         log.warning(msg_tmpl, repository_spec_to_install.label)
@@ -239,7 +239,7 @@ def install_collection(galaxy_context,
         msg = msg_tmpl % repository_spec_to_install.label
         raise_without_ignore(ignore_errors, msg)
 
-    return installed_repositories
+    return installed_collections
 
 
 # TODO: split into resolve, find/get metadata, resolve deps, download, install transaction
@@ -336,12 +336,12 @@ def fetch_collections(collections_to_install):
     return collections_to_install
 
 
-def install_collections(galaxy_context, collections_to_install_data, display_callback=None):
-    '''Find, fetch, and install multiple collections described in collections_to_install_data'''
+def install_collections(galaxy_context, collections_data_list, display_callback=None):
+    '''Find, fetch, and install multiple collections described in collections_data_list'''
 
     all_installed_collections = []
 
-    for col_key, collection_to_install in collections_to_install_data.items():
+    for col_key, collection_to_install in collections_data_list.items():
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
