@@ -135,6 +135,7 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
     assert res['success'] is True
 
 
+# BOGUS?
 def test_install_requirements(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
                                version='4.2.1')
@@ -184,6 +185,7 @@ def test_install_requirements(galaxy_context, mocker):
     assert res_repo.repository_spec.name == 'another'
 
 
+# BOGUS?
 def test_install_requirements_empty_requirements(galaxy_context):
     requirements_to_install = []
 
@@ -200,6 +202,7 @@ def test_install_requirements_empty_requirements(galaxy_context):
     assert ret == []
 
 
+# BOGUS?
 def test_install_repositories(galaxy_context, mocker):
     repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
                                version='9.4.5')
@@ -471,7 +474,7 @@ def test_install_requirements_repo(galaxy_context, mocker):
 def test_install_requirements_no_deps_required(galaxy_context, mocker):
     needed_deps = []
 
-    requirements_to_install = \
+    requirements_list = \
         requirements.requirements_from_strings(['some_namespace.this_requires_nothing'])
 
     # mock out install_repository
@@ -481,10 +484,15 @@ def test_install_requirements_no_deps_required(galaxy_context, mocker):
     # ? Mock this instead? maybe a fixture?
     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    ret = install.install_requirements(galaxy_context,
-                                       irdb,
-                                       requirements_to_install=requirements_to_install,
-                                       display_callback=display_callback)
+    # RESOLVE lazy requirements? (ie, http/file) ?
+    # transaction_item = resolve_requ
+    fetchable_requirements_list = install.associate_fetchable_requirements(requirements_list,
+                                                                           galaxy_context)
+
+    ret = install.find_required_collections(galaxy_context,
+                                            irdb,
+                                            fetchable_requirements_list,
+                                            display_callback=display_callback)
 
     log.debug('ret: %s', ret)
 
@@ -530,7 +538,25 @@ def test_find_unsolved_deps(galaxy_context, mocker):
     installed_repo = Repository(repo_spec, requirements=[some_requirement, some_requirement])
     # collections_to_install = {'some_namespace.some_name': installed_repo}
 
-    find_results = {}
+    import pprint
+
+    def stub_install_repository(*args, **kwargs):
+        log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
+        req = args[2]
+
+        log.debug('install_repo req: %s', req)
+        log.debug('install_repo reqlabel: %s', req.requirement_spec.label)
+
+        # TODO: fix .label / add .label equilv sans version
+
+        repos = {'some_collection': [installed_repo]}
+        return repos[req.requirement_spec.name]
+
+    # mock out the install_repository to avoid the network requests, etc
+    mock_ir = mocker.patch('ansible_galaxy.actions.install.install_repository',
+                           side_effect=stub_install_repository)
+
+    find_results = {'requirements': [some_requirement, some_requirement]}
 
     collections_to_install = {}
     collections_to_install[repo_spec.label] = \
@@ -540,9 +566,17 @@ def test_find_unsolved_deps(galaxy_context, mocker):
          'repo_spec': repo_spec,
          }
 
-    res = install.find_unsolved_deps(galaxy_context, collections_to_install)
+    res = install.find_unsolved_deps(galaxy_context,
+                                     mock_ir,
+                                     collections_to_install,
+                                     display_callback=display_callback)
 
     log.debug('res: %s', res)
+    log.debug('mock_ir.call_args_list: %s', pprint.pformat(mock_ir.call_args_list))
+
+    for call in mock_ir.call_args_list:
+        log.debug('call: %s', pprint.pformat(list(call)))
+
     assert isinstance(res, list)
     assert isinstance(res[0], Requirement)
     assert res[0].requirement_spec == req_spec

@@ -2,21 +2,13 @@ import logging
 import os
 import pprint
 
-from ansible_galaxy import collection_artifact
-from ansible_galaxy import collections_lockfile
-from ansible_galaxy import collection_artifact
 from ansible_galaxy import display
 from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
 from ansible_galaxy import requirements
-from ansible_galaxy.fetch import fetch_factory
-from ansible_galaxy.models.collections_lock import CollectionsLock
 from ansible_galaxy.models.fetchable_requirement import FetchableRequirement
-from ansible_galaxy.models.repository_spec import FetchMethods
-from ansible_galaxy.models.requirement import Requirement, RequirementOps
-from ansible_galaxy.models.requirement_spec import RequirementSpec
 from ansible_galaxy.utils.misc import uniq
 
 log = logging.getLogger(__name__)
@@ -195,11 +187,11 @@ def fetch_repo(collection_to_install,
     return fetch_results
 
 
-def install_repo(galaxy_context,
-                 collection_to_install,
-                 ignore_errors=False,
-                 force_overwrite=False,
-                 display_callback=None):
+def install_repository(galaxy_context,
+                       collection_to_install,
+                       ignore_errors=False,
+                       force_overwrite=False,
+                       display_callback=None):
 
     # FIXME: exc handling
 
@@ -329,9 +321,9 @@ def install_collections(galaxy_context, collections_to_install, display_callback
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
-        installed_repositories = install_repo(galaxy_context,
-                                              collection_to_install,
-                                              display_callback=display_callback)
+        installed_repositories = install_repository(galaxy_context,
+                                                    collection_to_install,
+                                                    display_callback=display_callback)
 
         # CLEANUP
         fetcher.cleanup()
@@ -347,6 +339,7 @@ def install_collections(galaxy_context, collections_to_install, display_callback
 
 
 def find_unsolved_deps(galaxy_context,
+                       irdb,
                        collections_to_install,
                        display_callback=None):
 
@@ -367,7 +360,7 @@ def find_unsolved_deps(galaxy_context,
             if dep in all_deps:
                 dupe_deps.append(dep)
                 log.warning('WARN duplicate deps, first is %s, second is %s from %s',
-                            all_deps[dep], dep, collection_to_install)
+                            all_deps[all_deps.index(dep)], dep, collection_to_install)
                 continue
 
             all_deps.append(dep)
@@ -383,7 +376,7 @@ def find_unsolved_deps(galaxy_context,
         log.debug('Checking if %s is provided by something installed', str(requirement))
 
         # Search for an exact ns_n_v match
-        irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+        # irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
         already_installed_iter = irdb.by_requirement(requirement)
         already_installed = list(already_installed_iter)
@@ -479,6 +472,7 @@ def install_requirements_loop(galaxy_context,
         log.debug('FINDUNSOLVEDEPS')
 
         new_requirements = find_unsolved_deps(galaxy_context,
+                                              irdb,
                                               new_required_collections,
                                               display_callback=display_callback)
 
