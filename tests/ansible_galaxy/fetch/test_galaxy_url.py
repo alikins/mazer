@@ -6,6 +6,7 @@ from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import galaxy_url
 from ansible_galaxy.models.context import GalaxyContext
 from ansible_galaxy.models.requirement_spec import RequirementSpec
+from ansible_galaxy.models.repository_spec import RepositorySpec
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +60,9 @@ def galaxy_url_fetch(galaxy_context_example_invalid):
                                name='some_name',
                                version_spec='==9.3.245')
 
-    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=galaxy_context_example_invalid)
+    repo_spec = RepositorySpec(namespace='alikins', name='some_collection',
+                               version='4.2.1')
+    galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(galaxy_context=galaxy_context_example_invalid)
     log.debug('galaxy_url_fetch: %s', galaxy_url_fetch)
 
     return galaxy_url_fetch
@@ -88,7 +91,7 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
     # The request to get the CollectionVersion detail via href from CollectionVersion list
     requests_mock.get('http://example.invalid/api/v2/collections/some_ns/some_name/versions/9.3.245/',
                       json={'download_url': download_url,
-                            'metadata': {},
+                            'metadata': {'dependencies': {}},
                             'artifact': {'sha256': expected_sha256,
                                          'filename': 'some_ns-some_name-9.3.245.tar.gz',
                                          'size': 1201},
@@ -98,7 +101,11 @@ def test_galaxy_url_fetch_find(galaxy_url_fetch, requests_mock):
     requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name/',
                       json={'versions_url': 'http://example.invalid/api/v2/collections/some_ns/some_name/versions/'})
 
-    res = galaxy_url_fetch.find()
+    req_spec = RequirementSpec(namespace='some_namespace',
+                               name='some_name',
+                               version_spec='==9.3.245')
+
+    res = galaxy_url_fetch.find(requirement_spec=req_spec)
 
     log.debug('res:%s', res)
 
@@ -116,13 +123,16 @@ def test_galaxy_url_fetch_find_no_repo_data(galaxy_url_fetch, galaxy_context, re
                       json={'current_version': 'v2'})
     requests_mock.get('http://example.invalid/api/v2/collections/some_namespace/some_name/',
                       json={})
+    req_spec = RequirementSpec(namespace='some_namespace',
+                               name='some_name',
+                               version_spec='==9.3.245')
 
     # galaxy_url_fetch = galaxy_url.GalaxyUrlFetch(requirement_spec=req_spec, galaxy_context=context)
     # - sorry, some_namespace.some_name (version_spec: ==9.3.245) was not found on http://galaxy.invalid/.
     # - sorry, some_namespace.some_name,==9.3.245 was not found on http://example.invalid.
     with pytest.raises(exceptions.GalaxyClientError,
                        match='- sorry, some_namespace.some_name,.* was not found on http://example.invalid') as exc_info:
-        galaxy_url_fetch.find()
+        galaxy_url_fetch.find(requirement_spec=req_spec)
 
     log.debug('exc_info:%s', exc_info)
 
@@ -149,9 +159,12 @@ def test_galaxy_url_fetch_fetch(galaxy_url_fetch, mocker, requests_mock):
                                },
                     }
 
+    repo_spec = RepositorySpec(namespace='some_ns', name='some_name',
+                               version='9.3.245')
+
     mock_sha256 = mocker.patch('ansible_galaxy.fetch.galaxy_url.collection_artifact.chksums.sha256sum_from_path',
                                return_value=expected_sha256)
-    res = galaxy_url_fetch.fetch(find_results)
+    res = galaxy_url_fetch.fetch(repository_spec_to_install=repo_spec, find_results=find_results)
 
     log.debug('res:%s', res)
 
