@@ -187,15 +187,19 @@ def fetch_collection(collection_to_install,
 
         # fetch_results will include a 'archive_path' pointing to where the artifact
         # was saved to locally.
+    except exceptions.GalaxyArtifactChksumError as exc:
+        log.error(exc)
+        msg = "While fetching %s, the checksum of the fetched artifact (%s) did not match the expected checksum %s" \
+            % (repository_spec_to_install, exc.artifact_path, exc.expected)
+        raise exceptions.GalaxyClientError(msg)
+
     except exceptions.GalaxyError as e:
         # fetch error probably should just go to a FAILED state, at least until
         # we have to implement retries
+        msg = 'Unable to fetch %s: %s' % (repository_spec_to_install.name, e)
+        log.warning(msg)
 
-        log.warning('Unable to fetch %s: %s',
-                    repository_spec_to_install.name,
-                    e)
-
-        raise_without_ignore(ignore_errors, e)
+        raise_without_ignore(ignore_errors, msg)
 
         # FIXME: raise ?
         return None

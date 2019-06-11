@@ -100,12 +100,12 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
 
     import pprint
 
-    def stub_install_repository(*args, **kwargs):
+    def stub_install_collection(*args, **kwargs):
         log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
         req = args[2]
 
-        log.debug('install_repo req: %s', req)
-        log.debug('install_repo reqlabel: %s', req.requirement_spec.label)
+        log.debug('install_collection req: %s', req)
+        log.debug('install_collection reqlabel: %s', req.requirement_spec.label)
 
         # TODO: fix .label / add .label equilv sans version
 
@@ -117,7 +117,7 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
 
     # mock out the install_collection to avoid the network requests, etc
     mock_ir = mocker.patch('ansible_galaxy.actions.install.install_collection',
-                           side_effect=stub_install_repository)
+                           side_effect=stub_install_collection)
 
     res = install.install_requirements_loop(galaxy_context,
                                             requirements_list,
@@ -259,9 +259,9 @@ def test_install_repositories(galaxy_context, mocker):
     assert ret == expected_repos
 
 
-def test_install_repository_validate_artifacts_exception(galaxy_context, mocker):
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
+def test_fetch_collection_validate_artifacts_exception(galaxy_context, mocker):
+    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
+                               version='9.3.245')
 
     find_results = {'content': {'galaxy_namespace': 'some_namespace',
                                 'repo_name': 'some_name'},
@@ -272,18 +272,26 @@ def test_install_repository_validate_artifacts_exception(galaxy_context, mocker)
                                },
                     }
 
-    mocker.patch('ansible_galaxy.actions.install.install.find',
-                 return_value=find_results)
-    mocker.patch('ansible_galaxy.actions.install.install.fetch',
-                 side_effect=exceptions.GalaxyArtifactChksumError(artifact_path='/dev/null/fake/path',
-                                                                  expected='FAKEEXPECTEDa948904f2f0f479',
-                                                                  actual='FAKEACTUAL4b0d2ed1c1cd2a1ec0fb85d2'))
+    mocker.patch('ansible_galaxy.actions.install.install.install')
+
+    mock_fetcher = mocker.MagicMock(name='MockFetch')
+    mock_fetcher.find.return_value = find_results
+    mock_fetcher.fetch.side_effect = exceptions.GalaxyArtifactChksumError(artifact_path='/dev/null/fake/path',
+                                                                          expected='FAKEEXPECTEDa948904f2f0f479',
+                                                                          actual='FAKEACTUAL4b0d2ed1c1cd2a1ec0fb85d2')
+
+    # mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+    #             new=faux_get)
+
+    collection_to_install = {'fetcher': mock_fetcher,
+                             'repo_spec': repo_spec,
+                             'find_results': find_results,
+                             }
 
     with pytest.raises(exceptions.GalaxyClientError,
                        match="While fetching some_namespace.*/dev/null/fake/path.*did not match.*FAKEEXPECTEDa948904f2f0f479") as exc_info:
-        install.install_collection(galaxy_context,
-                                   requirement_to_install=requirements_to_install[0],
-                                   display_callback=display_callback)
+        install.fetch_collection(collection_to_install,
+                                 display_callback=display_callback)
 
     log.debug('exc_info: %s', exc_info)
 
