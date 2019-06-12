@@ -99,13 +99,15 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
 
     log.debug('requirements_list: %s', requirements_list)
 
+    mock_fetcher = mocker.MagicMock(name='MockFetcher', spec=BaseFetch)
+
     import pprint
 
     def stub_install_collection(*args, **kwargs):
         log.debug('mir: args=%s, kwargs=%s', pprint.pformat(args), repr(kwargs))
-        req = args[2]
+        col_to_install = args[1]
 
-        log.debug('install_collection req: %s', req)
+        log.debug('install_collection col_to_install: %s', col_to_install)
         log.debug('install_collection reqlabel: %s', req.requirement_spec.label)
 
         # TODO: fix .label / add .label equilv sans version
@@ -121,11 +123,14 @@ def test_install_repository_specs_loop(galaxy_context, mocker):
                            side_effect=stub_install_collection)
 
     mocker.patch('ansible_galaxy.actions.install.find_required_collections',
-                 return_value={'alikins.some_collection':
-                               {'find_results':
-                                {'requirements': []},
-                                }
+                 return_value={'alikins.some_collection': {'find_results': {'requirements': []},
+                                                           'fetcher': mock_fetcher,
+                                                           'repo_spec': repo_spec},
+                               'testuser.another': {'find_results': {'requirements': []},
+                                                    'fetcher': mock_fetcher,
+                                                    'repo_spec': other_repo_spec},
                                })
+
     res = install.install_requirements_loop(galaxy_context,
                                             requirements_list,
                                             display_callback=display_callback)
@@ -223,47 +228,21 @@ def test_find_required_collections(galaxy_context, mocker):
     assert res_repo_spec.namespace == 'testuser'
     assert res_repo_spec.name == 'another'
 
+# BOGUS
+# def test_find_required_collections_empty_requirements(galaxy_context):
+#     requirements_to_install = []
 
-# BOGUS?
-def test_find_required_collections_empty_requirements(galaxy_context):
-    requirements_to_install = []
+#     irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
 
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
+#     ret = install.find_required_collections(galaxy_context,
+#                                             irdb,
+#                                             requirements_list=requirements_to_install,
+#                                             display_callback=display_callback)
 
-    ret = install.find_required_collections(galaxy_context,
-                                            irdb,
-                                            requirements_list=requirements_to_install,
-                                            display_callback=display_callback)
+#     log.debug('ret: %s', ret)
 
-    log.debug('ret: %s', ret)
-
-    assert isinstance(ret, list)
-    assert ret == []
-
-
-# BOGUS?
-def test_install_repositories(galaxy_context, mocker):
-    repo_spec = RepositorySpec(namespace='some_namespace', name='some_name',
-                               version='9.4.5')
-    expected_repos = [Repository(repository_spec=repo_spec)]
-
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
-
-    mocker.patch('ansible_galaxy.actions.install.install_collection',
-                 return_value=expected_repos)
-
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
-    ret = install.install_repositories(galaxy_context,
-                                       irdb,
-                                       requirements_to_install=requirements_to_install,
-                                       display_callback=display_callback)
-
-    log.debug('ret: %s', ret)
-
-    assert isinstance(ret, list)
-    assert ret == expected_repos
+#     assert isinstance(ret, list)
+#     assert ret == []
 
 
 def test_fetch_collection_validate_artifacts_exception(galaxy_context, mocker):
@@ -355,85 +334,10 @@ def test_fetch_collection_fetch_error(galaxy_context, mocker):
     log.debug('exc_info: %s %r', exc_info, exc_info)
 
 
-def test_install_repository_deprecated(galaxy_context, mocker):
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
-
-    find_results = {'content': {'galaxy_namespace': 'some_namespace',
-                                'repo_name': 'some_name'},
-                    'custom': {'repo_data': {},
-                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
-                               'repoversion': {'version': '9.3.245'},
-                               'collection_is_deprecated': True,
-                               },
-                    }
-
-    def faux_get(galaxy_context, requirement_spec):
-        log.debug('faux get %s', requirement_spec)
-        mock_fetcher = mocker.MagicMock(name='MockFetch')
-        mock_fetcher.find.return_value = find_results
-        mock_fetcher.fetch.return_value = {}
-        return mock_fetcher
-
-    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
-                 new=faux_get)
-    mocker.patch('ansible_galaxy.actions.install.install.install')
-
-    mock_display_callback = mocker.MagicMock(name='mock_display_callback')
-
-    ret = install.install_collection(galaxy_context,
-                                     requirement_to_install=requirements_to_install[0],
-                                     display_callback=mock_display_callback)
-
-    expected_display_calls = mocker.call("The collection 'some_namespace.this_requires_some_name' is deprecated.", level='warning')
-
-    log.debug('ret: %s', ret)
-
-    assert expected_display_calls in mock_display_callback.call_args_list
-
-
-def test_install_repository_install_error(galaxy_context, mocker):
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
-
-    find_results = {'content': {'galaxy_namespace': 'some_namespace',
-                                'repo_name': 'some_name'},
-                    'custom': {'repo_data': {},
-                               'download_url': 'http://foo.invalid/stuff/blip.tar.gz',
-                               'repoversion': {'version': '9.3.245'},
-                               },
-                    }
-
-    def faux_get(galaxy_context, requirement_spec):
-        log.debug('faux get %s', requirement_spec)
-        mock_fetcher = mocker.MagicMock(name='MockFetch')
-        mock_fetcher.find.return_value = find_results
-        mock_fetcher.fetch.return_value = {'stuff': 'whatever'}
-        return mock_fetcher
-
-    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
-                 new=faux_get)
-    mocker.patch('ansible_galaxy.actions.install.install.install',
-                 side_effect=exceptions.GalaxyClientError('Faux galaxy client error from test'))
-
-    irdb = installed_repository_db.InstalledRepositoryDatabase(galaxy_context)
-
-    with pytest.raises(exceptions.GalaxyError,
-                       match='.*Faux galaxy client error from test.*') as exc_info:
-        install.install_collection(galaxy_context,
-                                   irdb,
-                                   requirement_to_install=requirements_to_install[0],
-                                   display_callback=display_callback)
-
-    log.debug('exc_info: %s %r', exc_info, exc_info)
-
-
 def test_install_repository_install_empty_results(galaxy_context, mocker):
-    requirements_to_install = \
-        requirements.from_dependencies_dict({'some_namespace.this_requires_some_name': '*'})
-
-    fetchable_requirements_list = install.associate_fetchable_requirements(requirements_to_install,
-                                                                           galaxy_context)
+    repo_spec = RepositorySpec(namespace='some_namespace',
+                               name='some_name',
+                               version='1.0.0')
 
     find_results = {'content': {'galaxy_namespace': 'some_namespace',
                                 'repo_name': 'some_name'},
@@ -463,15 +367,37 @@ def test_install_repository_install_empty_results(galaxy_context, mocker):
         mock_fetcher.fetch.return_value = fetch_results
         return mock_fetcher
 
-    mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
-                 new=faux_get)
+    fetch_collections_data = {'some_namespace.some_name':
+                              {
+                                'find_results': {
+                                      'content': {},
+                                      'requirements': [],
+                                      'repository_spec_to_install': {},
+                                  },
+                                'requirement_to_install': {},
+                                'fetcher': {},
+                                'repo_spec': repo_spec,
+                                'fetch_results': {
+                                      'archive_path': None,
+                                      'fetch_method': 'local_file',
+                                      'custom': {},
+                                      'content': {},
+                                      'artifact': {}
+                                  }
+                              }
+                              }
+
+    #mocker.patch('ansible_galaxy.actions.install.fetch_factory.get',
+    #             new=faux_get)
     mocker.patch('ansible_galaxy.actions.install.install.install',
                  return_value=[])
+    mocker.patch('ansible_galaxy.actions.install.fetch_collections',
+                 return_value=fetch_collections_data)
 
     with pytest.raises(exceptions.GalaxyError,
-                       match='.*some_namespace.this_requires_some_name was NOT installed successfully.*') as exc_info:
+                       match='.*some_namespace.some_name was NOT installed successfully.*') as exc_info:
         install.install_collection(galaxy_context,
-                                   fetchable_requirements_list[0],
+                                   fetch_collections_data['some_namespace.some_name'],
                                    display_callback=display_callback)
 
     log.debug('exc_info: %s %r', exc_info, exc_info)

@@ -325,6 +325,7 @@ def find_required_collections(galaxy_context,
 
 
 def fetch_collections(collections_to_install):
+    '''Fetch collection artifact, and modify in place collections_to_install to include that info'''
     log.debug('collections_to_install: %s', collections_to_install)
 
     for col_key, collection_to_install in collections_to_install.items():
@@ -340,12 +341,12 @@ def fetch_collections(collections_to_install):
     return collections_to_install
 
 
-def install_collections(galaxy_context, collections_data_list, display_callback=None):
+def install_collections(galaxy_context, collections_data, display_callback=None):
     '''Find, fetch, and install multiple collections described in collections_data_list'''
 
     all_installed_collections = []
 
-    for col_key, collection_to_install in collections_data_list.items():
+    for col_key, collection_to_install in collections_data.items():
         fetcher = collection_to_install['fetcher']
 
         # INSTALL
