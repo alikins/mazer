@@ -8,7 +8,9 @@ from ansible_galaxy import exceptions
 from ansible_galaxy.fetch import fetch_factory
 from ansible_galaxy import install
 from ansible_galaxy import installed_repository_db
+from ansible_galaxy import matchers
 from ansible_galaxy import requirements
+from ansible_galaxy import repository
 from ansible_galaxy.models.collections_lock import CollectionsLock
 from ansible_galaxy.models.fetchable_requirement import FetchableRequirement
 from ansible_galaxy.utils.misc import uniq
@@ -77,12 +79,25 @@ def load_collections_lockfile(lockfile_path):
         raise exceptions.GalaxyClientError(msg)
 
 
-def requirement_needs_installed(irdb,
-                                requirement_to_install,
-                                display_callback=None):
-    '''Filter out requirements that should not actually be installed
+def local_installation_info_for_collection(irdb,
+                                           repository_spec_to_install,
+                                           display_callback=None):
+    '''If the same ns.n,version is already installed, return the Repositoryfor it'''
+    repository_spec_match_filter = matchers.MatchRepositorySpecNamespaceName([repository_spec_to_install])
 
-    This include requirements met my already installed collections.'''
+    already_installed_iter = irdb.select(repository_spec_match_filter=repository_spec_match_filter)
+
+    already_installed = sorted(list(already_installed_iter))
+
+    return already_installed
+
+
+def local_installation_info_for_requirement(irdb,
+                                            requirement_to_install,
+                                            display_callback=None):
+    '''If a requirement is already installed, return a list of repositories that provide that requirement.
+
+    This include requirements met by already installed collections.'''
 
     # TODO: if we want client side content whitelist/blacklist, or pinned versions,
     #       or rules to only update within some semver range (ie, only 'patch' level),
@@ -113,9 +128,7 @@ def requirement_needs_installed(irdb,
                              level='warning')
         log.debug('Stuff %s was already installed. In %s', requirement_spec_to_install, already_installed)
 
-        return False
-
-    return True
+    return already_installed
 
 
 def find_collection_data_for_requirement(galaxy_context,
@@ -208,6 +221,28 @@ def fetch_collection(collection_to_install,
     return fetch_results
 
 
+def remove_collection(collection_to_install,
+                      display_callback=None):
+
+    log.debug('remove_collection: %s', pprint.pformat(collection_to_install))
+
+    # repository_spec = collection_to_install['repo_spec']
+
+    collections_installed_locally = collection_to_install['collection_installed_locally']
+    for loc_col in collections_installed_locally:
+        repo_label = '%s,%s' % (loc_col.repository_spec.label,
+                                loc_col.repository_spec.version)
+
+        display_callback('  Removing: %s (previously installed to %s)' %
+                         (repo_label,
+                          loc_col.path),
+                         level='info')
+
+        log.debug('Removing already_installed %s', loc_col)
+
+        repository.remove(loc_col)
+
+
 def install_collection(galaxy_context,
                        collection_to_install,
                        ignore_errors=False,
@@ -278,15 +313,10 @@ def find_required_collections(galaxy_context,
         log.debug('requirement_to_install: %s', requirement_to_install)
         log.debug('requirement_to_install: %r', requirement_to_install)
 
-        # FILTER
-        if not requirement_needs_installed(irdb, requirement_to_install,
-                                           display_callback=display_callback):
-            log.debug('FILTERED out: %s', requirement_to_install)
-            continue
+        find_results = {'already_installed_collections': []}
 
         # fetcher = fetch_factory.get(galaxy_context=galaxy_context,
         #                            requirement_spec=requirement_to_install.requirement_spec)
-
         # FIND
         find_results = find_collection_data_for_requirement(galaxy_context,
                                                             irdb,
@@ -303,6 +333,31 @@ def find_required_collections(galaxy_context,
             log.debug('find_collection_data_for_requirement() returned None for requirement_to_install: %s', requirement_to_install)
             continue
 
+        repo_spec_to_install = find_results.get('repository_spec_to_install')
+
+        # FILTER
+        # Check if the collection is already installed
+        requirements_provided_locally = local_installation_info_for_requirement(irdb, requirement_to_install,
+                                                                                display_callback=display_callback)
+        if requirements_provided_locally:
+            for loc_col in requirements_provided_locally:
+                log.debug('FILTERED out: %s (provided by already installed %s)',
+                          requirement_to_install,
+                          loc_col)
+                if 'requirements_provided_locally' not in find_results:
+                    find_results['requirements_provided_locally'] = []
+                find_results['requirements_provided_locally'].append(loc_col)
+
+                # If this particular ns.n,v is installed, add it's info to find_results
+                collection_installed_locally = local_installation_info_for_collection(irdb,
+                                                                                      repo_spec_to_install,
+                                                                                      display_callback=display_callback)
+                find_results['collection_installed_locally'] = collection_installed_locally
+
+            # Don't add already installed collections to the required set unless --force
+            if not force_overwrite:
+                continue
+
         # log.debug('find_results: %s', pprint.pformat(find_results))
         repo_spec_to_install = find_results.get('repository_spec_to_install')
         if not repo_spec_to_install:
@@ -314,6 +369,8 @@ def find_required_collections(galaxy_context,
              'requirement_to_install': requirement_to_install,
              'fetcher': fetchable_requirement_to_install.fetcher,
              'repo_spec': repo_spec_to_install,
+             'requirements_provided_locally': find_results['requirements_provided_locally'],
+             'collection_installed_locally': find_results['collection_installed_locally'],
              }
 
         log.debug('About to FETCH repository requested by %s: %s',
@@ -348,6 +405,12 @@ def install_collections(galaxy_context, collections_data, display_callback=None)
 
     for col_key, collection_to_install in collections_data.items():
         fetcher = collection_to_install['fetcher']
+
+        # REMOVE
+        # delete any existing installations
+        if collection_to_install['collection_installed_locally']:
+            remove_collection(collection_to_install,
+                              display_callback=display_callback)
 
         # INSTALL
         installed_collections = install_collection(galaxy_context,
