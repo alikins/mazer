@@ -16,7 +16,8 @@ log = logging.getLogger(__name__)
 
 def test_galaxy_api_init():
 
-    gc = GalaxyContext()
+    gc = GalaxyContext(server={'url': default_server_dict['url'],
+                               'ignore_certs': False})
     api = rest_api.GalaxyAPI(gc)
 
     assert isinstance(api, rest_api.GalaxyAPI)
